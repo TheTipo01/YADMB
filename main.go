@@ -110,7 +110,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
 	case Prefix + "play":
 		go deleteMessage(s, m)
