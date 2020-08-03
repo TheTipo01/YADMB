@@ -21,12 +21,6 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 	//Locks the mutex for the current server
 	server[guildID].Lock()
 
-	if skip[guildID] {
-		server[guildID].Unlock()
-		removeQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
-		return
-	}
-
 	// Join the provided voice channel.
 	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, false)
 	if err != nil {
@@ -35,7 +29,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 
 	// Start speaking.
 	_ = vc.Speaking(true)
-	stop[guildID] = true
+	skip[guildID] = true
 
 	for {
 		// Read opus frame length from dca file.
@@ -66,15 +60,15 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 		}
 
 		// Stream data to discord
-		if stop[guildID] {
+		if skip[guildID] {
 			vc.OpusSend <- InBuf
 		} else {
 			break
 		}
 	}
 
-	//Resets the stop boolean
-	stop[guildID] = true
+	//Resets the skip boolean
+	skip[guildID] = true
 
 	// Stop speaking
 	_ = vc.Speaking(false)

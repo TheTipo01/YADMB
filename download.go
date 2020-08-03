@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/zmb3/spotify"
-	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
 	"log"
 	"os"
@@ -136,11 +135,6 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId string) {
 
-	config := &clientcredentials.Config{
-		ClientID:     "b1dba14b71634c919139ecfbd381fa56",
-		ClientSecret: "ac5f456ff9d24d2db985a046b91adebe",
-		TokenURL:     spotify.TokenURL,
-	}
 	token, err := config.Token(context.Background())
 	if err != nil {
 		log.Fatalf("couldn't get token: %v", err)

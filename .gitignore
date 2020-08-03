@@ -17,3 +17,4 @@
 *.lnk
 audio_cache/
 .idea/
+config.yml

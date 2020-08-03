@@ -1,0 +1,10 @@
+#Example configuration file, remember to remove "example_"!
+
+#Bot token, get one from https://discord.com/developers/applications
+token: 
+#Prefix for bot commands (Note: this line is bugged, if you want to change the prefix start the program with the parameter "-prefix <your prefix>" )
+prefix:
+#Spotify client id, for playlist support
+clientid: 
+#Spotify client secret, for playlist support
+clientsecret: 

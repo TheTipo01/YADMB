@@ -1,9 +1,11 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/spf13/viper"
+	"github.com/zmb3/spotify"
+	"golang.org/x/oauth2/clientcredentials"
 	"os"
 	"os/signal"
 	"strconv"
@@ -15,15 +17,38 @@ import (
 
 var (
 	server = make(map[string]*sync.Mutex)
-	stop   = make(map[string]bool)
 	skip   = make(map[string]bool)
 	queue  = make(map[string][]Queue)
+	config *clientcredentials.Config
 )
 
 func init() {
-	flag.StringVar(&Token, "t", "", "Bot Token")
-	flag.StringVar(&Prefix, "p", "", "Prefix for bot commands")
-	flag.Parse()
+
+	viper.SetConfigName("config")
+	viper.SetConfigType("yml")
+	viper.AddConfigPath(".")
+
+	viper.SetDefault("prefix", "!")
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found
+			fmt.Println("Config file not found! See example_config.yml")
+			return
+		}
+	} else {
+		//Config file found
+		Token = viper.GetString("token")
+		Prefix = viper.GetString("prefix")
+
+		//Spotify credentials
+		config = &clientcredentials.Config{
+			ClientID:     viper.GetString("clientid"),
+			ClientSecret: viper.GetString("clientsecret"),
+			TokenURL:     spotify.TokenURL,
+		}
+
+	}
 }
 
 var (
@@ -34,12 +59,12 @@ var (
 func main() {
 
 	if Token == "" {
-		fmt.Println("No Token provided. Please run: discordMusicBot -t <bot Token>")
+		fmt.Println("No Token provided. Please modify config.yml")
 		return
 	}
 
 	if Prefix == "" {
-		fmt.Println("No Prefix provided. Please run: discordMusicBot -p <prefix>")
+		fmt.Println("No Prefix provided. Please modify config.yml")
 		return
 	}
 
@@ -52,6 +77,8 @@ func main() {
 
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(guildCreate)
+
+	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
 
 	// Open the websocket and begin listening.
 	err = dg.Open()
@@ -69,10 +96,10 @@ func main() {
 	_ = dg.Close()
 }
 
+//Initialize for every guild mutex and skip variable
 func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
 	server[event.ID] = &sync.Mutex{}
-	stop[event.ID] = true
-	skip[event.ID] = false
+	skip[event.ID] = true
 }
 
 // This function will be called (due to AddHandler above) every time a new
@@ -94,20 +121,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"stop") {
+	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"skip") {
 		go deleteMessage(s, m)
 
-		stop[m.GuildID] = false
+		skip[m.GuildID] = false
 		return
 	}
 
 	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"clear") {
 		go deleteMessage(s, m)
 
-		stop[m.GuildID] = false
-		skip[m.GuildID] = true
-		time.Sleep(time.Millisecond * 500)
-		skip[m.GuildID] = false
+		//TODO: Clear queue logic
 		return
 	}
 

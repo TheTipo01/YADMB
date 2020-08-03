@@ -24,6 +24,7 @@ archives:
   files:
     - README.md
     - LICENSE 
+    - example_config.yml
     - gen.bat
     - gen.sh
 checksum:
