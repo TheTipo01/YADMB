@@ -18,3 +18,4 @@
 audio_cache/
 .idea/
 config.yml
+dist/
