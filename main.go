@@ -23,6 +23,8 @@ var (
 	queue  = make(map[string][]Queue)
 	vc     = make(map[string]*discordgo.VoiceConnection)
 	client spotify.Client
+	Token  string
+	Prefix string
 )
 
 func init() {
@@ -61,11 +63,6 @@ func init() {
 
 	}
 }
-
-var (
-	Token  string
-	Prefix string
-)
 
 func main() {
 
