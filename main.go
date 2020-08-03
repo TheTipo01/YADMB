@@ -106,6 +106,9 @@ func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the autenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if s.State.User.ID == m.Author.ID {
+		return
+	}
 	go deleteMessage(s, m)
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
@@ -169,16 +172,31 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-	case Prefix+"disconnect":
+	case Prefix + "disconnect":
 		_ = vc[m.GuildID].Disconnect()
 		break
 
-	case Prefix+"summon":
+	case Prefix + "summon":
 		var err error
 		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
 		if err != nil {
 			fmt.Println(err)
 		}
+		break
+	case Prefix + "help":
+		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+Prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+Prefix+"queue - Returns all the songs in the server queue\n"+Prefix+"summon - Make the bot join your voice channel\n"+Prefix+"disconnect - Disconnect the bot from the voice channel```")
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		time.Sleep(time.Second * 30)
+
+		err = s.ChannelMessageDelete(m.ChannelID, mex.ID)
+		if err != nil {
+			fmt.Println(err)
+		}
+		break
 	}
 
 }
