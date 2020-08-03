@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/zmb3/spotify"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"runtime"
@@ -134,14 +132,6 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 }
 
 func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId string) {
-
-	token, err := config.Token(context.Background())
-	if err != nil {
-		log.Fatalf("couldn't get token: %v", err)
-		return
-	}
-
-	client := spotify.Authenticator{}.NewClient(token)
 
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistId, "spotify:playlist:")))
 	if err != nil {

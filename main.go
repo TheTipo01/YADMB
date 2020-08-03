@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/spf13/viper"
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -20,7 +22,7 @@ var (
 	skip   = make(map[string]bool)
 	queue  = make(map[string][]Queue)
 	vc     = make(map[string]*discordgo.VoiceConnection)
-	config *clientcredentials.Config
+	client spotify.Client
 )
 
 func init() {
@@ -43,11 +45,19 @@ func init() {
 		Prefix = viper.GetString("prefix")
 
 		//Spotify credentials
-		config = &clientcredentials.Config{
+		config := &clientcredentials.Config{
 			ClientID:     viper.GetString("clientid"),
 			ClientSecret: viper.GetString("clientsecret"),
 			TokenURL:     spotify.TokenURL,
 		}
+
+		token, err := config.Token(context.Background())
+		if err != nil {
+			log.Fatalf("couldn't get token: %v", err)
+			return
+		}
+
+		client = spotify.Authenticator{}.NewClient(token)
 
 	}
 }
