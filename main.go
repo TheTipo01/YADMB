@@ -19,6 +19,7 @@ var (
 	server = make(map[string]*sync.Mutex)
 	skip   = make(map[string]bool)
 	queue  = make(map[string][]Queue)
+	vc     = make(map[string]*discordgo.VoiceConnection)
 	config *clientcredentials.Config
 )
 
@@ -105,8 +106,10 @@ func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the autenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"play") {
-		go deleteMessage(s, m)
+	go deleteMessage(s, m)
+
+	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
+	case Prefix + "play":
 		link := strings.TrimPrefix(m.Content, Prefix+"play ")
 
 		if isValidUrl(link) {
@@ -118,26 +121,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username)
 			}
 		}
-		return
-	}
+		break
 
-	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"skip") {
-		go deleteMessage(s, m)
-
+	case Prefix + "skip":
 		skip[m.GuildID] = false
-		return
-	}
+		break
 
-	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"clear") {
-		go deleteMessage(s, m)
-
+	case Prefix + "clear":
 		//TODO: Clear queue logic
-		return
-	}
+		break
 
-	if strings.HasPrefix(strings.ToLower(m.Content), Prefix+"queue") {
-		go deleteMessage(s, m)
-
+	case Prefix + "queue":
 		var message string
 
 		//Generate song info for message
@@ -173,8 +167,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if err != nil {
 			fmt.Println("Error deleting queue embed: ", err)
 		}
+		break
 
-		return
+	case Prefix+"disconnect":
+		_ = vc[m.GuildID].Disconnect()
+		break
+
+	case Prefix+"summon":
+		var err error
+		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 }

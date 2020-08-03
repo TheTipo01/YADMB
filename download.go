@@ -18,10 +18,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 	if strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be") {
 		files, _ := ioutil.ReadDir("./audio_cache")
 
-		//We check if the song 
+		//We check if the song
 		for _, f := range files {
 			id := strings.TrimSuffix(f.Name(), ".dca")
-			if strings.Contains(link, id) && f.Name() != ".dca"{
+			if strings.Contains(link, id) && f.Name() != ".dca" {
 				el := Queue{"", "", id, link, user}
 				queue[guildID] = append(queue[guildID], el)
 				go addInfo(id, guildID)
@@ -150,7 +150,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId 
 	}
 
 	for _, track := range playlist.Tracks.Tracks {
-		searchDownloadAndPlay(s, guildID, channelID, track.Track.Name + " - "+track.Track.Artists[0].Name, user)
+		searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user)
 	}
 
 }

@@ -22,13 +22,15 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 	server[guildID].Lock()
 
 	// Join the provided voice channel.
-	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, false)
-	if err != nil {
-		return
+	if vc[guildID] == nil || vc[guildID].ChannelID != channelID {
+		vc[guildID], err = s.ChannelVoiceJoin(guildID, channelID, false, false)
+		if err != nil {
+			return
+		}
 	}
 
 	// Start speaking.
-	_ = vc.Speaking(true)
+	_ = vc[guildID].Speaking(true)
 	skip[guildID] = true
 
 	for {
@@ -61,7 +63,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 
 		// Stream data to discord
 		if skip[guildID] {
-			vc.OpusSend <- InBuf
+			vc[guildID].OpusSend <- InBuf
 		} else {
 			break
 		}
@@ -71,14 +73,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 	skip[guildID] = true
 
 	// Stop speaking
-	_ = vc.Speaking(false)
-
-	// Disconnect from the provided voice channel.
-	err = vc.Disconnect()
-	if err != nil {
-		fmt.Println("Can't disconnect from voice channel,", err)
-		return
-	}
+	_ = vc[guildID].Speaking(false)
 
 	// Releases the mutex lock for the server
 	server[guildID].Unlock()
