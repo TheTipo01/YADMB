@@ -118,7 +118,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
-	case Prefix + "play":
+	case Prefix + "play", Prefix + "p":
 		go deleteMessage(s, m)
 		link := strings.TrimPrefix(m.Content, Prefix+"play ")
 
@@ -133,17 +133,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-	case Prefix + "skip":
+	case Prefix + "skip", Prefix + "s":
 		go deleteMessage(s, m)
 		skip[m.GuildID] = false
 		break
 
-	case Prefix + "clear":
+	case Prefix + "clear", Prefix + "c":
 		go deleteMessage(s, m)
 		//TODO: Clear queue logic
 		break
 
-	case Prefix + "queue":
+	case Prefix + "queue", Prefix + "q":
 		go deleteMessage(s, m)
 		var message string
 
@@ -182,12 +182,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-	case Prefix + "disconnect":
+	case Prefix + "disconnect", Prefix + "d":
 		go deleteMessage(s, m)
 		_ = vc[m.GuildID].Disconnect()
 		break
 
-	case Prefix + "summon":
+	case Prefix + "summon", Prefix + "s":
 		go deleteMessage(s, m)
 		var err error
 		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
@@ -195,7 +195,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Println(err)
 		}
 		break
-	case Prefix + "help":
+
+	case Prefix + "help", Prefix + "h":
 		go deleteMessage(s, m)
 		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+Prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+Prefix+"queue - Returns all the songs in the server queue\n"+Prefix+"summon - Make the bot join your voice channel\n"+Prefix+"disconnect - Disconnect the bot from the voice channel```")
 		if err != nil {
