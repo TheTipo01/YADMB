@@ -1,6 +1,8 @@
-#Example configuration file, remember to remove "example_"!
+#Example configuration file, remember to remove "example_" from the file after adding your tokens!
+#For getting a discord token: https://discord.com/developers/applications
+#For getting client id and secret from spotify: https://developer.spotify.com/dashboard/applications
 
-#Bot token, get one from https://discord.com/developers/applications
+#Bot token
 token: 
 #Prefix for bot commands (Note: this line is bugged, if you want to change the prefix start the program with the parameter "-prefix <your prefix>" )
 prefix:
