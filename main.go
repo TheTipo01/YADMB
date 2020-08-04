@@ -188,7 +188,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		vc[m.GuildID] = nil
 		break
 
-	case Prefix + "summon", Prefix + "s":
+	case Prefix + "summon":
 		go deleteMessage(s, m)
 		var err error
 		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
