@@ -185,6 +185,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case Prefix + "disconnect", Prefix + "d":
 		go deleteMessage(s, m)
 		_ = vc[m.GuildID].Disconnect()
+		vc[m.GuildID] = nil
 		break
 
 	case Prefix + "summon", Prefix + "s":
