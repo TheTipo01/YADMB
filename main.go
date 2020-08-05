@@ -123,12 +123,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		link := strings.TrimPrefix(m.Content, Prefix+"play ")
 
 		if isValidUrl(link) {
-			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username)
+			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, Prefix+"spotify "))
+				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, Prefix+"spotify "), m.ChannelID)
 			} else {
-				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username)
+				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
 			}
 		}
 		break

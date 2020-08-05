@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
+func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string) {
 	var opuslen int16
 
 	file, err := os.Open("./audio_cache/" + fileName)
@@ -79,6 +79,6 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string) {
 	server[guildID].Unlock()
 
 	//Remove from queue the song
-	removeQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
+	removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID, txtChannel, s)
 
 }

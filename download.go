@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string) {
+func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string) {
 
 	if strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be") {
 		files, _ := ioutil.ReadDir("./audio_cache")
@@ -20,10 +20,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		for _, f := range files {
 			id := strings.TrimSuffix(f.Name(), ".dca")
 			if strings.Contains(link, id) && f.Name() != ".dca" {
-				el := Queue{"", "", id, link, user}
+				el := Queue{"", "", id, link, user, ""}
 				queue[guildID] = append(queue[guildID], el)
-				go addInfo(id, guildID)
-				go playSound(s, guildID, channelID, f.Name())
+				go addInfo(id, guildID, txtChannel, s)
+				go playSound(s, guildID, channelID, f.Name(), txtChannel)
 				return
 			}
 		}
@@ -64,15 +64,17 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 				}
 			}
 
-			queue[guildID] = append(queue[guildID], Queue{"", "", id, link, user})
-			go addInfo(id, guildID)
-			go playSound(s, guildID, channelID, id+".dca")
+			embed, _ := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed)
+
+			queue[guildID] = append(queue[guildID], Queue{"", "", id, link, user, embed.ID})
+			go addInfo(id, guildID, txtChannel, s)
+			go playSound(s, guildID, channelID, id+".dca", txtChannel)
 		}
 	}
 
 }
 
-func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user string) {
+func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string) {
 
 	files, _ := ioutil.ReadDir("./audio_cache")
 
@@ -80,10 +82,10 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 		id := strings.TrimSuffix(f.Name(), ".dca")
 		if strings.Contains(query, id) && f.Name() != ".dca" {
-			el := Queue{"", "", id, query, user}
+			el := Queue{"", "", id, query, user, ""}
 			queue[guildID] = append(queue[guildID], el)
-			go addInfo(id, guildID)
-			go playSound(s, guildID, channelID, f.Name())
+			go addInfo(id, guildID, txtChannel, s)
+			go playSound(s, guildID, channelID, f.Name(), txtChannel)
 			return
 		}
 	}
@@ -124,14 +126,14 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 			}
 		}
 
-		queue[guildID] = append(queue[guildID], Queue{"", "", id, link, user})
-		go addInfo(id, guildID)
-		go playSound(s, guildID, channelID, id+".dca")
+		queue[guildID] = append(queue[guildID], Queue{"", "", id, link, user, ""})
+		go addInfo(id, guildID, txtChannel, s)
+		go playSound(s, guildID, channelID, id+".dca", txtChannel)
 	}
 
 }
 
-func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId string) {
+func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId, txtChannel string) {
 
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistId, "spotify:playlist:")))
 	if err != nil {
@@ -140,7 +142,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId 
 	}
 
 	for _, track := range playlist.Tracks.Tracks {
-		searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user)
+		searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, txtChannel)
 	}
 
 }

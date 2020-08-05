@@ -15,6 +15,7 @@ type Queue struct {
 	id       string
 	link     string
 	user     string
+	message  string
 }
 
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -60,7 +61,7 @@ func isValidUrl(toTest string) bool {
 	}
 }
 
-func addInfo(id string, guild string) {
+func addInfo(id string, guild, txtChannel string, s *discordgo.Session) {
 	for i, el := range queue[guild] {
 		if el.id == id {
 			out, _ := exec.Command("youtube-dl", "-e", "--get-duration", el.link).Output()
@@ -69,19 +70,37 @@ func addInfo(id string, guild string) {
 			if len(output) == 2 {
 				queue[guild][i].title = output[0]
 				queue[guild][i].duration = output[1]
-			} else {
-				removeQueue(id, guild)
-			}
 
+				//Delete old message
+				err := s.ChannelMessageDelete(txtChannel, queue[guild][i].message)
+				if err != nil {
+					fmt.Println(err)
+				}
+
+				//Send new one, and overwrite old id
+				embed, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", output[0] + " - " + output[1]).SetColor(0x7289DA).MessageEmbed)
+				if err != nil {
+					fmt.Println(err)
+				}
+				queue[guild][i].message = embed.ID
+			} else {
+				removeFromQueue(id, guild,txtChannel, s)
+			}
+			return
 		}
 	}
 }
 
-func removeQueue(id string, guild string) {
+func removeFromQueue(id string, guild, txtChannel string, s *discordgo.Session) {
 	for i, q := range queue[guild] {
 		if q.id == id {
+			err := s.ChannelMessageDelete(txtChannel, queue[guild][i].message)
+			if err != nil {
+				fmt.Println(err)
+			}
+
 			copy(queue[guild][i:], queue[guild][i+1:])
-			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", ""}
+			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", ""}
 			queue[guild] = queue[guild][:len(queue[guild])-1]
 			return
 		}
