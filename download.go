@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -64,13 +65,22 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 					fmt.Println("Can't delete file", err)
 				}
 			}
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
+
+			//We only send enqueued message if it's a single song
+			if len(ids) == 1 {
+				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
+			}
 
 			el := Queue{"", "", id, link, user, ""}
 
 			queue[guildID] = append(queue[guildID], el)
 			addInfo(id, guildID)
 			go playSound(s, guildID, channelID, id+".dca", txtChannel, findQueuePointer(guildID, id))
+		}
+
+		//If it's a playlist, we send a final message telling the users that we enqueued all the song
+		if len(ids) != 1 {
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", strconv.Itoa(len(ids)+1) + " songs").SetColor(0x7289DA).MessageEmbed, txtChannel)
 		}
 	}
 
