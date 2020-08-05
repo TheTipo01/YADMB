@@ -119,7 +119,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
-		//Plays a song
+	//Plays a song
 	case Prefix + "play", Prefix + "p":
 		go deleteMessage(s, m)
 		link := strings.TrimPrefix(m.Content, Prefix+"play ")

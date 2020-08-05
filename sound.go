@@ -22,7 +22,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	server[guildID].Lock()
 
 	//Sends now playing message
-	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][el].title+" - "+queue[guildID][el].duration + " added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed)
+	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][el].title+" - "+queue[guildID][el].duration+" added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed)
 	if err != nil {
 		fmt.Println(err)
 	}

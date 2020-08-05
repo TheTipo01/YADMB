@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+//Structure for holding infos about a song
 type Queue struct {
 	title    string
 	duration string
@@ -19,6 +20,7 @@ type Queue struct {
 	message  string
 }
 
+//Logs and instantly delete a message
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	log.Println(m.Author.Username + ": " + m.Content)
 	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
@@ -27,24 +29,19 @@ func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+//Finds user current voice channel
 func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) string {
+	user := m.Author.ID
+
+	//TODO: Better webhook handling
+	//My user id, for playing song via a webhook
 	if m.WebhookID != "" {
-		user := "145618075452964864"
-
-		for _, guild := range session.State.Guilds {
-			for _, vs := range guild.VoiceStates {
-				if vs.UserID == user {
-					return vs.ChannelID
-				}
-			}
-		}
-
-		return ""
+		user = "145618075452964864"
 	}
 
 	for _, guild := range session.State.Guilds {
 		for _, vs := range guild.VoiceStates {
-			if vs.UserID == m.Author.ID {
+			if vs.UserID == user {
 				return vs.ChannelID
 			}
 		}
@@ -53,6 +50,7 @@ func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) 
 	return ""
 }
 
+//Checks if a string is a valid URL
 func isValidUrl(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
 	if err != nil {
@@ -62,6 +60,7 @@ func isValidUrl(toTest string) bool {
 	}
 }
 
+//Gets title and duration for a given video
 func addInfo(id string, guild string) {
 	for i, el := range queue[guild] {
 		if el.id == id {
@@ -79,6 +78,7 @@ func addInfo(id string, guild string) {
 	}
 }
 
+//Removes element from the queue
 func removeFromQueue(id string, guild string) {
 	for i, q := range queue[guild] {
 		if q.id == id {
@@ -90,6 +90,7 @@ func removeFromQueue(id string, guild string) {
 	}
 }
 
+//Sends and delete after three second an embed in a given channel
 func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) {
 	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
 	if err != nil {
@@ -106,8 +107,9 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 	}
 }
 
+//Finds pointer for a given song id
 func findQueuePointer(guildId, id string) int {
-	for i, _ := range queue[guildId] {
+	for i := range queue[guildId] {
 		if queue[guildId][i].id == id {
 			return i
 		}
