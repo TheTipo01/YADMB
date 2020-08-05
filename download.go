@@ -11,12 +11,13 @@ import (
 	"strings"
 )
 
+//Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string) {
 
 	if strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be") {
 		files, _ := ioutil.ReadDir("./audio_cache")
 
-		//We check if the song
+		//We check if the song is already downloaded
 		for _, f := range files {
 			id := strings.TrimSuffix(f.Name(), ".dca")
 			if strings.Contains(link, id) && f.Name() != ".dca" {
@@ -75,12 +76,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 }
 
+//Searches a song from the query on youtube
 func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string) {
 
 	files, _ := ioutil.ReadDir("./audio_cache")
 
+	//We check if the song is already downloaded
 	for _, f := range files {
-
 		id := strings.TrimSuffix(f.Name(), ".dca")
 		if strings.Contains(query, id) && f.Name() != ".dca" {
 			el := Queue{"", "", id, query, user, ""}
@@ -136,6 +138,7 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 }
 
+//Enqueues song from a spotify playlist, searching them on youtube
 func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId, txtChannel string) {
 
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistId, "spotify:playlist:")))
@@ -145,7 +148,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId,
 	}
 
 	for _, track := range playlist.Tracks.Tracks {
-		searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, txtChannel)
+		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, txtChannel)
 	}
 
 }

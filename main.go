@@ -86,6 +86,7 @@ func main() {
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(guildCreate)
 
+	//Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
 
 	// Open the websocket and begin listening.
@@ -118,6 +119,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
+		//Plays a song
 	case Prefix + "play", Prefix + "p":
 		go deleteMessage(s, m)
 		link := strings.TrimPrefix(m.Content, Prefix+"play ")
@@ -133,16 +135,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
+		//Skips a song
 	case Prefix + "skip", Prefix + "s":
 		go deleteMessage(s, m)
 		skip[m.GuildID] = false
 		break
 
+		//Clear the queue of the guild
 	case Prefix + "clear", Prefix + "c":
 		go deleteMessage(s, m)
 		//TODO: Clear queue logic
 		break
 
+		//Prints out queue for the guild
 	case Prefix + "queue", Prefix + "q":
 		go deleteMessage(s, m)
 		var message string
@@ -159,6 +164,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				}
 
 			}
+			//If we don't have the title, we use some placeholder text
 			if el.title == "" {
 				message += strconv.Itoa(i) + ") Getting info...\n"
 			} else {
@@ -182,12 +188,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
+		//Disconnect the bot from the guild voice channel
 	case Prefix + "disconnect", Prefix + "d":
 		go deleteMessage(s, m)
 		_ = vc[m.GuildID].Disconnect()
 		vc[m.GuildID] = nil
 		break
 
+		//We summon the bot in the user current voice channel
 	case Prefix + "summon":
 		go deleteMessage(s, m)
 		var err error
@@ -197,6 +205,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
+		//Prints out supported commands
 	case Prefix + "help", Prefix + "h":
 		go deleteMessage(s, m)
 		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+Prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+Prefix+"queue - Returns all the songs in the server queue\n"+Prefix+"summon - Make the bot join your voice channel\n"+Prefix+"disconnect - Disconnect the bot from the voice channel```")
