@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 type Queue struct {
@@ -61,7 +62,7 @@ func isValidUrl(toTest string) bool {
 	}
 }
 
-func addInfo(id string, guild, txtChannel string, s *discordgo.Session) {
+func addInfo(id string, guild string) {
 	for i, el := range queue[guild] {
 		if el.id == id {
 			out, _ := exec.Command("youtube-dl", "-e", "--get-duration", el.link).Output()
@@ -70,39 +71,47 @@ func addInfo(id string, guild, txtChannel string, s *discordgo.Session) {
 			if len(output) == 2 {
 				queue[guild][i].title = output[0]
 				queue[guild][i].duration = output[1]
-
-				//Delete old message
-				err := s.ChannelMessageDelete(txtChannel, queue[guild][i].message)
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				//Send new one, and overwrite old id
-				embed, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", output[0] + " - " + output[1]).SetColor(0x7289DA).MessageEmbed)
-				if err != nil {
-					fmt.Println(err)
-				}
-				queue[guild][i].message = embed.ID
 			} else {
-				removeFromQueue(id, guild,txtChannel, s)
+				removeFromQueue(id, guild)
 			}
 			return
 		}
 	}
 }
 
-func removeFromQueue(id string, guild, txtChannel string, s *discordgo.Session) {
+func removeFromQueue(id string, guild string) {
 	for i, q := range queue[guild] {
 		if q.id == id {
-			err := s.ChannelMessageDelete(txtChannel, queue[guild][i].message)
-			if err != nil {
-				fmt.Println(err)
-			}
-
 			copy(queue[guild][i:], queue[guild][i+1:])
 			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", ""}
 			queue[guild] = queue[guild][:len(queue[guild])-1]
 			return
 		}
 	}
+}
+
+func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) {
+	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	time.Sleep(time.Second * 3)
+
+	err = s.ChannelMessageDelete(txtChannel, m.ID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+func findQueuePointer(guildId, id string) int {
+	for i, _ := range queue[guildId] {
+		if queue[guildId][i].id == id {
+			return i
+		}
+	}
+
+	return -1
 }

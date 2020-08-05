@@ -22,8 +22,8 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			if strings.Contains(link, id) && f.Name() != ".dca" {
 				el := Queue{"", "", id, link, user, ""}
 				queue[guildID] = append(queue[guildID], el)
-				go addInfo(id, guildID, txtChannel, s)
-				go playSound(s, guildID, channelID, f.Name(), txtChannel)
+				addInfo(id, guildID)
+				go playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, id))
 				return
 			}
 		}
@@ -63,12 +63,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 					fmt.Println("Can't delete file", err)
 				}
 			}
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
-			embed, _ := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed)
+			el := Queue{"", "", id, link, user, ""}
 
-			queue[guildID] = append(queue[guildID], Queue{"", "", id, link, user, embed.ID})
-			go addInfo(id, guildID, txtChannel, s)
-			go playSound(s, guildID, channelID, id+".dca", txtChannel)
+			queue[guildID] = append(queue[guildID], el)
+			addInfo(id, guildID)
+			go playSound(s, guildID, channelID, id+".dca", txtChannel, findQueuePointer(guildID, id))
 		}
 	}
 
@@ -84,8 +85,8 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 		if strings.Contains(query, id) && f.Name() != ".dca" {
 			el := Queue{"", "", id, query, user, ""}
 			queue[guildID] = append(queue[guildID], el)
-			go addInfo(id, guildID, txtChannel, s)
-			go playSound(s, guildID, channelID, f.Name(), txtChannel)
+			addInfo(id, guildID)
+			go playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, id))
 			return
 		}
 	}
@@ -126,9 +127,11 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 			}
 		}
 
-		queue[guildID] = append(queue[guildID], Queue{"", "", id, link, user, ""})
-		go addInfo(id, guildID, txtChannel, s)
-		go playSound(s, guildID, channelID, id+".dca", txtChannel)
+		el := Queue{"", "", id, link, user, ""}
+
+		queue[guildID] = append(queue[guildID], el)
+		addInfo(id, guildID)
+		go playSound(s, guildID, channelID, id+".dca", txtChannel, findQueuePointer(guildID, id))
 	}
 
 }
