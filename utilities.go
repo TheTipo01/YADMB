@@ -52,11 +52,7 @@ func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) 
 //Checks if a string is a valid URL
 func isValidUrl(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
-	if err != nil {
-		return false
-	} else {
-		return true
-	}
+	return err == nil
 }
 
 //Gets title and duration for a given video

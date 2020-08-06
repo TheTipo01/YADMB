@@ -23,8 +23,8 @@ var (
 	queue  = make(map[string][]Queue)
 	vc     = make(map[string]*discordgo.VoiceConnection)
 	client spotify.Client
-	Token  string
-	Prefix string
+	token  string
+	prefix string
 )
 
 func init() {
@@ -43,8 +43,8 @@ func init() {
 		}
 	} else {
 		//Config file found
-		Token = viper.GetString("token")
-		Prefix = viper.GetString("prefix")
+		token = viper.GetString("token")
+		prefix = viper.GetString("prefix")
 
 		//Spotify credentials
 		config := &clientcredentials.Config{
@@ -66,18 +66,18 @@ func init() {
 
 func main() {
 
-	if Token == "" {
-		fmt.Println("No Token provided. Please modify config.yml")
+	if token == "" {
+		fmt.Println("No token provided. Please modify config.yml")
 		return
 	}
 
-	if Prefix == "" {
-		fmt.Println("No Prefix provided. Please modify config.yml")
+	if prefix == "" {
+		fmt.Println("No prefix provided. Please modify config.yml")
 		return
 	}
 
-	// Create a new Discord session using the provided bot Token.
-	dg, err := discordgo.New("Bot " + Token)
+	// Create a new Discord session using the provided bot token.
+	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
 		fmt.Println("Error creating Discord session: ", err)
 		return
@@ -119,18 +119,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
-		//Plays a song
-	case Prefix + "play", Prefix + "p":
+	//Plays a song
+	case prefix + "play", prefix + "p":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, Prefix+"play ")
-		link = strings.TrimPrefix(link, Prefix+"p ")
+		link := strings.TrimPrefix(m.Content, prefix+"play ")
+		link = strings.TrimPrefix(link, prefix+"p ")
 
 		if isValidUrl(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, Prefix+"spotify "), m.ChannelID)
+				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID)
 			} else {
 				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
 			}
@@ -138,19 +138,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		//Skips a song
-	case Prefix + "skip", Prefix + "s":
+	case prefix + "skip", prefix + "s":
 		go deleteMessage(s, m)
 		skip[m.GuildID] = false
 		break
 
 		//Clear the queue of the guild
-	case Prefix + "clear", Prefix + "c":
+	case prefix + "clear", prefix + "c":
 		go deleteMessage(s, m)
 		//TODO: Clear queue logic
 		break
 
 		//Prints out queue for the guild
-	case Prefix + "queue", Prefix + "q":
+	case prefix + "queue", prefix + "q":
 		go deleteMessage(s, m)
 		var message string
 
@@ -191,14 +191,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		//Disconnect the bot from the guild voice channel
-	case Prefix + "disconnect", Prefix + "d":
+	case prefix + "disconnect", prefix + "d":
 		go deleteMessage(s, m)
 		_ = vc[m.GuildID].Disconnect()
 		vc[m.GuildID] = nil
 		break
 
 		//We summon the bot in the user current voice channel
-	case Prefix + "summon":
+	case prefix + "summon":
 		go deleteMessage(s, m)
 		var err error
 		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
@@ -208,9 +208,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		//Prints out supported commands
-	case Prefix + "help", Prefix + "h":
+	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
-		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+Prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+Prefix+"queue - Returns all the songs in the server queue\n"+Prefix+"summon - Make the bot join your voice channel\n"+Prefix+"disconnect - Disconnect the bot from the voice channel```")
+		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel```")
 		if err != nil {
 			fmt.Println(err)
 			break

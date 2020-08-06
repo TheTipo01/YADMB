@@ -45,8 +45,8 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 		//We generate a temporary temp queue, parsing info from youtube-dl
 		tmpQueue := make([]Queue, (len(strOut)+1)/3)
-		j:=0
-		for i := 0; i < len(strOut); i+=3 {
+		j := 0
+		for i := 0; i < len(strOut); i += 3 {
 			tmpQueue[j].title = strOut[i]
 			tmpQueue[j].id = strOut[i+1]
 			tmpQueue[j].duration = strOut[i+2]
