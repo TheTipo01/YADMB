@@ -29,58 +29,68 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 				return
 			}
 		}
-		//Gets video id
+		//Gets info about songs
 		var out []byte
 
 		switch runtime.GOOS {
 		case "linux":
-			out, _ = exec.Command("youtube-dl", "--get-id", link).Output()
+			out, _ = exec.Command("youtube-dl", "--get-id", "-e", "--get-duration", link).Output()
 			break
 		case "windows":
-			out, _ = exec.Command("cmd", "/C", "youtube-dl", "--get-id", link).Output()
+			out, _ = exec.Command("cmd", "/C", "youtube-dl", "--get-id", "-e", "--get-duration", link).Output()
 		}
 
-		ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+		//Parse output as string, splitting it on every newline
+		strOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-		for _, id := range ids {
-			link = "https://www.youtube.com/watch?v=" + id
+		//We generate a temporary temp queue, parsing info from youtube-dl
+		tmpQueue := make([]Queue, (len(strOut)+1)/3)
+		j:=0
+		for i := 0; i < len(strOut); i+=3 {
+			tmpQueue[j].title = strOut[i]
+			tmpQueue[j].id = strOut[i+1]
+			tmpQueue[j].duration = strOut[i+2]
+			j++
+		}
+
+		for _, el := range tmpQueue {
+			link = "https://www.youtube.com/watch?v=" + el.id
 
 			//We only send enqueued message if it's a single song
-			if len(ids) == 1 {
+			if len(tmpQueue) == 1 {
 				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 			}
 
 			//Checks if video is already downloaded
-			_, err := os.Stat("./audio_cache/" + id + ".dca")
+			_, err := os.Stat("./audio_cache/" + el.id + ".dca")
 
 			//If not, we download and convert it
 			if err != nil {
 				switch runtime.GOOS {
 				case "linux":
-					_ = exec.Command("youtube-dl", "-o", "download/"+id+".m4a", "-f 140", link).Run()
-					_ = exec.Command("bash", "gen.sh", id).Run()
+					_ = exec.Command("youtube-dl", "-o", "download/"+el.id+".m4a", "-f 140", link).Run()
+					_ = exec.Command("bash", "gen.sh", el.id).Run()
 					break
 				case "windows":
-					_ = exec.Command("youtube-dl", "-o", "download/"+id+".m4a", "-f 140", link).Run()
-					_ = exec.Command("gen.bat", id).Run()
+					_ = exec.Command("youtube-dl", "-o", "download/"+el.id+".m4a", "-f 140", link).Run()
+					_ = exec.Command("gen.bat", el.id).Run()
 				}
 
-				err = os.Remove("./download/" + id + ".m4a")
+				err = os.Remove("./download/" + el.id + ".m4a")
 				if err != nil {
 					fmt.Println("Can't delete file", err)
 				}
 			}
 
-			el := Queue{"", "", id, link, user}
+			el := Queue{el.title, el.duration, el.id, link, user}
 
 			queue[guildID] = append(queue[guildID], el)
-			addInfo(id, guildID)
-			go playSound(s, guildID, channelID, id+".dca", txtChannel, findQueuePointer(guildID, id))
+			go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, el.id))
 		}
 
 		//If it's a playlist, we send a final message telling the users that we enqueued all the song
-		if len(ids) != 1 {
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", strconv.Itoa(len(ids)+1) + " songs").SetColor(0x7289DA).MessageEmbed, txtChannel)
+		if len(tmpQueue) != 1 {
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", strconv.Itoa(len(tmpQueue)+1)+" songs").SetColor(0x7289DA).MessageEmbed, txtChannel)
 		}
 	}
 
