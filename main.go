@@ -119,10 +119,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
-	//Plays a song
+		//Plays a song
 	case Prefix + "play", Prefix + "p":
 		go deleteMessage(s, m)
+
 		link := strings.TrimPrefix(m.Content, Prefix+"play ")
+		link = strings.TrimPrefix(link, Prefix+"p ")
 
 		if isValidUrl(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
