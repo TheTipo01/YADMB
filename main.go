@@ -85,6 +85,7 @@ func main() {
 
 	dg.AddHandler(messageCreate)
 	dg.AddHandler(guildCreate)
+	dg.AddHandler(ready)
 
 	//Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
@@ -103,6 +104,15 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	_ = dg.Close()
+}
+
+func ready(s *discordgo.Session, _ *discordgo.Ready) {
+
+	// Set the playing status.
+	err := s.UpdateStatus(0, prefix+"help")
+	if err != nil {
+		fmt.Println("Can't set status,", err)
+	}
 }
 
 //Initialize for every guild mutex and skip variable
