@@ -75,11 +75,16 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		}
 	}
 
-	//Resets the skip boolean
-	skip[guildID] = true
-
 	// Stop speaking
 	_ = vc[guildID].Speaking(false)
+
+	//If the song is skipped, we send a feedback message
+	if !skip[guildID] {
+		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", queue[guildID][el].title+" - "+queue[guildID][el].duration+" added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed, txtChannel)
+	}
+
+	//Resets the skip boolean
+	skip[guildID] = true
 
 	// Releases the mutex lock for the server
 	server[guildID].Unlock()

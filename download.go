@@ -22,7 +22,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		for _, f := range files {
 			id := strings.TrimSuffix(f.Name(), ".dca")
 			if strings.Contains(link, id) && f.Name() != ".dca" {
-				el := Queue{"", "", id, link, user, ""}
+				el := Queue{"", "", id, link, user}
 				queue[guildID] = append(queue[guildID], el)
 				addInfo(id, guildID)
 				go playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, id))
@@ -45,6 +45,11 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		for _, id := range ids {
 			link = "https://www.youtube.com/watch?v=" + id
 
+			//We only send enqueued message if it's a single song
+			if len(ids) == 1 {
+				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
+			}
+
 			//Checks if video is already downloaded
 			_, err := os.Stat("./audio_cache/" + id + ".dca")
 
@@ -66,12 +71,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 				}
 			}
 
-			//We only send enqueued message if it's a single song
-			if len(ids) == 1 {
-				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
-			}
-
-			el := Queue{"", "", id, link, user, ""}
+			el := Queue{"", "", id, link, user}
 
 			queue[guildID] = append(queue[guildID], el)
 			addInfo(id, guildID)
@@ -95,7 +95,7 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 	for _, f := range files {
 		id := strings.TrimSuffix(f.Name(), ".dca")
 		if strings.Contains(query, id) && f.Name() != ".dca" {
-			el := Queue{"", "", id, query, user, ""}
+			el := Queue{"", "", id, query, user}
 			queue[guildID] = append(queue[guildID], el)
 			addInfo(id, guildID)
 			go playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, id))
@@ -139,7 +139,7 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 			}
 		}
 
-		el := Queue{"", "", id, link, user, ""}
+		el := Queue{"", "", id, link, user}
 
 		queue[guildID] = append(queue[guildID], el)
 		addInfo(id, guildID)
