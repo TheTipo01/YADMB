@@ -220,7 +220,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Prints out supported commands
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
-		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel```")
+		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot```")
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -233,6 +233,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmt.Println(err)
 		}
 		break
+
+		//Makes the bot stop
+	case prefix+"restart":
+		os.Exit(0)
 	}
 
 }
