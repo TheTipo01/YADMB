@@ -140,12 +140,17 @@ func downloadFile(filepath string, url string) error {
 	return err
 }
 
-func formatDuration(duration int) string {
+func formatDuration(duration float64) string {
 	duration2 := int(duration)
 	hours := duration2 / 3600
-	duration2 = duration2 - 3600 - hours
+	duration2 = duration2 - 3600*hours
 	minutes := (duration2) / 60
 	duration2 = duration2 - minutes*60
 
-	return fmt.Sprintf("%d:%02d:%02d", hours, minutes, duration2)
+	if hours != 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, duration2)
+	} else {
+		return fmt.Sprintf("%02d:%02d", minutes, duration2)
+	}
+
 }
