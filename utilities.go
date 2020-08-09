@@ -151,7 +151,10 @@ func formatDuration(duration float64) string {
 	if hours != 0 {
 		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, duration2)
 	} else {
-		return fmt.Sprintf("%02d:%02d", minutes, duration2)
+		if minutes != 0 {
+			return fmt.Sprintf("%02d:%02d", minutes, duration2)
+		} else {
+			return fmt.Sprintf("%02d", duration2)
+		}
 	}
-
 }
