@@ -140,6 +140,7 @@ func downloadFile(filepath string, url string) error {
 	return err
 }
 
+//Formats a string given it's duration in seconds
 func formatDuration(duration float64) string {
 	duration2 := int(duration)
 	hours := duration2 / 3600

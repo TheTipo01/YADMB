@@ -32,7 +32,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
 	//Gets info about songs
-	out, _ := exec.Command("youtube-dl", "-j", link).Output()
+	out, _ := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
 
 	//Parse output as string, splitting it on every newline
 	strOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
