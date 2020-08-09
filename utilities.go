@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -111,4 +114,28 @@ func findQueuePointer(guildId, id string) int {
 	}
 
 	return -1
+}
+
+//Downloads a file
+func downloadFile(filepath string, url string) error {
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+
+	_ = resp.Body.Close()
+	_ = out.Close()
+
+	return err
 }
