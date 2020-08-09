@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/zmb3/spotify"
@@ -8,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 )
 
@@ -29,62 +29,54 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		}
 	}
 
-	if strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be") {
+	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
-		//Gets info about songs
-		out, _ := exec.Command("youtube-dl", "--get-id", "-e", "--get-duration", link).Output()
+	//Gets info about songs
+	out, _ := exec.Command("youtube-dl", "-j", link).Output()
 
-		//Parse output as string, splitting it on every newline
-		strOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+	//Parse output as string, splitting it on every newline
+	strOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-		//We generate a temporary temp queue, parsing info from youtube-dl
-		tmpQueue := make([]Queue, (len(strOut)+1)/3)
-		j := 0
-		for i := 0; i < len(strOut); i += 3 {
-			tmpQueue[j].title = strOut[i]
-			tmpQueue[j].id = strOut[i+1]
-			tmpQueue[j].duration = strOut[i+2]
-			j++
-		}
+	var ytdl YoutubeDL
+	//We parse every track as individual json, because youtube-dl
+	for _, sos := range strOut {
+		_ = json.Unmarshal([]byte(sos), &ytdl)
 
-		for _, el := range tmpQueue {
-			link = "https://www.youtube.com/watch?v=" + el.id
+		//We search through the formats
+		for _, f := range ytdl.Formats {
+			//If the protocol is either http or https, and the format is audio and bitrate > 128, we download the song
+			if f.Protocol == "http" || f.Protocol == "https" {
+				if strings.Contains(f.Format, "audio only") && f.Abr >= 128 {
+					//Checks if video is already downloaded
+					_, err := os.Stat("./audio_cache/" + ytdl.ID + ".dca")
 
-			//We only send enqueued message if it's a single song
-			if len(tmpQueue) == 1 {
-				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
-			}
+					//If not, we download and convert it
+					if err != nil {
+						err := downloadFile("./download/"+ytdl.ID+"."+f.Ext, f.URL)
+						if err != nil {
+							fmt.Println(err)
+							break
+						}
 
-			//Checks if video is already downloaded
-			_, err := os.Stat("./audio_cache/" + el.id + ".dca")
+						switch runtime.GOOS {
+						case "linux":
+							_ = exec.Command("bash", "gen.sh", ytdl.ID, ytdl.ID+"."+f.Ext).Run()
+							break
+						case "windows":
+							_ = exec.Command("gen.bat", ytdl.ID, ytdl.ID+"."+f.Ext).Run()
+						}
 
-			//If not, we download and convert it
-			if err != nil {
-				_ = exec.Command("youtube-dl", "-o", "download/"+el.id+".m4a", "-f 140", link).Run()
+						err = os.Remove("./download/" + ytdl.ID + "." + f.Ext)
+					}
 
-				switch runtime.GOOS {
-				case "linux":
-					_ = exec.Command("bash", "gen.sh", el.id).Run()
+					el := Queue{ytdl.Title, formatDuration(ytdl.Duration), ytdl.ID, ytdl.WebpageURL, user}
+
+					queue[guildID] = append(queue[guildID], el)
+					go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, ytdl.ID))
+
 					break
-				case "windows":
-					_ = exec.Command("gen.bat", el.id).Run()
-				}
-
-				err = os.Remove("./download/" + el.id + ".m4a")
-				if err != nil {
-					fmt.Println("Can't delete file", err)
 				}
 			}
-
-			el := Queue{el.title, el.duration, el.id, link, user}
-
-			queue[guildID] = append(queue[guildID], el)
-			go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, el.id))
-		}
-
-		//If it's a playlist, we send a final message telling the users that we enqueued all the song
-		if len(tmpQueue) != 1 {
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", strconv.Itoa(len(tmpQueue)+1)+" songs").SetColor(0x7289DA).MessageEmbed, txtChannel)
 		}
 	}
 
