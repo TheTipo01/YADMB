@@ -8,7 +8,7 @@ type YoutubeDL struct {
 	} `json:"automatic_captions"`
 	StartTime     interface{} `json:"start_time"`
 	Uploader      string      `json:"uploader"`
-	Duration      int         `json:"duration"`
+	Duration      float64     `json:"duration"`
 	AverageRating float64     `json:"average_rating"`
 	Creator       interface{} `json:"creator"`
 	Subtitles     struct {
