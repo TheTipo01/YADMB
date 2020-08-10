@@ -21,26 +21,38 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	//Locks the mutex for the current server
 	server[guildID].Lock()
 
+	//Check if we need to clear
+	if clear[guildID] {
+		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
+		//If this is the last element, we have finished clearing the queue
+		if len(queue[guildID]) == 1 {
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").SetColor(0x7289DA).MessageEmbed, txtChannel)
+			clear[guildID] = false
+		}
+		server[guildID].Unlock()
+		return
+	}
+
 	//Sends now playing message
 	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][el].title+" - "+queue[guildID][el].duration+" added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	// Join the provided voice channel.
+	//Join the provided voice channel.
 	if vc[guildID] == nil || vc[guildID].ChannelID != channelID {
-		vc[guildID], err = s.ChannelVoiceJoin(guildID, channelID, false, false)
+		vc[guildID], err = s.ChannelVoiceJoin(guildID, channelID, false, true)
 		if err != nil {
 			return
 		}
 	}
 
-	// Start speaking.
+	//Start speaking.
 	_ = vc[guildID].Speaking(true)
-	skip[guildID] = true
+	skip[guildID] = false
 
 	for {
-		// Read opus frame length from dca file.
+		//Read opus frame length from dca file.
 		err = binary.Read(file, binary.LittleEndian, &opuslen)
 
 		// If this is the end of the file, just return.
@@ -57,36 +69,36 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 			break
 		}
 
-		// Read encoded pcm from dca file.
+		//Read encoded pcm from dca file.
 		InBuf := make([]byte, opuslen)
 		err = binary.Read(file, binary.LittleEndian, &InBuf)
 
-		// Should not be any end of file errors
+		//Should not be any end of file errors
 		if err != nil {
 			fmt.Println("Error reading from dca file :", err)
 			break
 		}
 
-		// Stream data to discord
-		if skip[guildID] {
+		//Stream data to discord
+		if !skip[guildID] {
 			vc[guildID].OpusSend <- InBuf
 		} else {
 			break
 		}
 	}
 
-	// Stop speaking
+	//Stop speaking
 	_ = vc[guildID].Speaking(false)
 
 	//If the song is skipped, we send a feedback message
-	if !skip[guildID] {
+	if skip[guildID] && !clear[guildID] {
 		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", queue[guildID][el].title+" - "+queue[guildID][el].duration+" added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed, txtChannel)
 	}
 
 	//Resets the skip boolean
-	skip[guildID] = true
+	skip[guildID] = false
 
-	// Releases the mutex lock for the server
+	//Releases the mutex lock for the server
 	server[guildID].Unlock()
 
 	//Delete old message
