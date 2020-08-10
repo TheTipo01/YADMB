@@ -9,18 +9,22 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"reflect"
 	"strings"
+	"sync"
 	"time"
 )
 
 //Structure for holding infos about a song
 type Queue struct {
-	title    string
-	duration string
-	id       string
-	link     string
-	user     string
-	time 	 *time.Time
+	title     string
+	duration  string
+	id        string
+	link      string
+	user      string
+	time      *time.Time
+	lastPause *time.Time
+	offset    float64
 }
 
 //Logs and instantly delete a message
@@ -82,7 +86,7 @@ func removeFromQueue(id string, guild string) {
 	for i, q := range queue[guild] {
 		if q.id == id {
 			copy(queue[guild][i:], queue[guild][i+1:])
-			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", nil}
+			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", nil, nil, 0}
 			queue[guild] = queue[guild][:len(queue[guild])-1]
 			return
 		}
@@ -158,4 +162,10 @@ func formatDuration(duration float64) string {
 			return fmt.Sprintf("%02d", duration2)
 		}
 	}
+}
+
+//Checks if mutex is locked
+func isMutexLocked(m *sync.Mutex) bool {
+	state := reflect.ValueOf(m).Elem().FieldByName("state")
+	return state.Int() == 1
 }

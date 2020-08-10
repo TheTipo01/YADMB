@@ -85,11 +85,13 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		}
 
 		//Stream data to discord
+		pause[guildID].Lock()
 		if !skip[guildID] {
 			vc[guildID].OpusSend <- InBuf
 		} else {
 			break
 		}
+		pause[guildID].Unlock()
 	}
 
 	//Stop speaking

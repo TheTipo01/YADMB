@@ -18,13 +18,23 @@ import (
 )
 
 var (
+	//Mutex for queueing songs correctly
 	server = make(map[string]*sync.Mutex)
-	skip   = make(map[string]bool)
-	clear  = make(map[string]bool)
-	queue  = make(map[string][]Queue)
-	vc     = make(map[string]*discordgo.VoiceConnection)
+	//Mutex for pausing/un-pausing songs
+	pause = make(map[string]*sync.Mutex)
+	//Variable for skipping a single song
+	skip = make(map[string]bool)
+	//Variable for clearing the whole queue
+	clear = make(map[string]bool)
+	//The queue
+	queue = make(map[string][]Queue)
+	//Voice connection
+	vc = make(map[string]*discordgo.VoiceConnection)
+	//Spotify client
 	client spotify.Client
-	token  string
+	//Discord bot token
+	token string
+	//Prefix for bot commands
 	prefix string
 )
 
@@ -119,6 +129,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 //Initialize for every guild mutex and skip variable
 func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
 	server[event.ID] = &sync.Mutex{}
+	pause[event.ID] = &sync.Mutex{}
 }
 
 // This function will be called (due to AddHandler above) every time a new
@@ -168,8 +179,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			//Generate song info for message
 			for i, el := range queue[m.GuildID] {
 				if i == 0 {
-					if el.title != "" {
-						message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()) + "/" + el.duration + " added by " + el.user + "\n\n"
+					if el.title != "" && el.time != nil {
+						//TODO: Fix time when bot is paused
+						message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()+el.offset) + "/" + el.duration + " added by " + el.user + "\n\n"
 						continue
 					} else {
 						message += "Currently playing: Getting info...\n\n"
@@ -225,7 +237,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Prints out supported commands
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
-		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot```")
+		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot\n"+prefix+"pause - Pauses current song\n"+prefix+"resume - Resumes current song```")
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -236,6 +248,34 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err = s.ChannelMessageDelete(m.ChannelID, mex.ID)
 		if err != nil {
 			fmt.Println(err)
+		}
+		break
+
+		//Pause the song
+	case prefix + "pause":
+		go deleteMessage(s, m)
+		if isMutexLocked(pause[m.GuildID]) && len(queue[m.GuildID]) > 0 {
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			pause[m.GuildID].Lock()
+
+			nowTime := time.Now()
+			queue[m.GuildID][0].lastPause = &nowTime
+
+			//Covering edge case where voiceconnection is not established
+			if vc[m.GuildID] != nil {
+				_ = vc[m.GuildID].Speaking(false)
+			}
+		}
+		break
+
+		//Resume playing
+	case prefix + "resume":
+		go deleteMessage(s, m)
+		if !isMutexLocked(pause[m.GuildID]) {
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			queue[m.GuildID][0].offset += queue[m.GuildID][0].time.Sub(*queue[m.GuildID][0].lastPause).Seconds()
+			pause[m.GuildID].Unlock()
+			_ = vc[m.GuildID].Speaking(true)
 		}
 		break
 
