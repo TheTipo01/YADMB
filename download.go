@@ -21,7 +21,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	for _, f := range files {
 		id := strings.TrimSuffix(f.Name(), ".dca")
 		if strings.Contains(link, id) && f.Name() != ".dca" {
-			el := Queue{"", "", id, link, user}
+			el := Queue{"", "", id, link, user, nil}
 			queue[guildID] = append(queue[guildID], el)
 			addInfo(id, guildID)
 			go playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, id))
@@ -69,7 +69,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 						err = os.Remove("./download/" + ytdl.ID + "." + f.Ext)
 					}
 
-					el := Queue{ytdl.Title, formatDuration(ytdl.Duration), ytdl.ID, ytdl.WebpageURL, user}
+					el := Queue{ytdl.Title, formatDuration(ytdl.Duration), ytdl.ID, ytdl.WebpageURL, user, nil}
 
 					queue[guildID] = append(queue[guildID], el)
 					go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, ytdl.ID))

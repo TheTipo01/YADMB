@@ -20,6 +20,7 @@ type Queue struct {
 	id       string
 	link     string
 	user     string
+	time 	 *time.Time
 }
 
 //Logs and instantly delete a message
@@ -81,7 +82,7 @@ func removeFromQueue(id string, guild string) {
 	for i, q := range queue[guild] {
 		if q.id == id {
 			copy(queue[guild][i:], queue[guild][i+1:])
-			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", ""}
+			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", nil}
 			queue[guild] = queue[guild][:len(queue[guild])-1]
 			return
 		}

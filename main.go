@@ -169,7 +169,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			for i, el := range queue[m.GuildID] {
 				if i == 0 {
 					if el.title != "" {
-						message += "Currently playing: " + el.title + " - " + el.duration + " added by " + el.user + "\n\n"
+						message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()) + "/" + el.duration + " added by " + el.user + "\n\n"
 						continue
 					} else {
 						message += "Currently playing: Getting info...\n\n"
@@ -203,7 +203,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			//Queue is empty
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 		}
-
 		break
 
 		//Disconnect the bot from the guild voice channel

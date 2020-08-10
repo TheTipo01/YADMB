@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string, el int) {
@@ -50,6 +51,10 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	//Start speaking.
 	_ = vc[guildID].Speaking(true)
 	skip[guildID] = false
+
+	//Sets when we started reading file, so we known the remaining time of the song
+	tmpTime := time.Now()
+	queue[guildID][el].time = &tmpTime
 
 	for {
 		//Read opus frame length from dca file.
