@@ -20,13 +20,16 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 	//We check if the song is already downloaded
 	for _, f := range files {
-		id := strings.Split(strings.TrimSuffix(f.Name(), ".dca"), "-")[0]
+		//This one is how we handle id
+		realId := strings.TrimSuffix(f.Name(), ".dca")
+		//This one is for caching purposes
+		id := strings.Split(realId, "-")[0]
 
 		if strings.Contains(link, id) && f.Size() != 0 {
-			el := Queue{"", "", id, link, user, nil, 0, ""}
+			el := Queue{"", "", realId, link, user, nil, 0, ""}
 			queue[guildID] = append(queue[guildID], el)
 			addInfo(id, guildID)
-			go playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, id))
+			playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, realId))
 			return
 		}
 	}
