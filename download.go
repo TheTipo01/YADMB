@@ -24,6 +24,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		realId := strings.TrimSuffix(f.Name(), ".dca")
 		//This one is for caching purposes
 		id := strings.Split(realId, "-")[0]
+		//If for reasons, the id is empty we just skip
+		if id == "" {
+			break
+		}
 
 		if strings.Contains(link, id) && f.Size() != 0 {
 			el := Queue{"", "", realId, link, user, nil, 0, ""}
