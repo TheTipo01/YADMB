@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/zmb3/spotify"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -15,28 +14,6 @@ import (
 //Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string) {
 	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
-
-	files, _ := ioutil.ReadDir("./audio_cache")
-
-	//We check if the song is already downloaded
-	for _, f := range files {
-		//This one is how we handle id
-		realId := strings.TrimSuffix(f.Name(), ".dca")
-		//This one is for caching purposes
-		id := strings.Split(realId, "-")[0]
-		//If for reasons, the id is empty we just skip
-		if id == "" {
-			break
-		}
-
-		if strings.Contains(link, id) && f.Size() != 0 {
-			el := Queue{"", "", realId, link, user, nil, 0, ""}
-			queue[guildID] = append(queue[guildID], el)
-			addInfo(id, guildID)
-			playSound(s, guildID, channelID, f.Name(), txtChannel, findQueuePointer(guildID, realId))
-			return
-		}
-	}
 
 	//Gets info about songs
 	out, _ := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
@@ -75,7 +52,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		queue[guildID] = append(queue[guildID], el)
 		go playSound(s, guildID, channelID, fileName+".dca", txtChannel, findQueuePointer(guildID, fileName))
 
-		break
 	}
 
 }

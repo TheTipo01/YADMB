@@ -5,8 +5,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"net/url"
-	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -64,24 +62,6 @@ func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) 
 func isValidUrl(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
 	return err == nil
-}
-
-//Gets title and duration for a given video
-func addInfo(id string, guild string) {
-	for i, el := range queue[guild] {
-		if el.id == id {
-			out, _ := exec.Command("youtube-dl", "-e", "--get-duration", el.link).Output()
-			output := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
-
-			if len(output) == 2 {
-				queue[guild][i].title = output[0]
-				queue[guild][i].duration = output[1]
-			} else {
-				removeFromQueue(id, guild)
-			}
-			return
-		}
-	}
 }
 
 //Removes element from the queue
