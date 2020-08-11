@@ -186,6 +186,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 							message += "Currently playing: " + el.title + " - " + el.lastTime + "/" + el.duration + " added by " + el.user + "\n\n"
 							continue
 						} else {
+							//TODO: Fix offset...
 							message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()+el.offset) + "/" + el.duration + " added by " + el.user + "\n\n"
 							continue
 						}
@@ -265,7 +266,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 			pause[m.GuildID].Lock()
 
-			queue[m.GuildID][0].lastTime = formatDuration(time.Now().Sub(*queue[m.GuildID][0].time).Seconds()+queue[m.GuildID][0].offset)
+			queue[m.GuildID][0].lastTime = formatDuration(time.Now().Sub(*queue[m.GuildID][0].time).Seconds() + queue[m.GuildID][0].offset)
 
 			//Covering edge case where voiceConnection is not established
 			if vc[m.GuildID] != nil {

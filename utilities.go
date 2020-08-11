@@ -3,11 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"io"
 	"log"
-	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -16,21 +13,21 @@ import (
 //Structure for holding infos about a song
 type Queue struct {
 	//Title of the song
-	title     string
+	title string
 	//Duration of the song
-	duration  string
+	duration string
 	//ID of the song
-	id        string
+	id string
 	//Link of the song
-	link      string
+	link string
 	//User who requested the song
-	user      string
+	user string
 	//When we started playing the song
-	time      *time.Time
+	time *time.Time
 	//Offset for when we pause the song
-	offset    float64
+	offset float64
 	//When song is paused, we save where we were
-	lastTime  string
+	lastTime string
 }
 
 //Logs and instantly delete a message
@@ -125,30 +122,6 @@ func findQueuePointer(guildId, id string) int {
 	}
 
 	return -1
-}
-
-//Downloads a file
-func downloadFile(filepath string, url string) error {
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-
-	_ = resp.Body.Close()
-	_ = out.Close()
-
-	return err
 }
 
 //Formats a string given it's duration in seconds

@@ -14,13 +14,15 @@ import (
 
 //Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string) {
+	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
 	files, _ := ioutil.ReadDir("./audio_cache")
 
 	//We check if the song is already downloaded
 	for _, f := range files {
-		id := strings.TrimSuffix(f.Name(), ".dca")
-		if strings.Contains(link, id) && f.Name() != ".dca" {
+		id := strings.Split(strings.TrimSuffix(f.Name(), ".dca"), "-")[0]
+
+		if strings.Contains(link, id) && f.Size() != 0 {
 			el := Queue{"", "", id, link, user, nil, 0, ""}
 			queue[guildID] = append(queue[guildID], el)
 			addInfo(id, guildID)
@@ -28,8 +30,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			return
 		}
 	}
-
-	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
 	//Gets info about songs
 	out, _ := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
@@ -41,43 +41,34 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	//We parse every track as individual json, because youtube-dl
 	for _, sos := range strOut {
 		_ = json.Unmarshal([]byte(sos), &ytdl)
+		fileName := ytdl.ID + "-" + ytdl.Extractor
 
-		//We search through the formats
-		for _, f := range ytdl.Formats {
-			//If the protocol is either http or https, and the format is audio and bitrate > 128, we download the song
-			if f.Protocol == "http" || f.Protocol == "https" {
-				if strings.Contains(f.Format, "audio only") && f.Abr >= 128 {
-					//Checks if video is already downloaded
-					_, err := os.Stat("./audio_cache/" + ytdl.ID + ".dca")
+		//Checks if video is already downloaded
+		_, err := os.Stat("./audio_cache/" + fileName + ".dca")
 
-					//If not, we download and convert it
-					if err != nil {
-						err := downloadFile("./download/"+ytdl.ID+"."+f.Ext, f.URL)
-						if err != nil {
-							fmt.Println(err)
-							break
-						}
+		//If not, we download and convert it
+		if err != nil {
+			//Download
+			_ = exec.Command("youtube-dl", "-o", "download/"+fileName+".m4a", "-x", "--audio-format", "m4a", ytdl.WebpageURL).Run()
 
-						switch runtime.GOOS {
-						case "linux":
-							_ = exec.Command("bash", "gen.sh", ytdl.ID, ytdl.ID+"."+f.Ext).Run()
-							break
-						case "windows":
-							_ = exec.Command("gen.bat", ytdl.ID, ytdl.ID+"."+f.Ext).Run()
-						}
-
-						err = os.Remove("./download/" + ytdl.ID + "." + f.Ext)
-					}
-
-					el := Queue{ytdl.Title, formatDuration(ytdl.Duration), ytdl.ID, ytdl.WebpageURL, user, nil, 0, ""}
-
-					queue[guildID] = append(queue[guildID], el)
-					go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, ytdl.ID))
-
-					break
-				}
+			//Conversion to DCA
+			switch runtime.GOOS {
+			case "linux":
+				_ = exec.Command("bash", "gen.sh", fileName, fileName+".m4a").Run()
+				break
+			case "windows":
+				_ = exec.Command("gen.bat", fileName, fileName+".m4a").Run()
 			}
+
+			err = os.Remove("./download/" + fileName + ".m4a")
 		}
+
+		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, ""}
+
+		queue[guildID] = append(queue[guildID], el)
+		go playSound(s, guildID, channelID, fileName+".dca", txtChannel, findQueuePointer(guildID, fileName))
+
+		break
 	}
 
 }
