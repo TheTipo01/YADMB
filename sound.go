@@ -89,6 +89,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		if !skip[guildID] {
 			vc[guildID].OpusSend <- InBuf
 		} else {
+			pause[guildID].Unlock()
 			break
 		}
 		pause[guildID].Unlock()
