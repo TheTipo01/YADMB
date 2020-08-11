@@ -22,6 +22,8 @@ var (
 	server = make(map[string]*sync.Mutex)
 	//Mutex for pausing/un-pausing songs
 	pause = make(map[string]*sync.Mutex)
+	//Need a boolean to check if song is paused, because the mutex is continuously locked and unlocked
+	isPaused = make(map[string]bool)
 	//Variable for skipping a single song
 	skip = make(map[string]bool)
 	//Variable for clearing the whole queue
@@ -180,9 +182,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			for i, el := range queue[m.GuildID] {
 				if i == 0 {
 					if el.title != "" && el.time != nil {
-						//TODO: Fix time when bot is paused
-						message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()+el.offset) + "/" + el.duration + " added by " + el.user + "\n\n"
-						continue
+						if isPaused[m.GuildID] {
+							message += "Currently playing: " + el.title + " - " + el.lastTime + "/" + el.duration + " added by " + el.user + "\n\n"
+							continue
+						} else {
+							message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()+el.offset) + "/" + el.duration + " added by " + el.user + "\n\n"
+							continue
+						}
 					} else {
 						message += "Currently playing: Getting info...\n\n"
 						continue
@@ -254,14 +260,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Pause the song
 	case prefix + "pause":
 		go deleteMessage(s, m)
-		if isMutexLocked(pause[m.GuildID]) && len(queue[m.GuildID]) > 0 {
+		if !isPaused[m.GuildID] && len(queue[m.GuildID]) > 0 {
+			isPaused[m.GuildID] = true
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 			pause[m.GuildID].Lock()
 
-			nowTime := time.Now()
-			queue[m.GuildID][0].lastPause = &nowTime
+			queue[m.GuildID][0].lastTime = formatDuration(time.Now().Sub(*queue[m.GuildID][0].time).Seconds()+queue[m.GuildID][0].offset)
 
-			//Covering edge case where voiceconnection is not established
+			//Covering edge case where voiceConnection is not established
 			if vc[m.GuildID] != nil {
 				_ = vc[m.GuildID].Speaking(false)
 			}
@@ -271,9 +277,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Resume playing
 	case prefix + "resume":
 		go deleteMessage(s, m)
-		if !isMutexLocked(pause[m.GuildID]) {
+		if isPaused[m.GuildID] {
+			isPaused[m.GuildID] = false
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
-			queue[m.GuildID][0].offset += queue[m.GuildID][0].time.Sub(*queue[m.GuildID][0].lastPause).Seconds()
+			queue[m.GuildID][0].offset += queue[m.GuildID][0].time.Sub(time.Now()).Seconds()
+
 			pause[m.GuildID].Unlock()
 			_ = vc[m.GuildID].Speaking(true)
 		}
