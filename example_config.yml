@@ -15,13 +15,13 @@ clientid:
 clientsecret:
 
 #DB Info, like username, password...
-#MySQL
-datasourcename: user:pass@tcp(ip:3306)/database
 #SQLite
-#datasourcename: ./yadmb.db
+datasourcename: ./yadmb.db
+#MySQL
+#datasourcename: user:pass@tcp(ip:3306)/database
 
 #Driver type, aka what database to use. For now we support only "sqlite3" and "mysql"
-#MySQL
-drivername: mysql
 #SQLite
-#drivername: sqlite3
+drivername: sqlite3
+#MySQL
+#drivername: mysql
