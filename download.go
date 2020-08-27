@@ -15,6 +15,15 @@ import (
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string) {
 	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
+	//Check if the song is the db, to speedup things
+	el := checkInDb(link)
+	if el.title != "" {
+		el.user = user
+		queue[guildID] = append(queue[guildID], el)
+		go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, el.id))
+		return
+	}
+
 	//Gets info about songs
 	out, _ := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
 
@@ -26,9 +35,18 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	for _, sos := range strOut {
 		_ = json.Unmarshal([]byte(sos), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
+		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, ""}
 
 		//Checks if video is already downloaded
 		_, err := os.Stat("./audio_cache/" + fileName + ".dca")
+
+		addToDb(el)
+
+		//If we have a single song, we also add it with the given link
+		if len(strOut) == 1 {
+			el.link = link
+			addToDb(el)
+		}
 
 		//If not, we download and convert it
 		if err != nil {
@@ -46,8 +64,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 			err = os.Remove("./download/" + fileName + ".m4a")
 		}
-
-		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, ""}
 
 		queue[guildID] = append(queue[guildID], el)
 		go playSound(s, guildID, channelID, fileName+".dca", txtChannel, findQueuePointer(guildID, fileName))

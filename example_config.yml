@@ -9,4 +9,8 @@ prefix:
 #Spotify client id, for playlist support
 clientid: 
 #Spotify client secret, for playlist support
-clientsecret: 
+clientsecret:
+#DB Info, like username, password...
+datasourcename: user:pass@tcp(ip:3306)/database
+#Driver type, aka what database to use. For now we support only sqlite3 and mysql
+drivername: mysql

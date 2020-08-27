@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
@@ -8,25 +9,7 @@ import (
 	"time"
 )
 
-//Structure for holding infos about a song
-type Queue struct {
-	//Title of the song
-	title string
-	//Duration of the song
-	duration string
-	//ID of the song
-	id string
-	//Link of the song
-	link string
-	//User who requested the song
-	user string
-	//When we started playing the song
-	time *time.Time
-	//Offset for when we pause the song
-	offset float64
-	//When song is paused, we save where we were
-	lastTime string
-}
+const tblSong = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, PRIMARY KEY (`link`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 
 //Logs and instantly delete a message
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -121,4 +104,38 @@ func formatDuration(duration float64) string {
 			return fmt.Sprintf("%02d", duration2)
 		}
 	}
+}
+
+//Executes a simple query given a DB
+func execQuery(query string, db *sql.DB) {
+	statement, err := db.Prepare(query)
+	if err != nil {
+		log.Println("Error preparing query,", err)
+		return
+	}
+
+	_, err = statement.Exec()
+	if err != nil {
+		log.Println("Error creating table,", err)
+	}
+}
+
+//Adds a song to the db, so next time we encounter it we don't need to call yt-dl
+func addToDb(el Queue) {
+	statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration) VALUES(?, ?, ?, ?)")
+
+	_, err := statement.Exec(el.link, el.id, el.title, el.duration)
+	if err != nil {
+		log.Println("Error inserting into the database,", err)
+	}
+}
+
+//Checks if we already have downloaded a song and we've got info about it
+func checkInDb(link string) Queue {
+	var el Queue
+	el.link = link
+	row := db.QueryRow("SELECT * FROM song WHERE link = ?", link)
+	_ = row.Scan(&el.link, &el.id, &el.title, &el.duration)
+
+	return el
 }

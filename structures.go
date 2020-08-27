@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type YoutubeDL struct {
 	License           interface{} `json:"license"`
 	AltTitle          interface{} `json:"alt_title"`
@@ -125,4 +127,24 @@ type YoutubeDL struct {
 	Playlist      interface{} `json:"playlist"`
 	ExtractorKey  string      `json:"extractor_key"`
 	Series        interface{} `json:"series"`
+}
+
+//Structure for holding infos about a song
+type Queue struct {
+	//Title of the song
+	title string
+	//Duration of the song
+	duration string
+	//ID of the song
+	id string
+	//Link of the song
+	link string
+	//User who requested the song
+	user string
+	//When we started playing the song
+	time *time.Time
+	//Offset for when we pause the song
+	offset float64
+	//When song is paused, we save where we were
+	lastTime string
 }

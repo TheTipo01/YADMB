@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
@@ -37,7 +40,10 @@ var (
 	//Discord bot token
 	token string
 	//Prefix for bot commands
-	prefix string
+	prefix         string
+	dataSourceName string
+	driverName     string
+	db             *sql.DB
 )
 
 func init() {
@@ -58,6 +64,8 @@ func init() {
 		//Config file found
 		token = viper.GetString("token")
 		prefix = viper.GetString("prefix")
+		dataSourceName = viper.GetString("datasourcename")
+		driverName = viper.GetString("drivername")
 
 		//Spotify credentials
 		config := &clientcredentials.Config{
@@ -73,6 +81,14 @@ func init() {
 		}
 
 		client = spotify.Authenticator{}.NewClient(token)
+
+		db, err = sql.Open(driverName, dataSourceName)
+		if err != nil {
+			log.Println("Error opening db connection,", err)
+			return
+		}
+
+		execQuery(tblSong, db)
 
 	}
 }
