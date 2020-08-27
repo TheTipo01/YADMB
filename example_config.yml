@@ -3,14 +3,25 @@
 #For getting client id and secret from spotify: https://developer.spotify.com/dashboard/applications
 
 #Bot token
-token: 
-#Prefix for bot commands (Note: this line is bugged, if you want to change the prefix start the program with the parameter "-prefix <your prefix>" )
-prefix:
+token:
+
+#Prefix for bot commands
+prefix: "!"
+
 #Spotify client id, for playlist support
-clientid: 
+clientid:
+
 #Spotify client secret, for playlist support
 clientsecret:
+
 #DB Info, like username, password...
+#MySQL
 datasourcename: user:pass@tcp(ip:3306)/database
-#Driver type, aka what database to use. For now we support only sqlite3 and mysql
+#SQLite
+#datasourcename: ./yadmb.db
+
+#Driver type, aka what database to use. For now we support only "sqlite3" and "mysql"
+#MySQL
 drivername: mysql
+#SQLite
+#drivername: sqlite3

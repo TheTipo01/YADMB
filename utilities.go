@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const tblSong = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, PRIMARY KEY (`link`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+const tblSong = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, PRIMARY KEY (`link`))"
 
 //Logs and instantly delete a message
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {

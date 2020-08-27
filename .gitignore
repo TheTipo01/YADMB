@@ -20,3 +20,4 @@ audio_cache/
 config.yml
 dist/
 download/
+*.db

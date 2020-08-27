@@ -52,8 +52,6 @@ func init() {
 	viper.SetConfigType("yml")
 	viper.AddConfigPath(".")
 
-	viper.SetDefault("prefix", "!")
-
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found
