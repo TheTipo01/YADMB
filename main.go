@@ -74,12 +74,12 @@ func init() {
 
 		token, err := config.Token(context.Background())
 		if err != nil {
-			log.Fatalf("couldn't get token: %v", err)
-			return
+			log.Printf("Spotify: couldn't get token: %v", err)
 		}
 
 		client = spotify.Authenticator{}.NewClient(token)
 
+		//Database
 		db, err = sql.Open(driverName, dataSourceName)
 		if err != nil {
 			log.Println("Error opening db connection,", err)
@@ -149,7 +149,7 @@ func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
 }
 
 // This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the autenticated bot has access to.
+// message is created on any channel that the authenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if s.State.User.ID == m.Author.ID {
 		return

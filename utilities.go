@@ -120,7 +120,7 @@ func execQuery(query string, db *sql.DB) {
 	}
 }
 
-//Adds a song to the db, so next time we encounter it we don't need to call yt-dl
+//Adds a song to the db, so next time we encounter it we don't need to call youtube-dl
 func addToDb(el Queue) {
 	statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration) VALUES(?, ?, ?, ?)")
 
