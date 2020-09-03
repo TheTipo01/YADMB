@@ -326,6 +326,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	default:
 		for _, command := range custom[m.GuildID] {
 			if m.Content == prefix+command.command {
+				go deleteMessage(s, m)
+				
 				if isValidUrl(command.song) {
 					downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID)
 				} else {
