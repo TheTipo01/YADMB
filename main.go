@@ -263,7 +263,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Prints out supported commands
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
-		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot\n"+prefix+"pause - Pauses current song\n"+prefix+"resume - Resumes current song\n"+prefix+"custom <command> <song/playlist> - Creates a shortcut for a song/playlist```")
+
+		message := "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot\n"+prefix+"pause - Pauses current song\n"+prefix+"resume - Resumes current song\n"+prefix+"custom <command> <song/playlist> - Creates a shortcut for a song/playlist```"
+		//If we have custom commands, we add them to the help message
+		if len(custom[m.GuildID]) > 0 {
+			message+="\nCustom commands:\n```"
+
+			for _, c := range custom[m.GuildID] {
+				message+=c.command+","
+			}
+			
+			message = strings.TrimSuffix(message, ",")
+			message+="```"
+		}
+
+		mex, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -314,7 +328,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		splitted := strings.Split(strings.TrimPrefix(m.Content, prefix+"custom "), " ")
 
 		if splitted[0] != "" && splitted[1] != "" {
-			addCommand(splitted[0], splitted[1], m.GuildID)
+			addCommand(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
+		}
+		break
+
+		//Removes a custom command
+	case prefix + "rmcustom":
+		go deleteMessage(s, m)
+
+		splitted := strings.Split(strings.TrimPrefix(m.Content, prefix+"custom "), " ")
+
+		if splitted[0] != "" && splitted[1] != "" {
+			removeCustom(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
 		}
 		break
 
@@ -324,10 +349,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		//We search for possible custom commands
 	default:
+		lowerMessage := strings.ToLower(m.Content)
+
 		for _, command := range custom[m.GuildID] {
-			if m.Content == prefix+command.command {
+			if lowerMessage == prefix+command.command {
 				go deleteMessage(s, m)
-				
+
 				if isValidUrl(command.song) {
 					downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID)
 				} else {
