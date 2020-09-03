@@ -156,17 +156,17 @@ func addCommand(command string, song string, guild string) {
 }
 
 //Removes a custom command from the db and from the command map
-func removeCustom(command string, song string, guild string) {
+func removeCustom(command string, guild string) {
 	//Remove from DB
-	statement, _ := db.Prepare("DELETE FROM customCommands WHERE guild=? AND command=? AND song=?")
-	_, err := statement.Exec(guild, command, song)
+	statement, _ := db.Prepare("DELETE FROM customCommands WHERE guild=? AND command=?")
+	_, err := statement.Exec(guild, command)
 	if err != nil {
 		log.Println("Error removing from the database,", err)
 	}
 
 	//Remove from the map
 	for i := range custom[guild] {
-		if custom[guild][i].command == command && custom[guild][i].song == song {
+		if custom[guild][i].command == command {
 			custom[guild][i] = custom[guild][len(custom[guild])-1]
 			custom[guild][len(custom[guild])-1] = CustomCommand{"", ""}
 			custom[guild] = custom[guild][:len(custom[guild])-1]
