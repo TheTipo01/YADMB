@@ -35,6 +35,8 @@ var (
 	queue = make(map[string][]Queue)
 	//Voice connection
 	vc = make(map[string]*discordgo.VoiceConnection)
+	//Custom commands
+	custom = make(map[string][]CustomCommand)
 	//Spotify client
 	client spotify.Client
 	//Discord bot token
@@ -87,6 +89,9 @@ func init() {
 		}
 
 		execQuery(tblSong, db)
+		execQuery(tblCommands, db)
+
+		loadCustomCommands(db)
 
 	}
 }
@@ -258,7 +263,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Prints out supported commands
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
-		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot\n"+prefix+"pause - Pauses current song\n"+prefix+"resume - Resumes current song```")
+		mex, err := s.ChannelMessageSend(m.ChannelID, "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot\n"+prefix+"pause - Pauses current song\n"+prefix+"resume - Resumes current song\n"+prefix+"custom <command> <song/playlist> - Creates a shortcut for a song/playlist```")
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -302,9 +307,38 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
+		//Adds a custom command
+	case prefix + "custom":
+		go deleteMessage(s, m)
+
+		splitted := strings.Split(strings.TrimPrefix(m.Content, prefix+"custom "), " ")
+
+		if splitted[0] != "" && splitted[1] != "" {
+			addCommand(splitted[0], splitted[1], m.GuildID)
+		}
+		break
+
 		//Makes the bot exit
 	case prefix + "restart", prefix + "r":
 		os.Exit(0)
+
+		//We search for possible custom commands
+	default:
+		for _, command := range custom[m.GuildID] {
+			if m.Content == prefix+command.command {
+				if isValidUrl(command.song) {
+					downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID)
+				} else {
+					if strings.HasPrefix(command.song, "spotify:playlist:") {
+						spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID)
+					} else {
+						searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID)
+					}
+				}
+				break
+			}
+		}
+
 	}
 
 }

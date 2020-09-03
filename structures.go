@@ -148,3 +148,11 @@ type Queue struct {
 	//When song is paused, we save where we were
 	lastTime string
 }
+
+//Structure for holding infos about a custom command
+type CustomCommand struct {
+	//Name of the command
+	command string
+	//Song link
+	song string
+}

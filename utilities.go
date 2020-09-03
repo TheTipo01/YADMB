@@ -9,7 +9,10 @@ import (
 	"time"
 )
 
-const tblSong = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, PRIMARY KEY (`link`))"
+const (
+	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, PRIMARY KEY (`link`))"
+	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`id` int(11) NOT NULL AUTO_INCREMENT, `guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `command` (`command`,`song`))"
+)
 
 //Logs and instantly delete a message
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -138,4 +141,37 @@ func checkInDb(link string) Queue {
 	_ = row.Scan(&el.link, &el.id, &el.title, &el.duration)
 
 	return el
+}
+
+//Adds a custom command to db and to the command map
+func addCommand(command string, song string, guild string) {
+	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
+
+	_, err := statement.Exec(guild, command, song)
+	if err != nil {
+		log.Println("Error inserting into the database,", err)
+	}
+
+	custom[guild] = append(custom[guild], CustomCommand{command, song})
+}
+
+//Loads custom command from the database
+func loadCustomCommands(db *sql.DB) {
+	var id int
+	var guild, command, song string
+
+	rows, err := db.Query("SELECT * FROM customCommands")
+	if err != nil {
+		log.Println("Error querying database,", err)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&id, &guild, &command, &song)
+		if err != nil {
+			log.Println("Error scanning rows from query,", err)
+			continue
+		}
+
+		custom[guild] = append(custom[guild], CustomCommand{command, song})
+	}
 }
