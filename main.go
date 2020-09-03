@@ -270,10 +270,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			message += "\nCustom commands:\n```"
 
 			for _, c := range custom[m.GuildID] {
-				message += c.command + ","
+				message += c.command + ", "
 			}
 
-			message = strings.TrimSuffix(message, ",")
+			message = strings.TrimSuffix(message, ", ")
 			message += "```"
 		}
 
