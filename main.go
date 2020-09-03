@@ -264,17 +264,17 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
 
-		message := "Supported commands:\n```"+prefix+"play <link> - Plays a song from youtube or spotify playlist\n"+prefix+"queue - Returns all the songs in the server queue\n"+prefix+"summon - Make the bot join your voice channel\n"+prefix+"disconnect - Disconnect the bot from the voice channel\n"+prefix+"restart - Restarts the bot\n"+prefix+"pause - Pauses current song\n"+prefix+"resume - Resumes current song\n"+prefix+"custom <command> <song/playlist> - Creates a shortcut for a song/playlist```"
+		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist```"
 		//If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
-			message+="\nCustom commands:\n```"
+			message += "\nCustom commands:\n```"
 
 			for _, c := range custom[m.GuildID] {
-				message+=c.command+","
+				message += c.command + ","
 			}
-			
+
 			message = strings.TrimSuffix(message, ",")
-			message+="```"
+			message += "```"
 		}
 
 		mex, err := s.ChannelMessageSend(m.ChannelID, message)
