@@ -20,7 +20,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	if el.title != "" {
 		el.user = user
 		queue[guildID] = append(queue[guildID], el)
-		go playSound(s, guildID, channelID, el.id+".dca", txtChannel, findQueuePointer(guildID, el.id))
+		go playSound(s, guildID, channelID, el.id+".dca", txtChannel)
 		return
 	}
 
@@ -67,7 +67,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		}
 
 		queue[guildID] = append(queue[guildID], el)
-		go playSound(s, guildID, channelID, fileName+".dca", txtChannel, findQueuePointer(guildID, fileName))
+		go playSound(s, guildID, channelID, fileName+".dca", txtChannel)
 
 	}
 

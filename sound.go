@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string, el int) {
+func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string) {
 	var opuslen int16
 
 	file, err := os.Open("./audio_cache/" + fileName)
@@ -35,7 +35,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	}
 
 	//Sends now playing message
-	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][el].title+" - "+queue[guildID][el].duration+" added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed)
+	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][0].title+" - "+queue[guildID][0].duration+" added by "+queue[guildID][0].user).SetColor(0x7289DA).MessageEmbed)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -54,7 +54,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 	//Sets when we started reading file, so we known the remaining time of the song
 	tmpTime := time.Now()
-	queue[guildID][el].time = &tmpTime
+	queue[guildID][0].time = &tmpTime
 
 	for {
 		//Read opus frame length from dca file.
@@ -100,14 +100,11 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 	//If the song is skipped, we send a feedback message
 	if skip[guildID] && !clear[guildID] {
-		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", queue[guildID][el].title+" - "+queue[guildID][el].duration+" added by "+queue[guildID][el].user).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", queue[guildID][0].title+" - "+queue[guildID][0].duration+" added by "+queue[guildID][0].user).SetColor(0x7289DA).MessageEmbed, txtChannel)
 	}
 
 	//Resets the skip boolean
 	skip[guildID] = false
-
-	//Releases the mutex lock for the server
-	server[guildID].Unlock()
 
 	//Delete old message
 	err = s.ChannelMessageDelete(txtChannel, m.ID)
@@ -117,5 +114,8 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 	//Remove from queue the song
 	removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
+
+	//Releases the mutex lock for the server
+	server[guildID].Unlock()
 
 }
