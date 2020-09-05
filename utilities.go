@@ -79,17 +79,6 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 	}
 }
 
-//Finds pointer for a given song id
-func findQueuePointer(guildId, id string) int {
-	for i := range queue[guildId] {
-		if queue[guildId][i].id == id {
-			return i
-		}
-	}
-
-	return -1
-}
-
 //Formats a string given it's duration in seconds
 func formatDuration(duration float64) string {
 	duration2 := int(duration)
@@ -145,6 +134,14 @@ func checkInDb(link string) Queue {
 
 //Adds a custom command to db and to the command map
 func addCommand(command string, song string, guild string) {
+	for _, c := range custom[guild] {
+		if c.song == song && c.command == command {
+			//If the song is already in the map, we ignore it
+			return
+		}
+	}
+	custom[guild] = append(custom[guild], CustomCommand{command, song})
+
 	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
 
 	_, err := statement.Exec(guild, command, song)
@@ -152,7 +149,6 @@ func addCommand(command string, song string, guild string) {
 		log.Println("Error inserting into the database,", err)
 	}
 
-	custom[guild] = append(custom[guild], CustomCommand{command, song})
 }
 
 //Removes a custom command from the db and from the command map
