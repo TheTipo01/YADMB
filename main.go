@@ -267,7 +267,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
 
-		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command" + prefix + "lyrics - Tries to search for the lyrics of the currently playing song```"
+		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command\n" + prefix + "lyrics <song> - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song```"
 		//If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
 			message += "\nCustom commands:\n```"
@@ -344,13 +344,25 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	case prefix + "lyrics":
 		go deleteMessage(s, m)
+		song := strings.TrimPrefix(strings.TrimPrefix(m.Content, prefix+"lyrics"), " ")
+
+		if song == "" {
+			song=queue[m.GuildID][0].title
+		}
 
 		if len(queue[m.GuildID]) > 0 {
 
-			text := formatLongMessage(lyrics(queue[m.GuildID][0].title))
+			text := formatLongMessage(lyrics(song))
 
-			mex, _ := s.ChannelMessageSend(m.ChannelID, "Lyrics for "+queue[m.GuildID][0].title+": ")
+			mex, _ := s.ChannelMessageSend(m.ChannelID, "Lyrics for "+song+": ")
 			queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+
+			//If the messages are more then 3, we don't send anything
+			if len(text) > 3 {
+				mex, _ := s.ChannelMessageSend(m.ChannelID, "```Lyrics too long!```")
+				queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+				return
+			}
 
 			for _, t := range text {
 				mex, _ = s.ChannelMessageSend(m.ChannelID, "```"+t+"```")
