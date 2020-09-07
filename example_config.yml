@@ -1,6 +1,7 @@
 #Example configuration file, remember to remove "example_" from the file after adding your tokens!
 #For getting a discord token: https://discord.com/developers/applications
 #For getting client id and secret from spotify: https://developer.spotify.com/dashboard/applications
+#For getting a Genius API key: https://docs.genius.com
 
 #Bot token
 token:
@@ -13,6 +14,9 @@ clientid:
 
 #Spotify client secret, for playlist support
 clientsecret:
+
+#Genius API key, for lyrics support
+genius:
 
 #DB Info, like username, password...
 #SQLite
