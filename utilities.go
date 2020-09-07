@@ -207,7 +207,7 @@ func formatLongMessage(text []string) []string {
 			counter = 0
 			output = append(output, buffer)
 
-			buffer = line
+			buffer = line + "\n"
 			continue
 		}
 
