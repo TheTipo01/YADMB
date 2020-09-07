@@ -39,6 +39,8 @@ var (
 	custom = make(map[string][]CustomCommand)
 	//Spotify client
 	client spotify.Client
+	//Genius key
+	genius string
 	//Discord bot token
 	token string
 	//Prefix for bot commands
@@ -66,6 +68,7 @@ func init() {
 		prefix = viper.GetString("prefix")
 		dataSourceName = viper.GetString("datasourcename")
 		driverName = viper.GetString("drivername")
+		genius = viper.GetString("genius")
 
 		//Spotify credentials
 		config := &clientcredentials.Config{
@@ -264,7 +267,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
 
-		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command```"
+		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command" + prefix + "lyrics - Tries to search for the lyrics of the currently playing song```"
 		//If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
 			message += "\nCustom commands:\n```"
@@ -337,6 +340,25 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		go deleteMessage(s, m)
 
 		removeCustom(strings.TrimPrefix(m.Content, prefix+"rmcustom "), m.GuildID)
+		break
+
+	case prefix + "lyrics":
+		go deleteMessage(s, m)
+
+		if len(queue[m.GuildID]) > 0 {
+
+			text := formatLongMessage(lyrics(queue[m.GuildID][0].title))
+
+			mex, _ := s.ChannelMessageSend(m.ChannelID, "Lyrics for "+queue[m.GuildID][0].title+": ")
+			queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+
+			for _, t := range text {
+				mex, _ = s.ChannelMessageSend(m.ChannelID, "```"+t+"```")
+				queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+			}
+
+		}
+
 		break
 
 		//Makes the bot exit

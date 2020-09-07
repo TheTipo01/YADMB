@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"log"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -55,7 +56,7 @@ func removeFromQueue(id string, guild string) {
 	for i, q := range queue[guild] {
 		if q.id == id {
 			copy(queue[guild][i:], queue[guild][i+1:])
-			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", nil, 0, ""}
+			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", nil, 0, "", nil}
 			queue[guild] = queue[guild][:len(queue[guild])-1]
 			return
 		}
@@ -188,5 +189,37 @@ func loadCustomCommands(db *sql.DB) {
 		}
 
 		custom[guild] = append(custom[guild], CustomCommand{command, song})
+	}
+}
+
+//Split lyrics into smaller messages
+func formatLongMessage(text []string) []string {
+	var counter int
+	var output []string
+	var buffer string
+	const charLimit = 1900
+
+	for _, line := range text {
+		counter += strings.Count(line, "")
+
+		//If the counter is exceeded, we append all the current line to the final slice
+		if counter > charLimit {
+			counter = 0
+			output = append(output, buffer)
+
+			buffer = line
+			continue
+		}
+
+		buffer += line + "\n"
+
+	}
+
+	return append(output, buffer)
+}
+
+func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
+	for _, m := range messages {
+		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
 }
