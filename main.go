@@ -11,6 +11,7 @@ import (
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"strconv"
@@ -51,6 +52,7 @@ var (
 )
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yml")
@@ -172,12 +174,29 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		link = strings.TrimPrefix(link, prefix+"p ")
 
 		if isValidUrl(link) {
-			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
+			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID)
+				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
 			} else {
-				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID)
+				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
+			}
+		}
+		break
+
+		//Randomly plays a song (or a playlist)
+	case prefix + "shuffle":
+		go deleteMessage(s, m)
+
+		link := strings.TrimPrefix(m.Content, prefix+"shuffle ")
+
+		if isValidUrl(link) {
+			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
+		} else {
+			if strings.HasPrefix(link, "spotify:playlist:") {
+				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, true)
+			} else {
+				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
 			}
 		}
 		break
@@ -267,7 +286,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
 
-		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command\n" + prefix + "lyrics <song> - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song```"
+		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command\n" + prefix + "lyrics <song> - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song\n"+prefix+"shuffle <playlist> - Randomly plays song from that playlist```"
 		//If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
 			message += "\nCustom commands:\n```"
@@ -347,7 +366,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		song := strings.TrimPrefix(strings.TrimPrefix(m.Content, prefix+"lyrics"), " ")
 
 		if song == "" {
-			song=queue[m.GuildID][0].title
+			song = queue[m.GuildID][0].title
 		}
 
 		if len(queue[m.GuildID]) > 0 {
@@ -386,12 +405,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				go deleteMessage(s, m)
 
 				if isValidUrl(command.song) {
-					downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID)
+					downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID, false)
 				} else {
 					if strings.HasPrefix(command.song, "spotify:playlist:") {
-						spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID)
+						spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
 					} else {
-						searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID)
+						searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID, false)
 					}
 				}
 				break

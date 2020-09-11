@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
+	"math/rand"
 	"net/url"
 	"strings"
 	"time"
@@ -222,4 +223,14 @@ func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
 	for _, m := range messages {
 		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
+}
+
+//Shuffles a slice of strings
+func shuffle(a []string) []string {
+	final := make([]string, len(a))
+
+	for i, v := range rand.Perm(len(a)) {
+		final[v] = a[i]
+	}
+	return final
 }
