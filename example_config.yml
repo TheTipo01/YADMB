@@ -1,23 +1,29 @@
 #Example configuration file, remember to remove "example_" from the file after adding your tokens!
-#For getting a discord token: https://discord.com/developers/applications
-#For getting client id and secret from spotify: https://developer.spotify.com/dashboard/applications
-#For getting a Genius API key: https://docs.genius.com
 
-#Bot token
-token:
+#Discord Bot token:
+#To get your bot's token, go to https://discord.com/developers/applications click "New application",
+#click "Bot" on the left bar, click "Add bot" and confirm, then click "Copy" under "Click to reveal token"
+token: ""
 
-#Prefix for bot commands
+#Prefix for bot commands:
+#This is what you are going to put before your bot's commands (for example: !play, !pause)
 prefix: "!"
 
-#Spotify client id, for playlist support
-clientid:
+#Spotify Client ID and Client Secret, to support spotify playlists:
+#To get your client ID and secret you need to visit https://developer.spotify.com/dashboard/applications and log in or create a new account,
+#click "Create an app", give it a name and description, check both boxes and click "Create",
+#then you can find your your Client ID and to find your Client Secret simply click "Show Client Secret"
+clientid: ""
+clientsecret: ""
 
-#Spotify client secret, for playlist support
-clientsecret:
+#Genius API key, to make the "!lyrics" command work:
+#To get a Genius API key, open https://docs.genius.com and login or create a new account,
+#click the grey "Authorize With Genius" button on the left, after that, if you scroll down you will find a line on the left side
+# that says "Authorization: Bearer XXXXXXXXXX" but with your API key instead of XXXXXXXXXX, copy that and paste it below
+genius: ""
 
-#Genius API key, for lyrics support
-genius:
 
+#DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
 #DB Info, like username, password...
 #SQLite
 datasourcename: ./yadmb.db

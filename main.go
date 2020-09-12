@@ -13,7 +13,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
@@ -287,7 +286,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
 
-		message := "Supported commands:\n```" + prefix + "play <link> - Plays a song from youtube or spotify playlist\n" + prefix + "queue - Returns all the songs in the server queue\n" + prefix + "summon - Make the bot join your voice channel\n" + prefix + "disconnect - Disconnect the bot from the voice channel\n" + prefix + "restart - Restarts the bot\n" + prefix + "pause - Pauses current song\n" + prefix + "resume - Resumes current song\n" + prefix + "custom <command> <song/playlist> - Creates a shortcut for a song/playlist\n" + prefix + "rmcustom <command> - Removes a custom command\n" + prefix + "lyrics <song> - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song\n" + prefix + "shuffle <playlist> - Shuffles the songs in the playlist and adds them to the queue```"
+		message := "Supported commands:\n```" +
+			prefix + "play <link> - Plays a song from youtube or spotify playlist\n" +
+			prefix + "shuffle <playlist> - Shuffles the songs in the playlist and adds them to the queue" +
+			prefix + "pause - Pauses current song\n" +
+			prefix + "resume - Resumes current song\n" +
+			prefix + "queue - Returns all the songs in the server queue\n" +
+			prefix + "lyrics <song> - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song\n" +
+			prefix + "summon - Make the bot join your voice channel\n" +
+			prefix + "disconnect - Disconnect the bot from the voice channel\n" +
+			prefix + "restart - Restarts the bot\n" +
+			prefix + "custom <custom_command> <song/playlist> - Creates a custom command to play a song or playlist\n" +
+			prefix + "rmcustom <costom_command> - Removes a custom command\n" +
+			"```"
 		//If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
 			message += "\nCustom commands:\n```"
