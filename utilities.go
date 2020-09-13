@@ -116,11 +116,14 @@ func execQuery(query string, db *sql.DB) {
 
 //Adds a song to the db, so next time we encounter it we don't need to call youtube-dl
 func addToDb(el Queue) {
-	statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration) VALUES(?, ?, ?, ?)")
+	//We check for empty strings, just to be sure
+	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
+		statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration) VALUES(?, ?, ?, ?)")
 
-	_, err := statement.Exec(el.link, el.id, el.title, el.duration)
-	if err != nil {
-		log.Println("Error inserting into the database,", err)
+		_, err := statement.Exec(el.link, el.id, el.title, el.duration)
+		if err != nil {
+			log.Println("Error inserting into the database,", err)
+		}
 	}
 }
 
