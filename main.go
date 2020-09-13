@@ -4,6 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/spf13/viper"
+	"github.com/zmb3/spotify"
+	"golang.org/x/oauth2/clientcredentials"
 	"log"
 	"math/rand"
 	"os"
@@ -13,12 +19,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"github.com/bwmarrin/discordgo"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
-	"github.com/zmb3/spotify"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 var (
@@ -36,8 +36,8 @@ var (
 	queue = make(map[string][]Queue)
 	//Voice connection
 	vc = make(map[string]*discordgo.VoiceConnection)
-	//Custom commands
-	custom = make(map[string][]CustomCommand)
+	//Custom commands, first map is for the guild id, second one is for the command, and the final string for the song
+	custom = make(map[string]map[string]string)
 	//Spotify client
 	client spotify.Client
 	//Genius key
@@ -303,8 +303,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(custom[m.GuildID]) > 0 {
 			message += "\nCustom commands:\n```"
 
-			for _, c := range custom[m.GuildID] {
-				message += c.command + ", "
+			for k := range custom[m.GuildID] {
+				message += k + ", "
 			}
 
 			message = strings.TrimSuffix(message, ", ")
@@ -406,27 +406,26 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		//Makes the bot exit
 	case prefix + "restart", prefix + "r":
+		go deleteMessage(s, m)
 		os.Exit(0)
 
 		//We search for possible custom commands
 	default:
-		lowerMessage := strings.ToLower(m.Content)
+		lower := strings.TrimPrefix(strings.ToLower(m.Content), prefix)
 
-		for _, command := range custom[m.GuildID] {
-			if lowerMessage == prefix+command.command {
-				go deleteMessage(s, m)
+		if custom[m.GuildID][lower] != "" {
+			go deleteMessage(s, m)
 
-				if isValidUrl(command.song) {
-					downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID, false)
+			if isValidUrl(custom[m.GuildID][lower]) {
+				downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
+			} else {
+				if strings.HasPrefix(custom[m.GuildID][lower], "spotify:playlist:") {
+					spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
 				} else {
-					if strings.HasPrefix(command.song, "spotify:playlist:") {
-						spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
-					} else {
-						searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), command.song, m.Author.Username, m.ChannelID, false)
-					}
+					searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
 				}
-				break
 			}
+			break
 		}
 
 	}

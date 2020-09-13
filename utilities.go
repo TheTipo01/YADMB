@@ -136,14 +136,15 @@ func checkInDb(link string) Queue {
 
 //Adds a custom command to db and to the command map
 func addCommand(command string, song string, guild string) {
-	for _, c := range custom[guild] {
-		if c.song == song && c.command == command {
-			//If the song is already in the map, we ignore it
-			return
-		}
+	//If the song is already in the map, we ignore it
+	if custom[guild][command] == song {
+		return
 	}
-	custom[guild] = append(custom[guild], CustomCommand{command, song})
 
+	//Else, we add it to the map
+	custom[guild][command] = song
+
+	//And to the database
 	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
 
 	_, err := statement.Exec(guild, command, song)
@@ -163,14 +164,7 @@ func removeCustom(command string, guild string) {
 	}
 
 	//Remove from the map
-	for i := range custom[guild] {
-		if custom[guild][i].command == command {
-			custom[guild][i] = custom[guild][len(custom[guild])-1]
-			custom[guild][len(custom[guild])-1] = CustomCommand{"", ""}
-			custom[guild] = custom[guild][:len(custom[guild])-1]
-			break
-		}
-	}
+	delete(custom[guild], command)
 }
 
 //Loads custom command from the database
@@ -189,7 +183,11 @@ func loadCustomCommands(db *sql.DB) {
 			continue
 		}
 
-		custom[guild] = append(custom[guild], CustomCommand{command, song})
+		if custom[guild] == nil {
+			custom[guild] = make(map[string]string)
+		}
+
+		custom[guild][command] = song
 	}
 }
 
