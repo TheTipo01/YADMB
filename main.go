@@ -297,7 +297,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix + "disconnect - Disconnect the bot from the voice channel\n" +
 			prefix + "restart - Restarts the bot\n" +
 			prefix + "custom <custom_command> <song/playlist> - Creates a custom command to play a song or playlist\n" +
-			prefix + "rmcustom <costom_command> - Removes a custom command\n" +
+			prefix + "rmcustom <custom_command> - Removes a custom command\n" +
 			"```"
 		//If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
@@ -335,10 +335,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			queue[m.GuildID][0].lastTime = formatDuration(time.Now().Sub(*queue[m.GuildID][0].time).Seconds() + queue[m.GuildID][0].offset)
 
-			//Covering edge case where voiceConnection is not established
-			if vc[m.GuildID] != nil {
-				_ = vc[m.GuildID].Speaking(false)
-			}
 		}
 		break
 
@@ -361,7 +357,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		splitted := strings.Split(strings.TrimPrefix(m.Content, prefix+"custom "), " ")
 
-		if splitted[0] != "" && splitted[1] != "" {
+		if len(splitted) == 2 {
 			addCommand(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
 		}
 		break
@@ -375,13 +371,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	case prefix + "lyrics":
 		go deleteMessage(s, m)
-		song := strings.TrimPrefix(strings.TrimPrefix(m.Content, prefix+"lyrics"), " ")
 
-		if song == "" {
-			song = queue[m.GuildID][0].title
-		}
-
+		//We search for lyrics only if there's something playing
 		if len(queue[m.GuildID]) > 0 {
+			song := strings.TrimPrefix(strings.TrimPrefix(m.Content, prefix+"lyrics"), " ")
+
+			//If the user didn't input a title, we use the currently playing video
+			if song == "" {
+				song = queue[m.GuildID][0].title
+			}
 
 			text := formatLongMessage(lyrics(song))
 

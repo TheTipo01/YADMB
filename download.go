@@ -114,9 +114,11 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId,
 func lyrics(song string) []string {
 	var lyrics Lyrics
 
+	//Command for downloading lyrics as a JSON file
 	cmd := exec.Command("python", "-m", "lyricsgenius", "song", "\""+song+"\"", "--save")
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "GENIUS_CLIENT_ACCESS_TOKEN="+genius)
+
+	//We append to the environmental variables the genius token and we run the command
+	cmd.Env = append(os.Environ(), "GENIUS_CLIENT_ACCESS_TOKEN="+genius)
 	out, _ := cmd.Output()
 
 	for _, line := range strings.Split(string(out), "\n") {
