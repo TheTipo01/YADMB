@@ -22,29 +22,29 @@ import (
 )
 
 var (
-	//Mutex for queueing songs correctly
+	// Mutex for queueing songs correctly
 	server = make(map[string]*sync.Mutex)
-	//Mutex for pausing/un-pausing songs
+	// Mutex for pausing/un-pausing songs
 	pause = make(map[string]*sync.Mutex)
-	//Need a boolean to check if song is paused, because the mutex is continuously locked and unlocked
+	// Need a boolean to check if song is paused, because the mutex is continuously locked and unlocked
 	isPaused = make(map[string]bool)
-	//Variable for skipping a single song
+	// Variable for skipping a single song
 	skip = make(map[string]bool)
-	//Variable for clearing the whole queue
+	// Variable for clearing the whole queue
 	clear = make(map[string]bool)
-	//The queue
+	// The queue
 	queue = make(map[string][]Queue)
-	//Voice connection
+	// Voice connection
 	vc = make(map[string]*discordgo.VoiceConnection)
-	//Custom commands, first map is for the guild id, second one is for the command, and the final string for the song
+	// Custom commands, first map is for the guild id, second one is for the command, and the final string for the song
 	custom = make(map[string]map[string]string)
-	//Spotify client
+	// Spotify client
 	client spotify.Client
-	//Genius key
+	// Genius key
 	genius string
-	//Discord bot token
+	// Discord bot token
 	token string
-	//Prefix for bot commands
+	// Prefix for bot commands
 	prefix         string
 	dataSourceName string
 	driverName     string
@@ -65,14 +65,14 @@ func init() {
 			return
 		}
 	} else {
-		//Config file found
+		// Config file found
 		token = viper.GetString("token")
 		prefix = viper.GetString("prefix")
 		dataSourceName = viper.GetString("datasourcename")
 		driverName = viper.GetString("drivername")
 		genius = viper.GetString("genius")
 
-		//Spotify credentials
+		// Spotify credentials
 		config := &clientcredentials.Config{
 			ClientID:     viper.GetString("clientid"),
 			ClientSecret: viper.GetString("clientsecret"),
@@ -86,7 +86,7 @@ func init() {
 
 		client = spotify.Authenticator{}.NewClient(token)
 
-		//Database
+		// Database
 		db, err = sql.Open(driverName, dataSourceName)
 		if err != nil {
 			log.Println("Error opening db connection,", err)
@@ -124,7 +124,7 @@ func main() {
 	dg.AddHandler(guildCreate)
 	dg.AddHandler(ready)
 
-	//Initialize intents that we use
+	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
 
 	// Open the websocket and begin listening.
@@ -152,7 +152,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 	}
 }
 
-//Initialize for every guild mutex and skip variable
+// Initialize for every guild mutex and skip variable
 func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
 	server[event.ID] = &sync.Mutex{}
 	pause[event.ID] = &sync.Mutex{}
@@ -166,7 +166,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
-	//Plays a song
+	// Plays a song
 	case prefix + "play", prefix + "p":
 		go deleteMessage(s, m)
 
@@ -184,7 +184,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Randomly plays a song (or a playlist)
+		// Randomly plays a song (or a playlist)
 	case prefix + "shuffle":
 		go deleteMessage(s, m)
 
@@ -201,25 +201,25 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Skips a song
+		// Skips a song
 	case prefix + "skip", prefix + "s":
 		go deleteMessage(s, m)
 		skip[m.GuildID] = true
 		break
 
-		//Clear the queue of the guild
+		// Clear the queue of the guild
 	case prefix + "clear", prefix + "c":
 		go deleteMessage(s, m)
 		clear[m.GuildID] = true
 		skip[m.GuildID] = true
 		break
 
-		//Prints out queue for the guild
+		// Prints out queue for the guild
 	case prefix + "queue", prefix + "q":
 		go deleteMessage(s, m)
 		var message string
 		if len(queue[m.GuildID]) > 0 {
-			//Generate song info for message
+			// Generate song info for message
 			for i, el := range queue[m.GuildID] {
 				if i == 0 {
 					if el.title != "" && el.time != nil {
@@ -237,7 +237,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 
 				}
-				//If we don't have the title, we use some placeholder text
+				// If we don't have the title, we use some placeholder text
 				if el.title == "" {
 					message += strconv.Itoa(i) + ") Getting info...\n"
 				} else {
@@ -246,33 +246,33 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			}
 
-			//Send embed
+			// Send embed
 			em, err := s.ChannelMessageSendEmbed(m.ChannelID, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", message).SetColor(0x7289DA).MessageEmbed)
 			if err != nil {
 				fmt.Println("Error sending queue embed: ", err)
 				return
 			}
 
-			//Wait for 15 seconds, then delete the message
+			// Wait for 15 seconds, then delete the message
 			time.Sleep(time.Second * 15)
 			err = s.ChannelMessageDelete(m.ChannelID, em.ID)
 			if err != nil {
 				fmt.Println("Error deleting queue embed: ", err)
 			}
 		} else {
-			//Queue is empty
+			// Queue is empty
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 		}
 		break
 
-		//Disconnect the bot from the guild voice channel
+		// Disconnect the bot from the guild voice channel
 	case prefix + "disconnect", prefix + "d":
 		go deleteMessage(s, m)
 		_ = vc[m.GuildID].Disconnect()
 		vc[m.GuildID] = nil
 		break
 
-		//We summon the bot in the user current voice channel
+		// We summon the bot in the user current voice channel
 	case prefix + "summon":
 		go deleteMessage(s, m)
 		var err error
@@ -282,7 +282,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Prints out supported commands
+		// Prints out supported commands
 	case prefix + "help", prefix + "h":
 		go deleteMessage(s, m)
 
@@ -299,7 +299,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix + "custom <custom_command> <song/playlist> - Creates a custom command to play a song or playlist\n" +
 			prefix + "rmcustom <custom_command> - Removes a custom command\n" +
 			"```"
-		//If we have custom commands, we add them to the help message
+		// If we have custom commands, we add them to the help message
 		if len(custom[m.GuildID]) > 0 {
 			message += "\nCustom commands:\n```"
 
@@ -325,7 +325,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Pause the song
+		// Pause the song
 	case prefix + "pause":
 		go deleteMessage(s, m)
 		if !isPaused[m.GuildID] && len(queue[m.GuildID]) > 0 {
@@ -338,7 +338,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Resume playing
+		// Resume playing
 	case prefix + "resume":
 		go deleteMessage(s, m)
 		if isPaused[m.GuildID] {
@@ -351,7 +351,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Adds a custom command
+		// Adds a custom command
 	case prefix + "custom":
 		go deleteMessage(s, m)
 
@@ -362,7 +362,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		break
 
-		//Removes a custom command
+		// Removes a custom command
 	case prefix + "rmcustom":
 		go deleteMessage(s, m)
 
@@ -372,11 +372,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "lyrics":
 		go deleteMessage(s, m)
 
-		//We search for lyrics only if there's something playing
+		// We search for lyrics only if there's something playing
 		if len(queue[m.GuildID]) > 0 {
 			song := strings.TrimPrefix(strings.TrimPrefix(m.Content, prefix+"lyrics"), " ")
 
-			//If the user didn't input a title, we use the currently playing video
+			// If the user didn't input a title, we use the currently playing video
 			if song == "" {
 				song = queue[m.GuildID][0].title
 			}
@@ -386,7 +386,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			mex, _ := s.ChannelMessageSend(m.ChannelID, "Lyrics for "+song+": ")
 			queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
 
-			//If the messages are more then 3, we don't send anything
+			// If the messages are more then 3, we don't send anything
 			if len(text) > 3 {
 				mex, _ := s.ChannelMessageSend(m.ChannelID, "```Lyrics too long!```")
 				queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
@@ -402,12 +402,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		break
 
-		//Makes the bot exit
+		// Makes the bot exit
 	case prefix + "restart", prefix + "r":
 		go deleteMessage(s, m)
 		os.Exit(0)
 
-		//We search for possible custom commands
+		// We search for possible custom commands
 	default:
 		lower := strings.TrimPrefix(strings.ToLower(m.Content), prefix)
 

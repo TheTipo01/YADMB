@@ -16,7 +16,7 @@ const (
 	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL,  PRIMARY KEY (`guild`,`command`,`song`))"
 )
 
-//Logs and instantly delete a message
+// Logs and instantly delete a message
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	log.Println(m.Author.Username + ": " + m.Content)
 	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
@@ -25,12 +25,12 @@ func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-//Finds user current voice channel
+// Finds user current voice channel
 func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) string {
 	user := m.Author.ID
 
 	//TODO: Better webhook handling
-	//My user id, for playing song via a webhook
+	// My user id, for playing song via a webhook
 	if m.WebhookID != "" {
 		user = "145618075452964864"
 	}
@@ -46,13 +46,13 @@ func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) 
 	return ""
 }
 
-//Checks if a string is a valid URL
+// Checks if a string is a valid URL
 func isValidUrl(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
 	return err == nil
 }
 
-//Removes element from the queue
+// Removes element from the queue
 func removeFromQueue(id string, guild string) {
 	for i, q := range queue[guild] {
 		if q.id == id {
@@ -64,7 +64,7 @@ func removeFromQueue(id string, guild string) {
 	}
 }
 
-//Sends and delete after three second an embed in a given channel
+// Sends and delete after three second an embed in a given channel
 func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) {
 	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
 	if err != nil {
@@ -81,13 +81,13 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 	}
 }
 
-//Formats a string given it's duration in seconds
+// Formats a string given it's duration in seconds
 func formatDuration(duration float64) string {
 	duration2 := int(duration)
 	hours := duration2 / 3600
-	duration2 = duration2 - 3600*hours
+	duration2 -= 3600 * hours
 	minutes := (duration2) / 60
-	duration2 = duration2 - minutes*60
+	duration2 -= minutes * 60
 
 	if hours != 0 {
 		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, duration2)
@@ -100,7 +100,7 @@ func formatDuration(duration float64) string {
 	}
 }
 
-//Executes a simple query given a DB
+// Executes a simple query given a DB
 func execQuery(query string, db *sql.DB) {
 	statement, err := db.Prepare(query)
 	if err != nil {
@@ -114,9 +114,9 @@ func execQuery(query string, db *sql.DB) {
 	}
 }
 
-//Adds a song to the db, so next time we encounter it we don't need to call youtube-dl
+// Adds a song to the db, so next time we encounter it we don't need to call youtube-dl
 func addToDb(el Queue) {
-	//We check for empty strings, just to be sure
+	// We check for empty strings, just to be sure
 	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
 		statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration) VALUES(?, ?, ?, ?)")
 
@@ -127,7 +127,7 @@ func addToDb(el Queue) {
 	}
 }
 
-//Checks if we already have downloaded a song and we've got info about it
+// Checks if we already have downloaded a song and we've got info about it
 func checkInDb(link string) Queue {
 	var el Queue
 	el.link = link
@@ -137,17 +137,17 @@ func checkInDb(link string) Queue {
 	return el
 }
 
-//Adds a custom command to db and to the command map
+// Adds a custom command to db and to the command map
 func addCommand(command string, song string, guild string) {
-	//If the song is already in the map, we ignore it
+	// If the song is already in the map, we ignore it
 	if custom[guild][command] == song {
 		return
 	}
 
-	//Else, we add it to the map
+	// Else, we add it to the map
 	custom[guild][command] = song
 
-	//And to the database
+	// And to the database
 	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
 
 	_, err := statement.Exec(guild, command, song)
@@ -157,20 +157,20 @@ func addCommand(command string, song string, guild string) {
 
 }
 
-//Removes a custom command from the db and from the command map
+// Removes a custom command from the db and from the command map
 func removeCustom(command string, guild string) {
-	//Remove from DB
+	// Remove from DB
 	statement, _ := db.Prepare("DELETE FROM customCommands WHERE guild=? AND command=?")
 	_, err := statement.Exec(guild, command)
 	if err != nil {
 		log.Println("Error removing from the database,", err)
 	}
 
-	//Remove from the map
+	// Remove from the map
 	delete(custom[guild], command)
 }
 
-//Loads custom command from the database
+// Loads custom command from the database
 func loadCustomCommands(db *sql.DB) {
 	var guild, command, song string
 
@@ -194,7 +194,7 @@ func loadCustomCommands(db *sql.DB) {
 	}
 }
 
-//Split lyrics into smaller messages
+// Split lyrics into smaller messages
 func formatLongMessage(text []string) []string {
 	var counter int
 	var output []string
@@ -204,7 +204,7 @@ func formatLongMessage(text []string) []string {
 	for _, line := range text {
 		counter += strings.Count(line, "")
 
-		//If the counter is exceeded, we append all the current line to the final slice
+		// If the counter is exceeded, we append all the current line to the final slice
 		if counter > charLimit {
 			counter = 0
 			output = append(output, buffer)
@@ -226,7 +226,7 @@ func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
 	}
 }
 
-//Shuffles a slice of strings
+// Shuffles a slice of strings
 func shuffle(a []string) []string {
 	final := make([]string, len(a))
 

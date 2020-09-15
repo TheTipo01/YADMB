@@ -132,29 +132,29 @@ type YoutubeDL struct {
 	Series        interface{} `json:"series"`
 }
 
-//Structure for holding infos about a song
+// Structure for holding infos about a song
 type Queue struct {
-	//Title of the song
+	// Title of the song
 	title string
-	//Duration of the song
+	// Duration of the song
 	duration string
-	//ID of the song
+	// ID of the song
 	id string
-	//Link of the song
+	// Link of the song
 	link string
-	//User who requested the song
+	// User who requested the song
 	user string
-	//When we started playing the song
+	// When we started playing the song
 	time *time.Time
-	//Offset for when we pause the song
+	// Offset for when we pause the song
 	offset float64
-	//When song is paused, we save where we were
+	// When song is paused, we save where we were
 	lastTime string
-	//Message  to delete at the end of the song play
+	// Message  to delete at the end of the song play
 	messageID []discordgo.Message
 }
 
-//Structure for getting lyrics of a song
+// Structure for getting lyrics of a song
 type Lyrics struct {
 	Type                     string      `json:"_type"`
 	AnnotationCount          int         `json:"annotation_count"`
