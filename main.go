@@ -404,7 +404,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Makes the bot exit
 	case prefix + "restart", prefix + "r":
-		go deleteMessage(s, m)
+		deleteMessage(s, m)
 		os.Exit(0)
 
 		// We search for possible custom commands
