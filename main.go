@@ -131,6 +131,7 @@ func main() {
 	err = dg.Open()
 	if err != nil {
 		fmt.Println("Error opening Discord session: ", err)
+		return
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
