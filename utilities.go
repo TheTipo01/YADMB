@@ -27,17 +27,10 @@ func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 // Finds user current voice channel
 func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) string {
-	user := m.Author.ID
-
-	//TODO: Better webhook handling
-	// My user id, for playing song via a webhook
-	if m.WebhookID != "" {
-		user = "145618075452964864"
-	}
 
 	for _, guild := range session.State.Guilds {
 		for _, vs := range guild.VoiceStates {
-			if vs.UserID == user {
+			if vs.UserID == m.Author.ID {
 				return vs.ChannelID
 			}
 		}

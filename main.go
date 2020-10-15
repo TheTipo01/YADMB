@@ -22,6 +22,8 @@ import (
 )
 
 var (
+	// Map of boolean so we don't reset mutexes when guildCreate is called twice for some reasons
+	mutexCreated = make(map[string]bool)
 	// Mutex for queueing songs correctly
 	server = make(map[string]*sync.Mutex)
 	// Mutex for pausing/un-pausing songs
@@ -45,13 +47,17 @@ var (
 	// Discord bot token
 	token string
 	// Prefix for bot commands
-	prefix         string
+	prefix string
+	// Database ip:port or name, in case of sqlite
 	dataSourceName string
-	driverName     string
-	db             *sql.DB
+	// Database driver name
+	driverName string
+	// Database connection
+	db *sql.DB
 )
 
 func init() {
+
 	rand.Seed(time.Now().UnixNano())
 
 	viper.SetConfigName("config")
@@ -99,6 +105,7 @@ func init() {
 		loadCustomCommands(db)
 
 	}
+
 }
 
 func main() {
@@ -142,6 +149,7 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	_ = dg.Close()
+
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
@@ -151,12 +159,20 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 	if err != nil {
 		fmt.Println("Can't set status,", err)
 	}
+
 }
 
 // Initialize for every guild mutex and skip variable
 func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
-	server[event.ID] = &sync.Mutex{}
-	pause[event.ID] = &sync.Mutex{}
+
+	// Check if the mutexes for the server were already created, if not we create them and set mutexCreated to true
+	if !mutexCreated[event.ID] {
+		mutexCreated[event.ID] = true
+
+		server[event.ID] = &sync.Mutex{}
+		pause[event.ID] = &sync.Mutex{}
+	}
+
 }
 
 // This function will be called (due to AddHandler above) every time a new
