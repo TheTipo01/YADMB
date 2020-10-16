@@ -306,7 +306,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		message := "Supported commands:\n```" +
 			prefix + "play <link> - Plays a song from youtube or spotify playlist\n" +
-			prefix + "shuffle <playlist> - Shuffles the songs in the playlist and adds them to the queue" +
+			prefix + "shuffle <playlist> - Shuffles the songs in the playlist and adds them to the queue\n" +
 			prefix + "pause - Pauses current song\n" +
 			prefix + "resume - Resumes current song\n" +
 			prefix + "queue - Returns all the songs in the server queue\n" +
