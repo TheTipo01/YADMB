@@ -44,6 +44,8 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	if vc[guildID] == nil || vc[guildID].ChannelID != channelID {
 		vc[guildID], err = s.ChannelVoiceJoin(guildID, channelID, false, true)
 		if err != nil {
+			fmt.Println(err)
+			server[guildID].Unlock()
 			return
 		}
 	}

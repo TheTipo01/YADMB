@@ -346,7 +346,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Pause the song
 	case prefix + "pause":
 		go deleteMessage(s, m)
-		if !isPaused[m.GuildID] && len(queue[m.GuildID]) > 0 {
+		if len(queue[m.GuildID]) > 0 && !isPaused[m.GuildID] {
 			isPaused[m.GuildID] = true
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 			pause[m.GuildID].Lock()
