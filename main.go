@@ -183,13 +183,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	switch strings.Split(strings.ToLower(m.Content), " ")[0] {
+	command := strings.Split(strings.ToLower(m.Content), " ")[0]
+
+	switch command {
 	// Plays a song
 	case prefix + "play", prefix + "p":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, prefix+"play ")
-		link = strings.TrimPrefix(link, prefix+"p ")
+		link := strings.TrimPrefix(m.Content, command)
 
 		if isValidUrl(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
@@ -206,7 +207,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "shuffle":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, prefix+"shuffle ")
+		link := strings.TrimPrefix(m.Content, command)
 
 		if isValidUrl(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
@@ -236,6 +237,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "queue", prefix + "q":
 		go deleteMessage(s, m)
 		var message string
+
 		if len(queue[m.GuildID]) > 0 {
 			// Generate song info for message
 			for i, el := range queue[m.GuildID] {
@@ -348,6 +350,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Pause the song
 	case prefix + "pause":
 		go deleteMessage(s, m)
+
 		if len(queue[m.GuildID]) > 0 && !isPaused[m.GuildID] {
 			isPaused[m.GuildID] = true
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
@@ -361,6 +364,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Resume playing
 	case prefix + "resume":
 		go deleteMessage(s, m)
+
 		if isPaused[m.GuildID] {
 			isPaused[m.GuildID] = false
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
@@ -375,7 +379,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "custom":
 		go deleteMessage(s, m)
 
-		splitted := strings.Split(strings.TrimPrefix(m.Content, prefix+"custom "), " ")
+		splitted := strings.Split(strings.TrimPrefix(m.Content, command), " ")
 
 		if len(splitted) == 2 {
 			addCommand(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
@@ -386,15 +390,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "rmcustom":
 		go deleteMessage(s, m)
 
-		removeCustom(strings.TrimPrefix(m.Content, prefix+"rmcustom "), m.GuildID)
+		removeCustom(strings.TrimPrefix(m.Content, command), m.GuildID)
 		break
-
 	case prefix + "lyrics":
 		go deleteMessage(s, m)
 
 		// We search for lyrics only if there's something playing
 		if len(queue[m.GuildID]) > 0 {
-			song := strings.TrimPrefix(strings.TrimPrefix(m.Content, prefix+"lyrics"), " ")
+			song := strings.TrimPrefix(m.Content, command)
 
 			// If the user didn't input a title, we use the currently playing video
 			if song == "" {
