@@ -71,6 +71,9 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			}
 
 			err = os.Remove("./download/" + fileName + ".m4a")
+			if err != nil {
+				fmt.Println("Can't delete file: ", err)
+			}
 		}
 
 		queue[guildID] = append(queue[guildID], el)
