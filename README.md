@@ -12,6 +12,10 @@ For tutorials on how to install the bot, see the wiki.
 
 `!play <link>` - Plays a song from youtube or spotify playlist
 
+`!skip` - Skips the currently playing song
+
+`!clear` - Clears the entire queue
+
 `!shuffle <playlist>` - Shuffles the songs in the playlist and adds them to the queue
 
 `!pause` - Pauses current song
