@@ -39,8 +39,8 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	}
 
 	// We parse every track as individual json, because youtube-dl
-	for _, singleJson := range strOut {
-		_ = json.Unmarshal([]byte(singleJson), &ytdl)
+	for _, singleJSON := range strOut {
+		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
 		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, "", nil}
 
@@ -94,10 +94,10 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 }
 
 // Enqueues song from a spotify playlist, searching them on youtube
-func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistId, txtChannel string, random bool) {
+func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID, txtChannel string, random bool) {
 
 	// We get the playlist from it's link
-	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistId, "spotify:playlist:")))
+	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
 		fmt.Println(err)
 		return

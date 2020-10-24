@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// YoutubeDL structure for holding youtube-dl data
 type YoutubeDL struct {
 	License           interface{} `json:"license"`
 	AltTitle          interface{} `json:"alt_title"`
@@ -132,7 +133,7 @@ type YoutubeDL struct {
 	Series        interface{} `json:"series"`
 }
 
-// Structure for holding infos about a song
+// Queue structure for holding infos about a song
 type Queue struct {
 	// Title of the song
 	title string
@@ -154,7 +155,7 @@ type Queue struct {
 	messageID []discordgo.Message
 }
 
-// Structure for getting lyrics of a song
+// Lyrics structure for storing lyrics of a song
 type Lyrics struct {
 	Type                     string      `json:"_type"`
 	AnnotationCount          int         `json:"annotation_count"`

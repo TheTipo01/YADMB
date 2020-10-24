@@ -40,7 +40,7 @@ func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) 
 }
 
 // Checks if a string is a valid URL
-func isValidUrl(toTest string) bool {
+func isValidURL(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
 	return err == nil
 }
@@ -84,13 +84,14 @@ func formatDuration(duration float64) string {
 
 	if hours != 0 {
 		return fmt.Sprintf("%d:%02d:%02d", hours, minutes, duration2)
-	} else {
-		if minutes != 0 {
-			return fmt.Sprintf("%02d:%02d", minutes, duration2)
-		} else {
-			return fmt.Sprintf("%02d", duration2)
-		}
 	}
+
+	if minutes != 0 {
+		return fmt.Sprintf("%02d:%02d", minutes, duration2)
+	}
+
+	return fmt.Sprintf("%02d", duration2)
+
 }
 
 // Executes a simple query given a DB

@@ -183,16 +183,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	command := strings.Split(strings.ToLower(m.Content), " ")[0]
+	// Store the message all in lowercase, because we also use it in the default case
+	lowerMessage := strings.ToLower(m.Content)
 
-	switch command {
+	splittedMessage := strings.Split(lowerMessage, " ")
+
+	switch splittedMessage[0] {
 	// Plays a song
 	case prefix + "play", prefix + "p":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, command+" ")
+		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
 
-		if isValidUrl(link) {
+		if isValidURL(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
@@ -207,9 +210,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "shuffle":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, command+" ")
+		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
 
-		if isValidUrl(link) {
+		if isValidURL(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
@@ -379,7 +382,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "custom":
 		go deleteMessage(s, m)
 
-		splitted := strings.Split(strings.TrimPrefix(m.Content, command+" "), " ")
+		splitted := strings.Split(strings.TrimPrefix(m.Content, splittedMessage[0]+" "), " ")
 
 		if len(splitted) == 2 {
 			addCommand(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
@@ -390,14 +393,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "rmcustom":
 		go deleteMessage(s, m)
 
-		removeCustom(strings.TrimPrefix(m.Content, command+" "), m.GuildID)
+		removeCustom(strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.GuildID)
 		break
 	case prefix + "lyrics":
 		go deleteMessage(s, m)
 
 		// We search for lyrics only if there's something playing
 		if len(queue[m.GuildID]) > 0 {
-			song := strings.TrimPrefix(m.Content, command+" ")
+			song := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
 
 			// If the user didn't input a title, we use the currently playing video
 			if song == "" {
@@ -413,7 +416,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if len(text) > 3 {
 				mex, _ := s.ChannelMessageSend(m.ChannelID, "```Lyrics too long!```")
 				queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
-				return
+				break
 			}
 
 			for _, t := range text {
@@ -432,16 +435,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// We search for possible custom commands
 	default:
-		lower := strings.TrimPrefix(strings.ToLower(m.Content), prefix)
+		lower := strings.TrimPrefix(lowerMessage, prefix)
 
 		if custom[m.GuildID][lower] != "" {
 			go deleteMessage(s, m)
 
-			if isValidUrl(custom[m.GuildID][lower]) {
+			if isValidURL(custom[m.GuildID][lower]) {
 				downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
 			} else {
 				if strings.HasPrefix(custom[m.GuildID][lower], "spotify:playlist:") {
-					spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
+					spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, custom[m.GuildID][lower], m.ChannelID, false)
 				} else {
 					searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
 				}
