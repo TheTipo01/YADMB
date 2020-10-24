@@ -190,7 +190,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "play", prefix + "p":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, command)
+		link := strings.TrimPrefix(m.Content, command+" ")
 
 		if isValidUrl(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
@@ -207,7 +207,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "shuffle":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, command)
+		link := strings.TrimPrefix(m.Content, command+" ")
 
 		if isValidUrl(link) {
 			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
@@ -379,7 +379,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "custom":
 		go deleteMessage(s, m)
 
-		splitted := strings.Split(strings.TrimPrefix(m.Content, command), " ")
+		splitted := strings.Split(strings.TrimPrefix(m.Content, command+" "), " ")
 
 		if len(splitted) == 2 {
 			addCommand(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
@@ -390,14 +390,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "rmcustom":
 		go deleteMessage(s, m)
 
-		removeCustom(strings.TrimPrefix(m.Content, command), m.GuildID)
+		removeCustom(strings.TrimPrefix(m.Content, command+" "), m.GuildID)
 		break
 	case prefix + "lyrics":
 		go deleteMessage(s, m)
 
 		// We search for lyrics only if there's something playing
 		if len(queue[m.GuildID]) > 0 {
-			song := strings.TrimPrefix(m.Content, command)
+			song := strings.TrimPrefix(m.Content, command+" ")
 
 			// If the user didn't input a title, we use the currently playing video
 			if song == "" {
