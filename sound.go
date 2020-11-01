@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/bwmarrin/lit"
 	"io"
 	"os"
 	"strings"
@@ -15,7 +15,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 	file, err := os.Open("./audio_cache/" + fileName)
 	if err != nil {
-		fmt.Println("Error opening dca file :", err)
+		lit.Error("Error opening dca file: %s", err)
 		return
 	}
 
@@ -37,14 +37,14 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	// Sends now playing message
 	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][0].title+" - "+queue[guildID][0].duration+" added by "+queue[guildID][0].user).SetColor(0x7289DA).MessageEmbed)
 	if err != nil {
-		fmt.Println(err)
+		lit.Error("%s", err)
 	}
 
 	// Join the provided voice channel.
 	if vc[guildID] == nil || vc[guildID].ChannelID != channelID {
 		vc[guildID], err = s.ChannelVoiceJoin(guildID, channelID, false, true)
 		if err != nil {
-			fmt.Println(err)
+			lit.Error("%s", err)
 			server[guildID].Unlock()
 			return
 		}
@@ -72,7 +72,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		}
 
 		if err != nil {
-			fmt.Println("Error reading from dca file :", err)
+			lit.Error("Error reading from dca file: %s", err)
 			break
 		}
 
@@ -82,7 +82,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 		// Should not be any end of file errors
 		if err != nil {
-			fmt.Println("Error reading from dca file :", err)
+			lit.Error("Error reading from dca file: %s", err)
 			break
 		}
 
@@ -111,7 +111,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	// Delete old message
 	err = s.ChannelMessageDelete(txtChannel, m.ID)
 	if err != nil {
-		fmt.Println(err)
+		lit.Error("%s", err)
 	}
 	deleteMessages(s, queue[guildID][0].messageID)
 

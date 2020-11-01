@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/bwmarrin/lit"
 	"github.com/zmb3/spotify"
 	"io/ioutil"
 	"os"
@@ -26,7 +26,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	}
 
 	// Gets info about songs
-	out, _ := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
+	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
+	if err != nil {
+		lit.Error("Can't get info about song: %s", err)
+	}
 
 	// Parse output as string, splitting it on every newline
 	strOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
@@ -59,7 +62,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		// If not, we download and convert it
 		if err != nil {
 			// Download
-			_ = exec.Command("youtube-dl", "-o", "download/"+fileName+".m4a", "-x", "--audio-format", "m4a", ytdl.WebpageURL).Run()
+			_, err = exec.Command("youtube-dl", "-o", "download/"+fileName+".m4a", "-x", "--audio-format", "m4a", ytdl.WebpageURL).Output()
+			if err != nil {
+				lit.Error("Can't download song: %s", err)
+			}
 
 			// Conversion to DCA
 			switch runtime.GOOS {
@@ -72,7 +78,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 			err = os.Remove("./download/" + fileName + ".m4a")
 			if err != nil {
-				fmt.Println("Can't delete file: ", err)
+				lit.Error("Can't delete file: %s", err)
 			}
 		}
 
@@ -86,7 +92,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 // Searches a song from the query on youtube
 func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string, random bool) {
 	// Gets video id
-	out, _ := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").Output()
+	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").Output()
+	if err != nil {
+		lit.Error("Can't find song on youtube: %s", err)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		return
+	}
+
 	ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
 	// Calls download and play for every id we get
@@ -102,7 +114,8 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID,
 	// We get the playlist from it's link
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
-		fmt.Println(err)
+		lit.Error("Can't get info on a spotify playlist: %s", err)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about spotify playlist!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
 
@@ -122,7 +135,10 @@ func lyrics(song string) []string {
 
 	// We append to the environmental variables the genius token and we run the command
 	cmd.Env = append(os.Environ(), "GENIUS_CLIENT_ACCESS_TOKEN="+genius)
-	out, _ := cmd.Output()
+	out, err := cmd.Output()
+	if err != nil {
+		lit.Error("Can't get lyrics for a song: %s", err)
+	}
 
 	for _, line := range strings.Split(string(out), "\n") {
 		// For windows support

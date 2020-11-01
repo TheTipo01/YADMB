@@ -3,14 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
-	"log"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -67,7 +66,7 @@ func init() {
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found
-			fmt.Println("Config file not found! See example_config.yml")
+			lit.Error("Config file not found! See example_config.yml")
 			return
 		}
 	} else {
@@ -87,7 +86,7 @@ func init() {
 
 		token, err := config.Token(context.Background())
 		if err != nil {
-			log.Printf("Spotify: couldn't get token: %v", err)
+			lit.Error("Spotify: couldn't get token: %s", err)
 		}
 
 		client = spotify.Authenticator{}.NewClient(token)
@@ -95,7 +94,7 @@ func init() {
 		// Database
 		db, err = sql.Open(driverName, dataSourceName)
 		if err != nil {
-			log.Println("Error opening db connection,", err)
+			lit.Error("Error opening db connection, %s", err)
 			return
 		}
 
@@ -111,19 +110,19 @@ func init() {
 func main() {
 
 	if token == "" {
-		fmt.Println("No token provided. Please modify config.yml")
+		lit.Error("No token provided. Please modify config.yml")
 		return
 	}
 
 	if prefix == "" {
-		fmt.Println("No prefix provided. Please modify config.yml")
+		lit.Error("No prefix provided. Please modify config.yml")
 		return
 	}
 
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("Error creating Discord session: ", err)
+		lit.Error("Error creating Discord session: %s", err)
 		return
 	}
 
@@ -137,12 +136,12 @@ func main() {
 	// Open the websocket and begin listening.
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("Error opening Discord session: ", err)
+		lit.Error("Error opening Discord session: %s", err)
 		return
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
-	fmt.Println("discordMusicBot is now running.  Press CTRL-C to exit.")
+	lit.Info("discordMusicBot is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
@@ -157,7 +156,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 	// Set the playing status.
 	err := s.UpdateStatus(0, prefix+"help")
 	if err != nil {
-		fmt.Println("Can't set status,", err)
+		lit.Error("Can't set status, %s", err)
 	}
 
 }
@@ -272,7 +271,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// Send embed
 			em, err := s.ChannelMessageSendEmbed(m.ChannelID, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", message).SetColor(0x7289DA).MessageEmbed)
 			if err != nil {
-				fmt.Println("Error sending queue embed: ", err)
+				lit.Error("Error sending queue embed: %s", err)
 				return
 			}
 
@@ -280,7 +279,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			time.Sleep(time.Second * 15)
 			err = s.ChannelMessageDelete(m.ChannelID, em.ID)
 			if err != nil {
-				fmt.Println("Error deleting queue embed: ", err)
+				lit.Error("Error deleting queue embed: %s", err)
 			}
 		} else {
 			// Queue is empty
@@ -301,7 +300,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		var err error
 		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
 		if err != nil {
-			fmt.Println(err)
+			lit.Error("%s", err)
 		}
 		break
 
@@ -338,7 +337,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		mex, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
-			fmt.Println(err)
+			lit.Error("%s", err)
 			break
 		}
 
@@ -346,7 +345,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		err = s.ChannelMessageDelete(m.ChannelID, mex.ID)
 		if err != nil {
-			fmt.Println(err)
+			lit.Error("%s", err)
 		}
 		break
 

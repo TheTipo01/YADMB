@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
+	"github.com/bwmarrin/lit"
 	"math/rand"
 	"net/url"
 	"strings"
@@ -18,10 +18,11 @@ const (
 
 // Logs and instantly delete a message
 func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	log.Println(m.Author.Username + ": " + m.Content)
+	lit.Debug(m.Author.Username + ": " + m.Content)
+
 	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
 	if err != nil {
-		fmt.Println("Can't delete message,", err)
+		lit.Error("Can't delete message, %s", err)
 	}
 }
 
@@ -61,7 +62,7 @@ func removeFromQueue(id string, guild string) {
 func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) {
 	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
 	if err != nil {
-		fmt.Println(err)
+		lit.Error("%s", err)
 		return
 	}
 
@@ -69,7 +70,7 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 
 	err = s.ChannelMessageDelete(txtChannel, m.ID)
 	if err != nil {
-		fmt.Println(err)
+		lit.Error("%s", err)
 		return
 	}
 }
@@ -98,13 +99,13 @@ func formatDuration(duration float64) string {
 func execQuery(query string, db *sql.DB) {
 	statement, err := db.Prepare(query)
 	if err != nil {
-		log.Println("Error preparing query,", err)
+		lit.Error("Error preparing query, %s", err)
 		return
 	}
 
 	_, err = statement.Exec()
 	if err != nil {
-		log.Println("Error creating table,", err)
+		lit.Error("Error creating table, %s", err)
 	}
 }
 
@@ -116,7 +117,7 @@ func addToDb(el Queue) {
 
 		_, err := statement.Exec(el.link, el.id, el.title, el.duration)
 		if err != nil {
-			log.Println("Error inserting into the database,", err)
+			lit.Error("Error inserting into the database, %s", err)
 		}
 	}
 }
@@ -146,7 +147,7 @@ func addCommand(command string, song string, guild string) {
 
 	_, err := statement.Exec(guild, command, song)
 	if err != nil {
-		log.Println("Error inserting into the database,", err)
+		lit.Error("Error inserting into the database, %s", err)
 	}
 
 }
@@ -157,7 +158,7 @@ func removeCustom(command string, guild string) {
 	statement, _ := db.Prepare("DELETE FROM customCommands WHERE guild=? AND command=?")
 	_, err := statement.Exec(guild, command)
 	if err != nil {
-		log.Println("Error removing from the database,", err)
+		lit.Error("Error removing from the database, %s", err)
 	}
 
 	// Remove from the map
@@ -170,13 +171,13 @@ func loadCustomCommands(db *sql.DB) {
 
 	rows, err := db.Query("SELECT * FROM customCommands")
 	if err != nil {
-		log.Println("Error querying database,", err)
+		lit.Error("Error querying database, %s", err)
 	}
 
 	for rows.Next() {
 		err = rows.Scan(&guild, &command, &song)
 		if err != nil {
-			log.Println("Error scanning rows from query,", err)
+			lit.Error("Error scanning rows from query, %s", err)
 			continue
 		}
 
