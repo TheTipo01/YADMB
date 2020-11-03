@@ -19,16 +19,21 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
 	if el.title != "" {
-		el.user = user
-		queue[guildID] = append(queue[guildID], el)
-		go playSound(s, guildID, channelID, el.id+".dca", txtChannel)
-		return
+		info, err := os.Stat("./audio_cache/" + el.id + ".dca")
+		if err == nil && info.Size() > 0 {
+			el.user = user
+			queue[guildID] = append(queue[guildID], el)
+			go playSound(s, guildID, channelID, el.id+".dca", txtChannel)
+			return
+		}
 	}
 
 	// Gets info about songs
 	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
 	if err != nil {
 		lit.Error("Can't get info about song: %s", err)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		return
 	}
 
 	// Parse output as string, splitting it on every newline
@@ -48,7 +53,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, "", nil}
 
 		// Checks if video is already downloaded
-		_, err := os.Stat("./audio_cache/" + fileName + ".dca")
+		info, err := os.Stat("./audio_cache/" + fileName + ".dca")
 
 		// We add the song to the db, for faster parsing
 		addToDb(el)
@@ -60,11 +65,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		}
 
 		// If not, we download and convert it
-		if err != nil {
+		if err != nil || info.Size() <= 0 {
 			// Download
 			_, err = exec.Command("youtube-dl", "-o", "download/"+fileName+".m4a", "-x", "--audio-format", "m4a", ytdl.WebpageURL).Output()
 			if err != nil {
 				lit.Error("Can't download song: %s", err)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
+				return
 			}
 
 			// Conversion to DCA

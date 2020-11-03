@@ -13,14 +13,15 @@ import (
 func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string) {
 	var opuslen int16
 
+	// Locks the mutex for the current server
+	server[guildID].Lock()
+
 	file, err := os.Open("./audio_cache/" + fileName)
 	if err != nil {
 		lit.Error("Error opening dca file: %s", err)
+		server[guildID].Unlock()
 		return
 	}
-
-	// Locks the mutex for the current server
-	server[guildID].Lock()
 
 	// Check if we need to clear
 	if clear[guildID] {
@@ -64,10 +65,6 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 		// If this is the end of the file, just return.
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			err := file.Close()
-			if err != nil {
-				break
-			}
 			break
 		}
 
@@ -96,6 +93,9 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		}
 		pause[guildID].Unlock()
 	}
+
+	// Close the file
+	_ = file.Close()
 
 	// Stop speaking
 	_ = vc[guildID].Speaking(false)
