@@ -118,6 +118,11 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	// Remove from queue the song
 	removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 
+	// If this is the last song, we wait a minute before disconnecting from the voice channel
+	if len(queue[guildID]) == 0 {
+		go quitVC(guildID)
+	}
+
 	// Releases the mutex lock for the server
 	server[guildID].Unlock()
 

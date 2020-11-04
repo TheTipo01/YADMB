@@ -230,3 +230,13 @@ func shuffle(a []string) []string {
 	}
 	return final
 }
+
+// Disconnects the bot from the voice channel after 1 minute if nothing is playing
+func quitVC(server string) {
+	time.Sleep(1 * time.Minute)
+
+	if len(queue[server]) == 0 && vc[server] != nil {
+		_ = vc[server].Disconnect()
+		vc[server] = nil
+	}
+}
