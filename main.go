@@ -290,17 +290,38 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Disconnect the bot from the guild voice channel
 	case prefix + "disconnect", prefix + "d":
 		go deleteMessage(s, m)
-		_ = vc[m.GuildID].Disconnect()
-		vc[m.GuildID] = nil
+
+		// Check if the queue is empty
+		if len(queue[m.GuildID]) == 0 {
+			server[m.GuildID].Lock()
+
+			_ = vc[m.GuildID].Disconnect()
+			vc[m.GuildID] = nil
+
+			server[m.GuildID].Unlock()
+		} else {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't disconnect the bot!\nStill playing in a voice channel.").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+		}
 		break
 
 		// We summon the bot in the user current voice channel
 	case prefix + "summon":
 		go deleteMessage(s, m)
-		var err error
-		vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
-		if err != nil {
-			lit.Error("%s", err)
+
+		// Check if the queue is empty
+		if len(queue[m.GuildID]) == 0 {
+			var err error
+
+			server[m.GuildID].Lock()
+
+			vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
+			if err != nil {
+				lit.Error("%s", err)
+			}
+
+			server[m.GuildID].Unlock()
+		} else {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't summon the bot!\nAlready playing in a voice channel.").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 		}
 		break
 
