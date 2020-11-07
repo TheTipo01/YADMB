@@ -194,13 +194,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
 
+		vs := findUserVoiceState(s, m)
+
+		// Check if user is not in a voice channel
+		if vs == nil {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			break
+		}
+
 		if isValidURL(link) {
-			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
+			downloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, false)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
+				spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
 			} else {
-				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, false)
+				searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, false)
 			}
 		}
 		break
@@ -211,13 +219,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
 
+		vs := findUserVoiceState(s, m)
+
+		// Check if user is not in a voice channel
+		if vs == nil {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			break
+		}
+
 		if isValidURL(link) {
-			downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
+			downloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, true)
 		} else {
 			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, true)
+				spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, true)
 			} else {
-				searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), link, m.Author.Username, m.ChannelID, true)
+				searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, true)
 			}
 		}
 		break
@@ -225,12 +241,26 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Skips a song
 	case prefix + "skip", prefix + "s":
 		go deleteMessage(s, m)
+
+		// Check if user is not in a voice channel
+		if findUserVoiceState(s, m) == nil {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			break
+		}
+
 		skip[m.GuildID] = true
 		break
 
 		// Clear the queue of the guild
 	case prefix + "clear", prefix + "c":
 		go deleteMessage(s, m)
+
+		// Check if user is not in a voice channel
+		if findUserVoiceState(s, m) == nil {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			break
+		}
+
 		clear[m.GuildID] = true
 		skip[m.GuildID] = true
 		break
@@ -308,13 +338,27 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case prefix + "summon":
 		go deleteMessage(s, m)
 
+		// Check if user is not in a voice channel
+		if findUserVoiceState(s, m) == nil {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			return
+		}
+
 		// Check if the queue is empty
 		if len(queue[m.GuildID]) == 0 {
 			var err error
 
+			vs := findUserVoiceState(s, m)
+
+			// Check if user is not in a voice channel
+			if vs == nil {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+				return
+			}
+
 			server[m.GuildID].Lock()
 
-			vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, findUserVoiceState(s, m), false, false)
+			vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, false)
 			if err != nil {
 				lit.Error("%s", err)
 			}
@@ -460,13 +504,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if custom[m.GuildID][lower] != "" {
 			go deleteMessage(s, m)
 
+			vs := findUserVoiceState(s, m)
+
+			// Check if user is not in a voice channel
+			if vs == nil {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+				return
+			}
+
 			if isValidURL(custom[m.GuildID][lower]) {
-				downloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
+				downloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
 			} else {
 				if strings.HasPrefix(custom[m.GuildID][lower], "spotify:playlist:") {
-					spotifyPlaylist(s, m.GuildID, findUserVoiceState(s, m), m.Author.Username, custom[m.GuildID][lower], m.ChannelID, false)
+					spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, custom[m.GuildID][lower], m.ChannelID, false)
 				} else {
-					searchDownloadAndPlay(s, m.GuildID, findUserVoiceState(s, m), custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
+					searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
 				}
 			}
 			break

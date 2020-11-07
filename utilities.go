@@ -27,17 +27,21 @@ func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 // Finds user current voice channel
-func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) string {
+func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) *discordgo.VoiceState {
 
 	for _, guild := range session.State.Guilds {
+		if guild.ID != m.GuildID {
+			continue
+		}
+
 		for _, vs := range guild.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				return vs.ChannelID
+				return vs
 			}
 		}
 	}
 
-	return ""
+	return nil
 }
 
 // Checks if a string is a valid URL
@@ -215,6 +219,7 @@ func formatLongMessage(text []string) []string {
 	return append(output, buffer)
 }
 
+// Deletes an array of discordgo.Message
 func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
 	for _, m := range messages {
 		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
