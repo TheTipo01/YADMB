@@ -66,26 +66,23 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			// Download
-			_, err = exec.Command("youtube-dl", "-o", "download/"+fileName+".m4a", "-x", "--audio-format", "m4a", ytdl.WebpageURL).Output()
+			var cmd *exec.Cmd
+
+			// Download and conversion to DCA
+			switch runtime.GOOS {
+			case "windows":
+				cmd = exec.Command("gen.bat", fileName)
+			default:
+				cmd = exec.Command("sh", "gen.sh", fileName)
+			}
+
+			cmd.Stdin = strings.NewReader(ytdl.WebpageURL)
+			err = cmd.Run()
+
 			if err != nil {
 				lit.Error("Can't download song: %s", err)
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
 				return
-			}
-
-			// Conversion to DCA
-			switch runtime.GOOS {
-			case "linux":
-				_ = exec.Command("bash", "gen.sh", fileName, fileName+".m4a").Run()
-				break
-			case "windows":
-				_ = exec.Command("gen.bat", fileName, fileName+".m4a").Run()
-			}
-
-			err = os.Remove("./download/" + fileName + ".m4a")
-			if err != nil {
-				lit.Error("Can't delete file: %s", err)
 			}
 		}
 

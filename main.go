@@ -109,12 +109,6 @@ func init() {
 		loadCustomCommands(db)
 
 		// Create folders used by the bot
-		if _, err = os.Stat("./download"); err != nil {
-			if err = os.Mkdir("./download", 0755); err != nil {
-				lit.Error("Cannot create download directory, %s", err)
-			}
-		}
-
 		if _, err = os.Stat("./audio_cache"); err != nil {
 			if err = os.Mkdir("./audio_cache", 0755); err != nil {
 				lit.Error("Cannot create audio_cache directory, %s", err)
