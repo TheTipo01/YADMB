@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
@@ -110,14 +109,16 @@ func init() {
 		loadCustomCommands(db)
 
 		// Create folders used by the bot
-		err = os.Mkdir("download", 0755)
-		if err != nil && !errors.Is(err, syscall.ERROR_ALREADY_EXISTS) {
-			lit.Error("Cannot create download directory, %s", err)
+		if _, err = os.Stat("./download"); err != nil {
+			if err = os.Mkdir("./download", 0755); err != nil {
+				lit.Error("Cannot create download directory, %s", err)
+			}
 		}
 
-		err = os.Mkdir("audio_cache", 0755)
-		if err != nil && !errors.Is(err, syscall.ERROR_ALREADY_EXISTS) {
-			lit.Error("Cannot create audio_cache directory, %s", err)
+		if _, err = os.Stat("./audio_cache"); err != nil {
+			if err = os.Mkdir("./audio_cache", 0755); err != nil {
+				lit.Error("Cannot create audio_cache directory, %s", err)
+			}
 		}
 
 	}
