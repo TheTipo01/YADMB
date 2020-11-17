@@ -174,14 +174,14 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 }
 
 // Initialize for every guild mutex and skip variable
-func guildCreate(_ *discordgo.Session, event *discordgo.GuildCreate) {
+func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 
 	// Check if the mutexes for the server were already created, if not we create them and set mutexCreated to true
-	if !mutexCreated[event.ID] {
-		mutexCreated[event.ID] = true
+	if !mutexCreated[e.ID] {
+		mutexCreated[e.ID] = true
 
-		server[event.ID] = &sync.Mutex{}
-		pause[event.ID] = &sync.Mutex{}
+		server[e.ID] = &sync.Mutex{}
+		pause[e.ID] = &sync.Mutex{}
 	}
 
 }
@@ -325,7 +325,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 		} else {
 			// Queue is empty
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 		}
 		break
 
@@ -414,7 +414,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		mex, err := s.ChannelMessageSend(m.ChannelID, message)
 		if err != nil {
-			lit.Error("%s", err)
+			lit.Error("MessageSend failed: %s", err)
 			break
 		}
 
@@ -422,7 +422,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		err = s.ChannelMessageDelete(m.ChannelID, mex.ID)
 		if err != nil {
-			lit.Error("%s", err)
+			lit.Error("MessageDelete failed: %s", err)
 		}
 		break
 
@@ -450,7 +450,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			queue[m.GuildID][0].offset += queue[m.GuildID][0].time.Sub(time.Now()).Seconds()
 
 			pause[m.GuildID].Unlock()
-			_ = vc[m.GuildID].Speaking(true)
+			err := vc[m.GuildID].Speaking(true)
+			if err != nil {
+				lit.Error("vc.Speaking(true) failed: %s", err)
+			}
 		}
 		break
 
@@ -485,7 +488,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			text := formatLongMessage(lyrics(song))
 
-			mex, _ := s.ChannelMessageSend(m.ChannelID, "Lyrics for "+song+": ")
+			mex, err := s.ChannelMessageSend(m.ChannelID, "Lyrics for "+song+": ")
+			if err != nil {
+				lit.Error("Lyrics MessageSend failed: %s", err)
+				break
+			}
+
 			queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
 
 			// If the messages are more then 3, we don't send anything

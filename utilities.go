@@ -66,7 +66,7 @@ func removeFromQueue(id string, guild string) {
 func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) {
 	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
 	if err != nil {
-		lit.Error("%s", err)
+		lit.Error("MessageSendEmbed failed: %s", err)
 		return
 	}
 
@@ -74,7 +74,7 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 
 	err = s.ChannelMessageDelete(txtChannel, m.ID)
 	if err != nil {
-		lit.Error("%s", err)
+		lit.Error("MessageDelete failed: %s", err)
 		return
 	}
 }
