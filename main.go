@@ -184,6 +184,11 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 		pause[e.ID] = &sync.Mutex{}
 	}
 
+	// If the custom map for the guild is empty, we generate it
+	if custom[e.ID] == nil {
+		custom[e.ID] = make(map[string]string)
+	}
+
 }
 
 // This function will be called (due to AddHandler above) every time a new
@@ -194,14 +199,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// Store the message all in lowercase, because we also use it in the default case
-	lowerMessage := strings.ToLower(m.Content)
+	// Split the message on spaces
+	splittedMessage := strings.Split(m.Content, " ")
 
-	splittedMessage := strings.Split(lowerMessage, " ")
+	command := strings.TrimPrefix(strings.ToLower(splittedMessage[0]), prefix)
 
-	switch splittedMessage[0] {
+	switch command {
 	// Plays a song
-	case prefix + "play", prefix + "p":
+	case "play", "p":
 		go deleteMessage(s, m)
 
 		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
@@ -226,7 +231,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Randomly plays a song (or a playlist)
-	case prefix + "shuffle":
+	case "shuffle":
 		go deleteMessage(s, m)
 
 		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
@@ -251,7 +256,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Skips a song
-	case prefix + "skip", prefix + "s":
+	case "skip", "s":
 		go deleteMessage(s, m)
 
 		// Check if user is not in a voice channel
@@ -264,7 +269,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Clear the queue of the guild
-	case prefix + "clear", prefix + "c":
+	case "clear", "c":
 		go deleteMessage(s, m)
 
 		// Check if user is not in a voice channel
@@ -278,7 +283,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Prints out queue for the guild
-	case prefix + "queue", prefix + "q":
+	case "queue", "q":
 		go deleteMessage(s, m)
 		var message string
 
@@ -330,7 +335,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Disconnect the bot from the guild voice channel
-	case prefix + "disconnect", prefix + "d":
+	case "disconnect", "d":
 		go deleteMessage(s, m)
 
 		// Check if the queue is empty
@@ -347,7 +352,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// We summon the bot in the user current voice channel
-	case prefix + "summon":
+	case "summon":
 		go deleteMessage(s, m)
 
 		// Check if user is not in a voice channel
@@ -382,7 +387,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Prints out supported commands
-	case prefix + "help", prefix + "h":
+	case "help", "h":
 		go deleteMessage(s, m)
 
 		message := "Supported commands:\n```" +
@@ -427,7 +432,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Pause the song
-	case prefix + "pause":
+	case "pause":
 		go deleteMessage(s, m)
 
 		if len(queue[m.GuildID]) > 0 && !isPaused[m.GuildID] {
@@ -441,7 +446,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Resume playing
-	case prefix + "resume":
+	case "resume":
 		go deleteMessage(s, m)
 
 		if isPaused[m.GuildID] {
@@ -458,23 +463,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Adds a custom command
-	case prefix + "custom":
+	case "custom":
 		go deleteMessage(s, m)
 
-		splitted := strings.Split(strings.TrimPrefix(m.Content, splittedMessage[0]+" "), " ")
-
-		if len(splitted) == 2 {
-			addCommand(strings.ToLower(splitted[0]), splitted[1], m.GuildID)
+		if len(splittedMessage) == 3 {
+			addCommand(strings.ToLower(splittedMessage[1]), splittedMessage[2], m.GuildID)
 		}
 		break
 
 		// Removes a custom command
-	case prefix + "rmcustom":
+	case "rmcustom":
 		go deleteMessage(s, m)
 
 		removeCustom(strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.GuildID)
 		break
-	case prefix + "lyrics":
+	case "lyrics":
 		go deleteMessage(s, m)
 
 		// We search for lyrics only if there's something playing
@@ -513,15 +516,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		break
 
 		// Makes the bot exit
-	case prefix + "restart", prefix + "r":
+	case "restart", "r":
 		deleteMessage(s, m)
 		os.Exit(0)
 
 		// We search for possible custom commands
 	default:
-		lower := strings.TrimPrefix(lowerMessage, prefix)
 
-		if custom[m.GuildID][lower] != "" {
+		if custom[m.GuildID][command] != "" {
 			go deleteMessage(s, m)
 
 			vs := findUserVoiceState(s, m)
@@ -532,13 +534,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 
-			if isValidURL(custom[m.GuildID][lower]) {
-				downloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
+			if isValidURL(custom[m.GuildID][command]) {
+				downloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
 			} else {
-				if strings.HasPrefix(custom[m.GuildID][lower], "spotify:playlist:") {
-					spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, custom[m.GuildID][lower], m.ChannelID, false)
+				if strings.HasPrefix(custom[m.GuildID][command], "spotify:playlist:") {
+					spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, custom[m.GuildID][command], m.ChannelID, false)
 				} else {
-					searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][lower], m.Author.Username, m.ChannelID, false)
+					searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
 				}
 			}
 			break
