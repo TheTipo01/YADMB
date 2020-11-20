@@ -140,7 +140,7 @@ func checkInDb(link string) Queue {
 // Adds a custom command to db and to the command map
 func addCommand(command string, song string, guild string) error {
 	// If the song is already in the map, we ignore it
-	if custom[guild][command] == song {
+	if custom[guild][command] != "" {
 		return errors.New("Command already exists!")
 	}
 
