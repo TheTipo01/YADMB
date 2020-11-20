@@ -467,7 +467,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		go deleteMessage(s, m)
 
 		if len(splittedMessage) == 3 {
-			addCommand(strings.ToLower(splittedMessage[1]), splittedMessage[2], m.GuildID)
+			err := addCommand(strings.ToLower(splittedMessage[1]), splittedMessage[2], m.GuildID)
+			if err != nil {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			} else {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Successful", "Custom command added!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			}
 		}
 		break
 

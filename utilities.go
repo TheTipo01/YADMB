@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
@@ -70,7 +71,7 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 		return
 	}
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 5)
 
 	err = s.ChannelMessageDelete(txtChannel, m.ID)
 	if err != nil {
@@ -137,10 +138,10 @@ func checkInDb(link string) Queue {
 }
 
 // Adds a custom command to db and to the command map
-func addCommand(command string, song string, guild string) {
+func addCommand(command string, song string, guild string) error {
 	// If the song is already in the map, we ignore it
 	if custom[guild][command] == song {
-		return
+		return errors.New("Command already exists!")
 	}
 
 	// Else, we add it to the map
@@ -153,6 +154,8 @@ func addCommand(command string, song string, guild string) {
 	if err != nil {
 		lit.Error("Error inserting into the database, %s", err)
 	}
+
+	return nil
 
 }
 
