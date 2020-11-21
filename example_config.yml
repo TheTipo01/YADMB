@@ -9,6 +9,10 @@ token: ""
 #This is what you are going to put before your bot's commands (for example: !play, !pause)
 prefix: "!"
 
+#Owner id
+#Put here the id of the owner of the bot, so they can use commands like restart
+owner: ""
+
 #Spotify Client ID and Client Secret, to support spotify playlists:
 #To get your client ID and secret you need to visit https://developer.spotify.com/dashboard/applications and log in or create a new account,
 #click "Create an app", give it a name and description, check both boxes and click "Create",

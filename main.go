@@ -39,6 +39,8 @@ var (
 	vc = make(map[string]*discordgo.VoiceConnection)
 	// Custom commands, first map is for the guild id, second one is for the command, and the final string for the song
 	custom = make(map[string]map[string]string)
+	// String for storing the owner of the bot
+	owner string
 	// Spotify client
 	client spotify.Client
 	// Genius key
@@ -78,6 +80,7 @@ func init() {
 		dataSourceName = viper.GetString("datasourcename")
 		driverName = viper.GetString("drivername")
 		genius = viper.GetString("genius")
+		owner = viper.GetString("owner")
 
 		// Spotify credentials
 		config := &clientcredentials.Config{
@@ -153,7 +156,7 @@ func main() {
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
-	lit.Info("discordMusicBot is now running.  Press CTRL-C to exit.")
+	lit.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
@@ -209,8 +212,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "play", "p":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
-
 		vs := findUserVoiceState(s, m)
 
 		// Check if user is not in a voice channel
@@ -219,14 +220,23 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		if isValidURL(link) {
-			downloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, false)
-		} else {
-			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, false)
-			} else {
-				searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, false)
-			}
+		// Check if the user also sent a song
+		if len(splittedMessage) < 2 {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			break
+		}
+
+		switch {
+		case strings.HasPrefix(splittedMessage[1], "spotify:playlist:"):
+			spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+" spotify "), m.ChannelID, false)
+			break
+
+		case isValidURL(splittedMessage[1]):
+			downloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, false)
+			break
+
+		default:
+			searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, false)
 		}
 		break
 
@@ -234,8 +244,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "shuffle":
 		go deleteMessage(s, m)
 
-		link := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
-
 		vs := findUserVoiceState(s, m)
 
 		// Check if user is not in a voice channel
@@ -244,14 +252,23 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		if isValidURL(link) {
-			downloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, true)
-		} else {
-			if strings.HasPrefix(link, "spotify:playlist:") {
-				spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+"spotify "), m.ChannelID, true)
-			} else {
-				searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, link, m.Author.Username, m.ChannelID, true)
-			}
+		// Check if the user also sent a song
+		if len(splittedMessage) < 2 {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+			break
+		}
+
+		switch {
+		case strings.HasPrefix(splittedMessage[1], "spotify:playlist:"):
+			spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+" spotify "), m.ChannelID, true)
+			break
+
+		case isValidURL(splittedMessage[1]):
+			downloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, true)
+			break
+
+		default:
+			searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, true)
 		}
 		break
 
@@ -401,7 +418,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix + "lyrics <song> - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song\n" +
 			prefix + "summon - Make the bot join your voice channel\n" +
 			prefix + "disconnect - Disconnect the bot from the voice channel\n" +
-			prefix + "restart - Restarts the bot\n" +
+			prefix + "restart - Restarts the bot (works only for the bot owner)\n" +
 			prefix + "custom <custom_command> <song/playlist> - Creates a custom command to play a song or playlist\n" +
 			prefix + "rmcustom <custom_command> - Removes a custom command\n" +
 			"```"
@@ -482,6 +499,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		removeCustom(strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.GuildID)
 		break
+
 	case "lyrics":
 		go deleteMessage(s, m)
 
@@ -517,13 +535,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 
 		}
-
 		break
 
 		// Makes the bot exit
 	case "restart", "r":
 		deleteMessage(s, m)
-		os.Exit(0)
+
+		// Check if the owner of the bot required the restart
+		if owner == m.Author.ID {
+			os.Exit(0)
+		} else {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "I'm sorry "+m.Author.Username+", I'm afraid I can't do that").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
+		}
+		break
 
 		// We search for possible custom commands
 	default:
@@ -536,17 +560,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// Check if user is not in a voice channel
 			if vs == nil {
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
-				return
+				break
 			}
 
-			if isValidURL(custom[m.GuildID][command]) {
+			switch {
+			case strings.HasPrefix(custom[m.GuildID][command], "spotify:playlist:"):
+				spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, strings.TrimPrefix(m.Content, prefix+" spotify "), m.ChannelID, false)
+				break
+
+			case isValidURL(custom[m.GuildID][command]):
 				downloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
-			} else {
-				if strings.HasPrefix(custom[m.GuildID][command], "spotify:playlist:") {
-					spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, custom[m.GuildID][command], m.ChannelID, false)
-				} else {
-					searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
-				}
+				break
+
+			default:
+				searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
 			}
 			break
 		}

@@ -30,7 +30,7 @@ For tutorials on how to install the bot, see the wiki.
 
 `!disconnect` - Disconnect the bot from the voice channel
 
-`!restart` - Restarts the bot
+`!restart` - Restarts the bot (works only for the bot owner)
 
 `!custom <custom_command> <song/playlist>` - Creates a custom command to play a song or playlist
 
