@@ -29,10 +29,12 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	}
 
 	// Gets info about songs
-	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).Output()
+	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
 	if err != nil {
-		lit.Error("Can't get info about song: %s", err)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		tmp := string(out)
+
+		lit.Error("Can't get info about song: %s", tmp)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+tmp).SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
 
@@ -77,11 +79,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			}
 
 			cmd.Stdin = strings.NewReader(ytdl.WebpageURL)
-			err = cmd.Run()
+			out, err = cmd.CombinedOutput()
 
 			if err != nil {
-				lit.Error("Can't download song: %s", err)
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
+				tmp := string(out)
+
+				lit.Error("Can't download song: %s", tmp)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+tmp).SetColor(0x7289DA).MessageEmbed, txtChannel)
 				return
 			}
 		}
@@ -96,10 +100,12 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 // Searches a song from the query on youtube
 func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string, random bool) {
 	// Gets video id
-	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").Output()
+	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
 	if err != nil {
-		lit.Error("Can't find song on youtube: %s", err)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		tmp := string(out)
+
+		lit.Error("Can't find song on youtube: %s", tmp)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+tmp).SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
 

@@ -109,11 +109,14 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	skip[guildID] = false
 
 	// Delete old message
-	err = s.ChannelMessageDelete(txtChannel, m.ID)
-	if err != nil {
-		lit.Error("%s", err)
+	if m != nil {
+		err = s.ChannelMessageDelete(txtChannel, m.ID)
+		if err != nil {
+			lit.Error("%s", err)
+		}
+
+		deleteMessages(s, queue[guildID][0].messageID)
 	}
-	deleteMessages(s, queue[guildID][0].messageID)
 
 	// Remove from queue the song
 	removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
