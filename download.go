@@ -30,22 +30,22 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 	// Gets info about songs
 	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
-	strOut := string(out)
+
+	// Parse output as string, splitting it on every newline
+	splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+
 	if err != nil {
-		lit.Error("Can't get info about song: %s", strOut)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+strOut).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		lit.Error("Can't get info about song: %s", splittedOut[len(splittedOut)-1])
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
 
 	// Check if youtube-dl returned something
-	if strOut == "" {
+	if strings.TrimSpace(splittedOut[0]) == "" {
 		lit.Error("youtube-dl returned no songs!")
 		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "youtube-dl returned no songs!").SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
-
-	// Parse output as string, splitting it on every newline
-	splittedOut := strings.Split(strings.TrimSuffix(strOut, "\n"), "\n")
 
 	var ytdl YoutubeDL
 
@@ -88,10 +88,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			out, err = cmd.CombinedOutput()
 
 			if err != nil {
-				strOut = string(out)
+				splitted := strings.Split(string(out), "\n")
 
-				lit.Error("Can't download song: %s", strOut)
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+strOut).SetColor(0x7289DA).MessageEmbed, txtChannel)
+				lit.Error("Can't download song: %s", splitted[len(splitted)-1])
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+splitted[len(splitted)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel)
 				return
 			}
 		}
@@ -108,10 +108,10 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 	// Gets video id
 	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
 	if err != nil {
-		tmp := string(out)
+		splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-		lit.Error("Can't find song on youtube: %s", tmp)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+tmp).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		lit.Error("Can't find song on youtube: %s", splittedOut[len(splittedOut)-1])
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
 
