@@ -226,18 +226,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		switch {
-		case strings.HasPrefix(splittedMessage[1], "spotify:playlist:"):
-			spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, splittedMessage[1], m.ChannelID, false)
-			break
-
-		case isValidURL(splittedMessage[1]):
-			downloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, false)
-			break
-
-		default:
-			searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, false)
-		}
+		play(s, splittedMessage[1], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
 		break
 
 		// Randomly plays a song (or a playlist)
@@ -258,18 +247,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		switch {
-		case strings.HasPrefix(splittedMessage[1], "spotify:playlist:"):
-			spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, splittedMessage[1], m.ChannelID, true)
-			break
-
-		case isValidURL(splittedMessage[1]):
-			downloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, true)
-			break
-
-		default:
-			searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, splittedMessage[1], m.Author.Username, m.ChannelID, true)
-		}
+		play(s, splittedMessage[1], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, true)
 		break
 
 		// Skips a song
@@ -563,18 +541,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				break
 			}
 
-			switch {
-			case strings.HasPrefix(custom[m.GuildID][command], "spotify:playlist:"):
-				spotifyPlaylist(s, m.GuildID, vs.ChannelID, m.Author.Username, custom[m.GuildID][command], m.ChannelID, false)
-				break
-
-			case isValidURL(custom[m.GuildID][command]):
-				downloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
-				break
-
-			default:
-				searchDownloadAndPlay(s, m.GuildID, vs.ChannelID, custom[m.GuildID][command], m.Author.Username, m.ChannelID, false)
-			}
+			play(s, custom[m.GuildID][command], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
 			break
 		}
 

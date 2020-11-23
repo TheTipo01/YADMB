@@ -252,3 +252,19 @@ func quitVC(guildID string) {
 		server[guildID].Unlock()
 	}
 }
+
+// Wrapper function for playing songs
+func play(s *discordgo.Session, song, textChannel, voiceChannel, guild, username string, random bool) {
+	switch {
+	case strings.HasPrefix(song, "spotify:playlist:"):
+		spotifyPlaylist(s, guild, voiceChannel, username, song, textChannel, random)
+		break
+
+	case isValidURL(song):
+		downloadAndPlay(s, guild, voiceChannel, song, username, textChannel, random)
+		break
+
+	default:
+		searchDownloadAndPlay(s, guild, voiceChannel, song, username, textChannel, random)
+	}
+}

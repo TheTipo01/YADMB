@@ -30,26 +30,32 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 	// Gets info about songs
 	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
+	strOut := string(out)
 	if err != nil {
-		tmp := string(out)
+		lit.Error("Can't get info about song: %s", strOut)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+strOut).SetColor(0x7289DA).MessageEmbed, txtChannel)
+		return
+	}
 
-		lit.Error("Can't get info about song: %s", tmp)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+tmp).SetColor(0x7289DA).MessageEmbed, txtChannel)
+	// Check if youtube-dl returned something
+	if strOut == "" {
+		lit.Error("youtube-dl returned no songs!")
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "youtube-dl returned no songs!").SetColor(0x7289DA).MessageEmbed, txtChannel)
 		return
 	}
 
 	// Parse output as string, splitting it on every newline
-	strOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+	splittedOut := strings.Split(strings.TrimSuffix(strOut, "\n"), "\n")
 
 	var ytdl YoutubeDL
 
 	// If we want to play the song in a random order, we just shuffle the slice
 	if random {
-		strOut = shuffle(strOut)
+		splittedOut = shuffle(splittedOut)
 	}
 
 	// We parse every track as individual json, because youtube-dl
-	for _, singleJSON := range strOut {
+	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
 		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, "", nil}
@@ -61,7 +67,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		addToDb(el)
 
 		// If we have a single song, we also add it with the given link
-		if len(strOut) == 1 {
+		if len(splittedOut) == 1 {
 			el.link = link
 			addToDb(el)
 		}
@@ -82,10 +88,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			out, err = cmd.CombinedOutput()
 
 			if err != nil {
-				tmp := string(out)
+				strOut = string(out)
 
-				lit.Error("Can't download song: %s", tmp)
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+tmp).SetColor(0x7289DA).MessageEmbed, txtChannel)
+				lit.Error("Can't download song: %s", strOut)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+strOut).SetColor(0x7289DA).MessageEmbed, txtChannel)
 				return
 			}
 		}
