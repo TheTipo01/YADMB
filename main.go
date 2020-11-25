@@ -226,7 +226,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
+		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
 		break
 
 		// Randomly plays a song (or a playlist)
@@ -247,7 +247,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, true)
+		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, true)
 		break
 
 		// Skips a song
