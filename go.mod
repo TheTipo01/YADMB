@@ -1,4 +1,4 @@
-module main
+module YADMB
 
 go 1.14
 

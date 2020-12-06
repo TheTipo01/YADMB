@@ -198,7 +198,7 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 // message is created on any channel that the authenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore messages sent from the bot, messages if the user is a bot, and messages without the prefix
-	if s.State.User.ID == m.Author.ID || m.Author.Bot || !strings.HasPrefix(m.Content, prefix){
+	if s.State.User.ID == m.Author.ID || m.Author.Bot || !strings.HasPrefix(m.Content, prefix) {
 		return
 	}
 

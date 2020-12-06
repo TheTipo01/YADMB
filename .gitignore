@@ -21,3 +21,5 @@ config.yml
 dist/
 download/
 *.db
+YADMB
+main
