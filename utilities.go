@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -53,11 +54,11 @@ func isValidURL(toTest string) bool {
 
 // Removes element from the queue
 func removeFromQueue(id string, guild string) {
-	for i, q := range queue[guild] {
+	for i, q := range server[guild].queue {
 		if q.id == id {
-			copy(queue[guild][i:], queue[guild][i+1:])
-			queue[guild][len(queue[guild])-1] = Queue{"", "", "", "", "", nil, 0, "", nil}
-			queue[guild] = queue[guild][:len(queue[guild])-1]
+			copy(server[guild].queue[i:], server[guild].queue[i+1:])
+			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, 0, "", nil}
+			server[guild].queue = server[guild].queue[:len(server[guild].queue)-1]
 			return
 		}
 	}
@@ -144,12 +145,12 @@ func checkInDb(link string) Queue {
 // Adds a custom command to db and to the command map
 func addCommand(command string, song string, guild string) error {
 	// If the song is already in the map, we ignore it
-	if custom[guild][command] != "" {
-		return errors.New("Command already exists!")
+	if server[guild].custom[command] != "" {
+		return errors.New("command already exists")
 	}
 
 	// Else, we add it to the map
-	custom[guild][command] = song
+	server[guild].custom[command] = song
 
 	// And to the database
 	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
@@ -173,7 +174,7 @@ func removeCustom(command string, guild string) {
 	}
 
 	// Remove from the map
-	delete(custom[guild], command)
+	delete(server[guild].custom, command)
 }
 
 // Loads custom command from the database
@@ -192,11 +193,12 @@ func loadCustomCommands(db *sql.DB) {
 			continue
 		}
 
-		if custom[guild] == nil {
-			custom[guild] = make(map[string]string)
+		// We need to allocate the Server structure before loading custom commands, otherwise we would get a nil pointer deference
+		if server[guild] == nil {
+			server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, custom: make(map[string]string)}
 		}
 
-		custom[guild][command] = song
+		server[guild].custom[command] = song
 	}
 }
 
@@ -247,13 +249,13 @@ func shuffle(a []string) []string {
 func quitVC(guildID string) {
 	time.Sleep(1 * time.Minute)
 
-	if len(queue[guildID]) == 0 && vc[guildID] != nil {
-		server[guildID].Lock()
+	if len(server[guildID].queue) == 0 && server[guildID].vc != nil {
+		server[guildID].server.Lock()
 
-		_ = vc[guildID].Disconnect()
-		vc[guildID] = nil
+		_ = server[guildID].vc.Disconnect()
+		server[guildID].vc = nil
 
-		server[guildID].Unlock()
+		server[guildID].server.Unlock()
 	}
 }
 

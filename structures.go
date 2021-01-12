@@ -2,8 +2,29 @@ package main
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"sync"
 	"time"
 )
+
+// Server holds all info about a single server
+type Server struct {
+	// Mutex for queueing songs correctly
+	server *sync.Mutex
+	// Mutex for pausing/un-pausing songs
+	pause *sync.Mutex
+	// Need a boolean to check if song is paused, because the mutex is continuously locked and unlocked
+	isPaused bool
+	// Variable for skipping a single song
+	skip bool
+	// Variable for clearing the whole queue
+	clear bool
+	// The queue
+	queue []Queue
+	// Voice connection
+	vc *discordgo.VoiceConnection
+	// Custom commands, maps a command to a song
+	custom map[string]string
+}
 
 // Queue structure for holding infos about a song
 type Queue struct {

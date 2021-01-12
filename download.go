@@ -22,7 +22,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		info, err := os.Stat("./audio_cache/" + el.id + ".dca")
 		if err == nil && info.Size() > 0 {
 			el.user = user
-			queue[guildID] = append(queue[guildID], el)
+			server[guildID].queue = append(server[guildID].queue, el)
 			go playSound(s, guildID, channelID, el.id+".dca", txtChannel)
 			return
 		}
@@ -96,7 +96,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			}
 		}
 
-		queue[guildID] = append(queue[guildID], el)
+		server[guildID].queue = append(server[guildID].queue, el)
 		go playSound(s, guildID, channelID, fileName+".dca", txtChannel)
 
 	}

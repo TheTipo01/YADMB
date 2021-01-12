@@ -14,50 +14,50 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	var opuslen int16
 
 	// Locks the mutex for the current server
-	server[guildID].Lock()
+	server[guildID].server.Lock()
 
 	file, err := os.Open("./audio_cache/" + fileName)
 	if err != nil {
 		lit.Error("Error opening dca file: %s", err)
-		server[guildID].Unlock()
+		server[guildID].server.Unlock()
 		return
 	}
 
 	// Check if we need to clear
-	if clear[guildID] {
+	if server[guildID].clear {
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
-		if len(queue[guildID]) == 1 {
+		if len(server[guildID].queue) == 1 {
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").SetColor(0x7289DA).MessageEmbed, txtChannel)
-			clear[guildID] = false
+			server[guildID].clear = false
 		}
-		server[guildID].Unlock()
+		server[guildID].server.Unlock()
 		return
 	}
 
 	// Sends now playing message
-	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", queue[guildID][0].title+" - "+queue[guildID][0].duration+" added by "+queue[guildID][0].user).SetColor(0x7289DA).MessageEmbed)
+	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).MessageEmbed)
 	if err != nil {
 		lit.Error("%s", err)
 	}
 
 	// Join the provided voice channel.
-	if vc[guildID] == nil || vc[guildID].ChannelID != channelID {
-		vc[guildID], err = s.ChannelVoiceJoin(guildID, channelID, false, true)
+	if server[guildID].vc == nil || server[guildID].vc.ChannelID != channelID {
+		server[guildID].vc, err = s.ChannelVoiceJoin(guildID, channelID, false, true)
 		if err != nil {
 			lit.Error("%s", err)
-			server[guildID].Unlock()
+			server[guildID].server.Unlock()
 			return
 		}
 	}
 
 	// Start speaking.
-	_ = vc[guildID].Speaking(true)
-	skip[guildID] = false
+	_ = server[guildID].vc.Speaking(true)
+	server[guildID].skip = false
 
 	// Sets when we started reading file, so we known the remaining time of the song
 	tmpTime := time.Now()
-	queue[guildID][0].time = &tmpTime
+	server[guildID].queue[0].time = &tmpTime
 
 	// Channel to send ok messages
 	c1 := make(chan string, 1)
@@ -87,11 +87,11 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		}
 
 		// Stream data to discord
-		pause[guildID].Lock()
-		if !skip[guildID] {
+		server[guildID].pause.Lock()
+		if !server[guildID].skip {
 			// Send data in a goroutine
 			go func() {
-				vc[guildID].OpusSend <- InBuf
+				server[guildID].vc.OpusSend <- InBuf
 				c1 <- "ok"
 			}()
 
@@ -100,29 +100,29 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 			case _ = <-c1:
 				break
 			case <-time.After(time.Second / 3):
-				vc[guildID], _ = s.ChannelVoiceJoin(guildID, channelID, false, true)
+				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, channelID, false, true)
 			}
 
 		} else {
-			pause[guildID].Unlock()
+			server[guildID].pause.Unlock()
 			break
 		}
-		pause[guildID].Unlock()
+		server[guildID].pause.Unlock()
 	}
 
 	// Close the file
 	_ = file.Close()
 
 	// Stop speaking
-	_ = vc[guildID].Speaking(false)
+	_ = server[guildID].vc.Speaking(false)
 
 	// If the song is skipped, we send a feedback message
-	if skip[guildID] && !clear[guildID] {
-		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", queue[guildID][0].title+" - "+queue[guildID][0].duration+" added by "+queue[guildID][0].user).SetColor(0x7289DA).MessageEmbed, txtChannel)
+	if server[guildID].skip && !server[guildID].clear {
+		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).MessageEmbed, txtChannel)
 	}
 
 	// Resets the skip boolean
-	skip[guildID] = false
+	server[guildID].skip = false
 
 	// Delete old message
 	if m != nil {
@@ -131,18 +131,18 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 			lit.Error("%s", err)
 		}
 
-		deleteMessages(s, queue[guildID][0].messageID)
+		deleteMessages(s, server[guildID].queue[0].messageID)
 	}
 
 	// Remove from queue the song
 	removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 
 	// If this is the last song, we wait a minute before disconnecting from the voice channel
-	if len(queue[guildID]) == 0 {
+	if len(server[guildID].queue) == 0 {
 		go quitVC(guildID)
 	}
 
 	// Releases the mutex lock for the server
-	server[guildID].Unlock()
+	server[guildID].server.Unlock()
 
 }

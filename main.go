@@ -21,24 +21,8 @@ import (
 )
 
 var (
-	// Map of boolean so we don't reset mutexes when guildCreate is called twice for some reasons
-	mutexCreated = make(map[string]bool)
-	// Mutex for queueing songs correctly
-	server = make(map[string]*sync.Mutex)
-	// Mutex for pausing/un-pausing songs
-	pause = make(map[string]*sync.Mutex)
-	// Need a boolean to check if song is paused, because the mutex is continuously locked and unlocked
-	isPaused = make(map[string]bool)
-	// Variable for skipping a single song
-	skip = make(map[string]bool)
-	// Variable for clearing the whole queue
-	clear = make(map[string]bool)
-	// The queue
-	queue = make(map[string][]Queue)
-	// Voice connection
-	vc = make(map[string]*discordgo.VoiceConnection)
-	// Custom commands, first map is for the guild id, second one is for the command, and the final string for the song
-	custom = make(map[string]map[string]string)
+	// Holds all the info about a server
+	server = make(map[string]*Server)
 	// String for storing the owner of the bot
 	owner string
 	// Spotify client
@@ -49,10 +33,6 @@ var (
 	token string
 	// Prefix for bot commands
 	prefix string
-	// Database ip:port or name, in case of sqlite
-	dataSourceName string
-	// Database driver name
-	driverName string
 	// Database connection
 	db *sql.DB
 )
@@ -77,8 +57,6 @@ func init() {
 		// Config file found
 		token = viper.GetString("token")
 		prefix = viper.GetString("prefix")
-		dataSourceName = viper.GetString("datasourcename")
-		driverName = viper.GetString("drivername")
 		genius = viper.GetString("genius")
 		owner = viper.GetString("owner")
 
@@ -98,7 +76,7 @@ func init() {
 		client = spotify.Authenticator{}.NewClient(token)
 
 		// Open database connection
-		db, err = sql.Open(driverName, dataSourceName)
+		db, err = sql.Open(viper.GetString("drivername"), viper.GetString("datasourcename"))
 		if err != nil {
 			lit.Error("Error opening db connection, %s", err)
 			return
@@ -176,20 +154,11 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 }
 
-// Initialize for every guild mutex and skip variable
+// Initialize Server structure
 func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 
-	// Check if the mutexes for the server were already created, if not we create them and set mutexCreated to true
-	if !mutexCreated[e.ID] {
-		mutexCreated[e.ID] = true
-
-		server[e.ID] = &sync.Mutex{}
-		pause[e.ID] = &sync.Mutex{}
-	}
-
-	// If the custom map for the guild is empty, we generate it
-	if custom[e.ID] == nil {
-		custom[e.ID] = make(map[string]string)
+	if server[e.ID] == nil {
+		server[e.ID] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, custom: make(map[string]string)}
 	}
 
 }
@@ -260,7 +229,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		skip[m.GuildID] = true
+		server[m.GuildID].skip = true
 		break
 
 		// Clear the queue of the guild
@@ -273,8 +242,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		clear[m.GuildID] = true
-		skip[m.GuildID] = true
+		server[m.GuildID].clear = true
+		server[m.GuildID].skip = true
 		break
 
 		// Prints out queue for the guild
@@ -282,12 +251,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		go deleteMessage(s, m)
 		var message string
 
-		if len(queue[m.GuildID]) > 0 {
+		if len(server[m.GuildID].queue) > 0 {
 			// Generate song info for message
-			for i, el := range queue[m.GuildID] {
+			for i, el := range server[m.GuildID].queue {
 				if i == 0 {
 					if el.title != "" && el.time != nil {
-						if isPaused[m.GuildID] {
+						if server[m.GuildID].isPaused {
 							message += "Currently playing: " + el.title + " - " + el.lastTime + "/" + el.duration + " added by " + el.user + "\n\n"
 							continue
 						} else {
@@ -334,13 +303,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		go deleteMessage(s, m)
 
 		// Check if the queue is empty
-		if len(queue[m.GuildID]) == 0 {
-			server[m.GuildID].Lock()
+		if len(server[m.GuildID].queue) == 0 {
+			server[m.GuildID].server.Lock()
 
-			_ = vc[m.GuildID].Disconnect()
-			vc[m.GuildID] = nil
+			_ = server[m.GuildID].vc.Disconnect()
+			server[m.GuildID].vc = nil
 
-			server[m.GuildID].Unlock()
+			server[m.GuildID].server.Unlock()
 		} else {
 			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't disconnect the bot!\nStill playing in a voice channel.").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 		}
@@ -357,7 +326,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		// Check if the queue is empty
-		if len(queue[m.GuildID]) == 0 {
+		if len(server[m.GuildID].queue) == 0 {
 			var err error
 
 			vs := findUserVoiceState(s, m)
@@ -368,14 +337,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 
-			server[m.GuildID].Lock()
+			server[m.GuildID].server.Lock()
 
-			vc[m.GuildID], err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, false)
+			server[m.GuildID].vc, err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, false)
 			if err != nil {
 				lit.Error("%s", err)
 			}
 
-			server[m.GuildID].Unlock()
+			server[m.GuildID].server.Unlock()
 		} else {
 			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't summon the bot!\nAlready playing in a voice channel.").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
 		}
@@ -401,10 +370,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix + "rmcustom <custom_command> - Removes a custom command\n" +
 			"```"
 		// If we have custom commands, we add them to the help message
-		if len(custom[m.GuildID]) > 0 {
+		if len(server[m.GuildID].custom) > 0 {
 			message += "\nCustom commands:\n```"
 
-			for k := range custom[m.GuildID] {
+			for k := range server[m.GuildID].custom {
 				message += k + ", "
 			}
 
@@ -430,12 +399,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "pause":
 		go deleteMessage(s, m)
 
-		if len(queue[m.GuildID]) > 0 && !isPaused[m.GuildID] {
-			isPaused[m.GuildID] = true
+		if len(server[m.GuildID].queue) > 0 && !server[m.GuildID].isPaused {
+			server[m.GuildID].isPaused = true
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
-			pause[m.GuildID].Lock()
+			server[m.GuildID].pause.Lock()
 
-			queue[m.GuildID][0].lastTime = formatDuration(time.Now().Sub(*queue[m.GuildID][0].time).Seconds() + queue[m.GuildID][0].offset)
+			server[m.GuildID].queue[0].lastTime = formatDuration(time.Now().Sub(*server[m.GuildID].queue[0].time).Seconds() + server[m.GuildID].queue[0].offset)
 
 		}
 		break
@@ -444,13 +413,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "resume":
 		go deleteMessage(s, m)
 
-		if isPaused[m.GuildID] {
-			isPaused[m.GuildID] = false
+		if server[m.GuildID].isPaused {
+			server[m.GuildID].isPaused = false
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID)
-			queue[m.GuildID][0].offset += queue[m.GuildID][0].time.Sub(time.Now()).Seconds()
+			server[m.GuildID].queue[0].offset += server[m.GuildID].queue[0].time.Sub(time.Now()).Seconds()
 
-			pause[m.GuildID].Unlock()
-			err := vc[m.GuildID].Speaking(true)
+			server[m.GuildID].pause.Unlock()
+			err := server[m.GuildID].vc.Speaking(true)
 			if err != nil {
 				lit.Error("vc.Speaking(true) failed: %s", err)
 			}
@@ -482,12 +451,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		go deleteMessage(s, m)
 
 		// We search for lyrics only if there's something playing
-		if len(queue[m.GuildID]) > 0 {
+		if len(server[m.GuildID].queue) > 0 {
 			song := strings.TrimPrefix(m.Content, splittedMessage[0]+" ")
 
 			// If the user didn't input a title, we use the currently playing video
 			if song == "" {
-				song = queue[m.GuildID][0].title
+				song = server[m.GuildID].queue[0].title
 			}
 
 			text := formatLongMessage(lyrics(song))
@@ -498,18 +467,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				break
 			}
 
-			queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+			server[m.GuildID].queue[0].messageID = append(server[m.GuildID].queue[0].messageID, *mex)
 
 			// If the messages are more then 3, we don't send anything
 			if len(text) > 3 {
 				mex, _ := s.ChannelMessageSend(m.ChannelID, "```Lyrics too long!```")
-				queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+				server[m.GuildID].queue[0].messageID = append(server[m.GuildID].queue[0].messageID, *mex)
 				break
 			}
 
 			for _, t := range text {
 				mex, _ = s.ChannelMessageSend(m.ChannelID, "```"+t+"```")
-				queue[m.GuildID][0].messageID = append(queue[m.GuildID][0].messageID, *mex)
+				server[m.GuildID].queue[0].messageID = append(server[m.GuildID].queue[0].messageID, *mex)
 			}
 
 		}
@@ -530,7 +499,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// We search for possible custom commands
 	default:
 
-		if custom[m.GuildID][command] != "" {
+		if server[m.GuildID].custom[command] != "" {
 			go deleteMessage(s, m)
 
 			vs := findUserVoiceState(s, m)
@@ -541,7 +510,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				break
 			}
 
-			play(s, custom[m.GuildID][command], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
+			play(s, server[m.GuildID].custom[command], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
 			break
 		}
 
