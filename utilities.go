@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -102,7 +101,7 @@ func formatDuration(duration float64) string {
 }
 
 // Executes a simple query given a DB
-func execQuery(query string, db *sql.DB) {
+func execQuery(query string) {
 	statement, err := db.Prepare(query)
 	if err != nil {
 		lit.Error("Error preparing query, %s", err)
@@ -178,7 +177,7 @@ func removeCustom(command string, guild string) {
 }
 
 // Loads custom command from the database
-func loadCustomCommands(db *sql.DB) {
+func loadCustomCommands() {
 	var guild, command, song string
 
 	rows, err := db.Query("SELECT * FROM customCommands")

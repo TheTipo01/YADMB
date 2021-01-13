@@ -83,11 +83,11 @@ func init() {
 		}
 
 		// Create tables used by the bots
-		execQuery(tblSong, db)
-		execQuery(tblCommands, db)
+		execQuery(tblSong)
+		execQuery(tblCommands)
 
 		// And load custom commands from the db
-		loadCustomCommands(db)
+		loadCustomCommands()
 
 		// Create folders used by the bot
 		if _, err = os.Stat("./audio_cache"); err != nil {
@@ -119,9 +119,9 @@ func main() {
 		return
 	}
 
-	dg.AddHandler(messageCreate)
-	dg.AddHandler(guildCreate)
 	dg.AddHandler(ready)
+	dg.AddHandler(guildCreate)
+	dg.AddHandler(messageCreate)
 
 	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
