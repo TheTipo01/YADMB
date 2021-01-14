@@ -39,3 +39,6 @@ datasourcename: ./yadmb.db
 drivername: sqlite3
 #MySQL
 #drivername: mysql
+
+#Log level. Possible value are error, warning, informational and debug
+loglevel: informational

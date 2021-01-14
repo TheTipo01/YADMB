@@ -39,8 +39,6 @@ var (
 
 func init() {
 
-	lit.LogLevel = lit.LogInformational
-
 	rand.Seed(time.Now().UnixNano())
 
 	viper.SetConfigName("config")
@@ -59,6 +57,18 @@ func init() {
 		prefix = viper.GetString("prefix")
 		genius = viper.GetString("genius")
 		owner = viper.GetString("owner")
+
+		// Set lit.LogLevel to the given value. Default value is lit.LogError
+		switch strings.ToLower(viper.GetString("loglevel")) {
+		case "logerror", "error":
+			lit.LogLevel = lit.LogError
+		case "logwarning", "warning":
+			lit.LogLevel = lit.LogWarning
+		case "loginformational", "informational":
+			lit.LogLevel = lit.LogInformational
+		case "logdebug", "debug":
+			lit.LogLevel = lit.LogDebug
+		}
 
 		// Spotify credentials
 		config := &clientcredentials.Config{

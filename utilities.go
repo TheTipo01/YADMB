@@ -49,7 +49,7 @@ func removeFromQueue(id string, guild string) {
 	for i, q := range server[guild].queue {
 		if q.id == id {
 			copy(server[guild].queue[i:], server[guild].queue[i+1:])
-			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, 0, "", nil}
+			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, 0, "", nil, ""}
 			server[guild].queue = server[guild].queue[:len(server[guild].queue)-1]
 			return
 		}

@@ -46,6 +46,8 @@ type Queue struct {
 	lastTime string
 	// Message  to delete at the end of the song play
 	messageID []discordgo.Message
+	// Link to the thumbnail of the video
+	thumbnail string
 }
 
 // YoutubeDL structure for holding youtube-dl data

@@ -14,7 +14,6 @@ import (
 
 // Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string, random bool) {
-	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
@@ -27,6 +26,8 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			return
 		}
 	}
+
+	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel)
 
 	// Gets info about songs
 	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
@@ -58,7 +59,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
-		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, "", nil}
+		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, "", nil, ytdl.Thumbnail}
 
 		// Checks if video is already downloaded
 		info, err := os.Stat("./audio_cache/" + fileName + ".dca")

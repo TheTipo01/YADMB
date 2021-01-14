@@ -36,7 +36,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	}
 
 	// Sends now playing message
-	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).MessageEmbed)
+	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed)
 	if err != nil {
 		lit.Error("%s", err)
 	}
