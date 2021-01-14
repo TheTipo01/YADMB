@@ -35,3 +35,7 @@ For tutorials on how to install the bot, see the wiki.
 `!custom <custom_command> <song/playlist>` - Creates a custom command to play a song or playlist
 
 `!rmcustom <custom_command>` - Removes a custom command
+
+`!streamplay <link>` - Same as play, but it streams the song if it's not in cache
+
+`!streamshuffle <link>` - Same as shuffle, but it streams the song if it's not in cache

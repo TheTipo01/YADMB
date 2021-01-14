@@ -13,7 +13,7 @@ import (
 )
 
 // Download and plays a song from a youtube link
-func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string, random bool) {
+func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string, random, stream bool) {
 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
@@ -77,35 +77,63 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		if err != nil || info.Size() <= 0 {
 			var cmd *exec.Cmd
 
-			// Download and conversion to DCA
-			switch runtime.GOOS {
-			case "windows":
-				cmd = exec.Command("gen.bat", fileName)
-			default:
-				cmd = exec.Command("sh", "gen.sh", fileName)
+			if stream {
+
+				// Download and conversion to DCA
+				switch runtime.GOOS {
+				case "windows":
+					cmd = exec.Command("genStream.bat", fileName)
+				default:
+					cmd = exec.Command("sh", "genStream.sh", fileName)
+				}
+
+				cmd.Stdin = strings.NewReader(ytdl.WebpageURL)
+
+				pipe, err := cmd.StdoutPipe()
+				if err != nil {
+					lit.Error("Can't create StdoutPipe: %s", err)
+					break
+				}
+
+				_ = cmd.Start()
+
+				server[guildID].queue = append(server[guildID].queue, el)
+				go playSoundStream(s, guildID, channelID, fileName+".dca", txtChannel, pipe)
+
+				continue
+			} else {
+
+				// Download and conversion to DCA
+				switch runtime.GOOS {
+				case "windows":
+					cmd = exec.Command("gen.bat", fileName)
+				default:
+					cmd = exec.Command("sh", "gen.sh", fileName)
+				}
+
+				cmd.Stdin = strings.NewReader(ytdl.WebpageURL)
+				out, err = cmd.CombinedOutput()
+
+				if err != nil {
+					splitted := strings.Split(string(out), "\n")
+
+					lit.Error("Can't download song: %s", splitted[len(splitted)-1])
+					sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+splitted[len(splitted)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel)
+					return
+				}
 			}
 
-			cmd.Stdin = strings.NewReader(ytdl.WebpageURL)
-			out, err = cmd.CombinedOutput()
+			server[guildID].queue = append(server[guildID].queue, el)
+			go playSound(s, guildID, channelID, fileName+".dca", txtChannel)
 
-			if err != nil {
-				splitted := strings.Split(string(out), "\n")
-
-				lit.Error("Can't download song: %s", splitted[len(splitted)-1])
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't download song!\n"+splitted[len(splitted)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel)
-				return
-			}
 		}
-
-		server[guildID].queue = append(server[guildID].queue, el)
-		go playSound(s, guildID, channelID, fileName+".dca", txtChannel)
 
 	}
 
 }
 
 // Searches a song from the query on youtube
-func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string, random bool) {
+func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string, random, stream bool) {
 	// Gets video id
 	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
 	if err != nil {
@@ -120,13 +148,12 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 	// Calls download and play for every id we get
 	for _, id := range ids {
-		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+id, user, txtChannel, random)
+		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+id, user, txtChannel, random, stream)
 	}
-
 }
 
 // Enqueues song from a spotify playlist, searching them on youtube
-func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID, txtChannel string, random bool) {
+func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID, txtChannel string, random, stream bool) {
 
 	// We get the playlist from it's link
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
@@ -138,7 +165,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID,
 
 	// We parse every single song, searching it on youtube
 	for _, track := range playlist.Tracks.Tracks {
-		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, txtChannel, random)
+		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, txtChannel, random, stream)
 	}
 
 }
