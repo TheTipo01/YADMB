@@ -39,3 +39,5 @@ For tutorials on how to install the bot, see the wiki.
 `!streamplay <link>` - Same as play, but it streams the song if it's not in cache
 
 `!streamshuffle <link>` - Same as shuffle, but it streams the song if it's not in cache
+
+`!stats` - Stats™

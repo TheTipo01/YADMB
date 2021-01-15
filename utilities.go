@@ -6,6 +6,8 @@ import (
 	"github.com/bwmarrin/lit"
 	"math/rand"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -57,14 +59,14 @@ func removeFromQueue(id string, guild string) {
 }
 
 // Sends and delete after three second an embed in a given channel
-func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) {
+func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string, wait time.Duration) {
 	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
 	if err != nil {
 		lit.Error("MessageSendEmbed failed: %s", err)
 		return
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(wait)
 
 	err = s.ChannelMessageDelete(txtChannel, m.ID)
 	if err != nil {
@@ -164,4 +166,34 @@ func play(s *discordgo.Session, song, textChannel, voiceChannel, guild, username
 	default:
 		searchDownloadAndPlay(s, guild, voiceChannel, song, username, textChannel, random, stream)
 	}
+}
+
+// DirSize gets size of a directory
+func DirSize(path string) int64 {
+	var size int64
+	_ = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size
+}
+
+// ByteCountSI formats bytes into a readable format
+func ByteCountSI(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
 }
