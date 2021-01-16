@@ -8,7 +8,7 @@ import (
 
 const (
 	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, PRIMARY KEY (`link`));"
-	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL,  PRIMARY KEY (`guild`,`command`,`song`));"
+	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL,  PRIMARY KEY (`guild`,`command`));"
 )
 
 // Executes a simple query given a DB
@@ -59,19 +59,19 @@ func addCommand(command string, song string, guild string) error {
 		return errors.New("command already exists")
 	}
 
-	// Else, we add it to the map
-	server[guild].custom[command] = song
-
-	// And to the database
+	// Else, we add it to the database
 	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
 
 	_, err := statement.Exec(guild, command, song)
 	if err != nil {
-		lit.Error("Error inserting into the database, %s", err)
+		lit.Error("error inserting into the database: %s", err)
+		return errors.New("error inserting into the database: " + err.Error())
 	}
 
-	return nil
+	// And the map
+	server[guild].custom[command] = song
 
+	return nil
 }
 
 // Removes a custom command from the db and from the command map
