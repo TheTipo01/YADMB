@@ -60,7 +60,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
-		el := Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, 0, "", nil, ytdl.Thumbnail}
+
+		var el Queue
+		if ytdl.Extractor == "youtube" {
+			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID)}
+		} else {
+			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil}
+		}
 
 		// Checks if video is already downloaded
 		info, err := os.Stat("./audio_cache/" + fileName + ".dca")

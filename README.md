@@ -8,6 +8,8 @@ Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [youtu
 
 For tutorials on how to install the bot, see the wiki.
 
+Uses SponsorBlock API from https://sponsor.ajay.app/
+
 ## Bot commands
 
 `!play <link>` - Plays a song from youtube or spotify playlist

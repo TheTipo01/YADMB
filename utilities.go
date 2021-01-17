@@ -1,13 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -51,7 +55,7 @@ func removeFromQueue(id string, guild string) {
 	for i, q := range server[guild].queue {
 		if q.id == id {
 			copy(server[guild].queue[i:], server[guild].queue[i+1:])
-			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, 0, "", nil, ""}
+			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, "", 0, nil}
 			server[guild].queue = server[guild].queue[:len(server[guild].queue)-1]
 			return
 		}
@@ -196,4 +200,63 @@ func ByteCountSI(b int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB",
 		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+// Returns a map for skipping certain frames of a song
+func getSegments(videoID string) map[int]bool {
+	var segments SponsorBlock
+	var segmentMap = make(map[int]bool)
+
+	resp, err := http.Get("https://sponsor.ajay.app/api/skipSegments?videoID=" + videoID + "&categories=[\"sponsor\",\"music_offtopic\"]")
+	if err != nil {
+		lit.Error(err.Error())
+		return nil
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	_ = json.Unmarshal(body, &segments)
+
+	for _, s := range segments {
+		if len(s.Segment) == 2 {
+			segmentMap[int(s.Segment[0]*frameSeconds)] = true
+			segmentMap[int(s.Segment[1]*frameSeconds)] = true
+		}
+	}
+
+	return segmentMap
+}
+
+// From a map of segments returns an encoded string
+func encodeSegments(segments map[int]bool) string {
+	if segments == nil {
+		return ""
+	}
+
+	var out string
+
+	for k := range segments {
+		out += strconv.Itoa(k) + ","
+	}
+
+	return strings.TrimSuffix(out, ",")
+}
+
+// Decodes segments into a map
+func decodeSegments(segments string) map[int]bool {
+	if segments == "" {
+		return nil
+	}
+	mapSegments := make(map[int]bool)
+	splitted := strings.Split(segments, ",")
+
+	for _, s := range splitted {
+		frame, err := strconv.Atoi(s)
+		if err == nil {
+			mapSegments[frame] = true
+		}
+	}
+
+	return mapSegments
 }

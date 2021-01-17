@@ -21,6 +21,11 @@ import (
 	"time"
 )
 
+const (
+	// How many DCA frames are needed for a second. It's not perfect, but good enough.
+	frameSeconds = 50
+)
+
 var (
 	// Holds all the info about a server
 	server = make(map[string]*Server)
@@ -308,15 +313,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// Generate song info for message
 			for i, el := range server[m.GuildID].queue {
 				if i == 0 {
-					if el.title != "" && el.time != nil {
-						if server[m.GuildID].isPaused {
-							message += "Currently playing: " + el.title + " - " + el.lastTime + "/" + el.duration + " added by " + el.user + "\n\n"
-							continue
-						} else {
-							//TODO: Fix offset...
-							message += "Currently playing: " + el.title + " - " + formatDuration(time.Now().Sub(*el.time).Seconds()+el.offset) + "/" + el.duration + " added by " + el.user + "\n\n"
-							continue
-						}
+					if el.title != "" {
+						message += "Currently playing: " + el.title + " - " + formatDuration(float64(server[m.GuildID].queue[0].frame/frameSeconds)) + "/" + el.duration + " added by " + el.user + "\n\n"
+						continue
 					} else {
 						message += "Currently playing: Getting info...\n\n"
 						continue
@@ -459,9 +458,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			server[m.GuildID].isPaused = true
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			server[m.GuildID].pause.Lock()
-
-			server[m.GuildID].queue[0].lastTime = formatDuration(time.Now().Sub(*server[m.GuildID].queue[0].time).Seconds() + server[m.GuildID].queue[0].offset)
-
 		}
 		break
 
@@ -472,7 +468,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if server[m.GuildID].isPaused {
 			server[m.GuildID].isPaused = false
 			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-			server[m.GuildID].queue[0].offset += server[m.GuildID].queue[0].time.Sub(time.Now()).Seconds()
 
 			server[m.GuildID].pause.Unlock()
 			err := server[m.GuildID].vc.Speaking(true)

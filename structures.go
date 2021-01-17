@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/bwmarrin/discordgo"
 	"sync"
-	"time"
 )
 
 // Server holds all info about a single server
@@ -38,16 +37,14 @@ type Queue struct {
 	link string
 	// User who requested the song
 	user string
-	// When we started playing the song
-	time *time.Time
-	// Offset for when we pause the song
-	offset float64
-	// When song is paused, we save where we were
-	lastTime string
 	// Message  to delete at the end of the song play
 	messageID []discordgo.Message
 	// Link to the thumbnail of the video
 	thumbnail string
+	// We keep how many frame we already played, so we known how many seconds elapsed in the song
+	frame int
+	// Segments of the song to skip. Uses SponsorBlock API
+	segments map[int]bool
 }
 
 // YoutubeDL structure for holding youtube-dl data
@@ -401,4 +398,11 @@ type Lyrics struct {
 	VerifiedLyricsBy      []interface{} `json:"verified_lyrics_by"`
 	WriterArtists         []interface{} `json:"writer_artists"`
 	Lyrics                string        `json:"lyrics"`
+}
+
+// SponsorBlock holds data for segments of sponsors in youtube video
+type SponsorBlock []struct {
+	Category string    `json:"category"`
+	Segment  []float64 `json:"segment"`
+	UUID     string    `json:"UUID"`
 }

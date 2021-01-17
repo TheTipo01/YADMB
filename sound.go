@@ -12,6 +12,7 @@ import (
 
 func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string) {
 	var opuslen int16
+	var skip bool
 
 	// Locks the mutex for the current server
 	server[guildID].server.Lock()
@@ -55,14 +56,18 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	_ = server[guildID].vc.Speaking(true)
 	server[guildID].skip = false
 
-	// Sets when we started reading file, so we known the remaining time of the song
-	tmpTime := time.Now()
-	server[guildID].queue[0].time = &tmpTime
-
 	// Channel to send ok messages
 	c1 := make(chan string, 1)
 
 	for {
+		if server[guildID].queue[0].segments[server[guildID].queue[0].frame] {
+			if skip {
+				skip = false
+			} else {
+				skip = true
+			}
+		}
+
 		// Read opus frame length from dca file.
 		err = binary.Read(file, binary.LittleEndian, &opuslen)
 
@@ -79,6 +84,13 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		// Read encoded pcm from dca file.
 		InBuf := make([]byte, opuslen)
 		err = binary.Read(file, binary.LittleEndian, &InBuf)
+
+		// Keep count of the frames of the song
+		server[guildID].queue[0].frame++
+
+		if skip {
+			continue
+		}
 
 		// Should not be any end of file errors
 		if err != nil {
@@ -184,10 +196,6 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChan
 	// Start speaking.
 	_ = server[guildID].vc.Speaking(true)
 	server[guildID].skip = false
-
-	// Sets when we started reading file, so we known the remaining time of the song
-	tmpTime := time.Now()
-	server[guildID].queue[0].time = &tmpTime
 
 	// Channel to send ok messages
 	c1 := make(chan string, 1)

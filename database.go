@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, PRIMARY KEY (`link`));"
+	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, `segments` varchar(1000) NOT NULL, PRIMARY KEY (`link`));"
 	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL,  PRIMARY KEY (`guild`,`command`));"
 )
 
@@ -29,9 +29,9 @@ func execQuery(query string) {
 func addToDb(el Queue) {
 	// We check for empty strings, just to be sure
 	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
-		statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration, thumbnail) VALUES(?, ?, ?, ?, ?)")
+		statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration, thumbnail, segments) VALUES(?, ?, ?, ?, ?, ?)")
 
-		_, err := statement.Exec(el.link, el.id, el.title, el.duration, el.thumbnail)
+		_, err := statement.Exec(el.link, el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
 		if err != nil {
 			errStr := err.Error()
 			// First error is for SQLite, second one is for MySQL
@@ -45,9 +45,14 @@ func addToDb(el Queue) {
 // Checks if we already have downloaded a song and we've got info about it
 func checkInDb(link string) Queue {
 	var el Queue
+	var encodedSegments string
+
 	el.link = link
+
 	row := db.QueryRow("SELECT * FROM song WHERE link = ?", link)
-	_ = row.Scan(&el.link, &el.id, &el.title, &el.duration, &el.thumbnail)
+	_ = row.Scan(&el.link, &el.id, &el.title, &el.duration, &el.thumbnail, &encodedSegments)
+
+	el.segments = decodeSegments(encodedSegments)
 
 	return el
 }
