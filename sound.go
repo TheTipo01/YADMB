@@ -61,11 +61,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 	for {
 		if server[guildID].queue[0].segments[server[guildID].queue[0].frame] {
-			if skip {
-				skip = false
-			} else {
-				skip = true
-			}
+			skip = !skip
 		}
 
 		// Read opus frame length from dca file.
