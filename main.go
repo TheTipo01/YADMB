@@ -45,6 +45,8 @@ var (
 
 func init() {
 
+	lit.LogLevel = lit.LogError
+
 	rand.Seed(time.Now().UnixNano())
 
 	viper.SetConfigName("config")
@@ -64,16 +66,20 @@ func init() {
 		genius = viper.GetString("genius")
 		owner = viper.GetString("owner")
 
-		// Set lit.LogLevel to the given value. Default value is lit.LogError
+		// Set lit.LogLevel to the given value
 		switch strings.ToLower(viper.GetString("loglevel")) {
 		case "logerror", "error":
 			lit.LogLevel = lit.LogError
+			break
 		case "logwarning", "warning":
 			lit.LogLevel = lit.LogWarning
+			break
 		case "loginformational", "informational":
 			lit.LogLevel = lit.LogInformational
+			break
 		case "logdebug", "debug":
 			lit.LogLevel = lit.LogDebug
+			break
 		}
 
 		// Spotify credentials
@@ -574,6 +580,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			play(s, server[m.GuildID].custom[command], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false, false)
 			break
 		}
+		break
 
 	}
 
