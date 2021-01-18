@@ -204,28 +204,49 @@ func ByteCountSI(b int64) string {
 
 // Returns a map for skipping certain frames of a song
 func getSegments(videoID string) map[int]bool {
-	var segments SponsorBlock
-	var segmentMap = make(map[int]bool)
 
+	// Gets segments
 	resp, err := http.Get("https://sponsor.ajay.app/api/skipSegments?videoID=" + videoID + "&categories=[\"sponsor\",\"music_offtopic\"]")
 	if err != nil {
-		lit.Error(err.Error())
+		lit.Error("Can't get SponsorBlock segments", err)
 		return nil
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	_ = resp.Body.Close()
+	// If we get the HTTP code 200, segments were found for the given video
+	if resp.StatusCode == http.StatusOK {
+		var segments SponsorBlock
+		segmentMap := make(map[int]bool)
 
-	_ = json.Unmarshal(body, &segments)
-
-	for _, s := range segments {
-		if len(s.Segment) == 2 {
-			segmentMap[int(s.Segment[0]*frameSeconds)] = true
-			segmentMap[int(s.Segment[1]*frameSeconds)] = true
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			lit.Error("Can't read response body", err)
+			return nil
 		}
+
+		err = resp.Body.Close()
+		if err != nil {
+			lit.Error("Can't close response body", err)
+			return nil
+		}
+
+		err = json.Unmarshal(body, &segments)
+		if err != nil {
+			lit.Error("Can't unmarshal JSON", err)
+			return nil
+		}
+
+		for _, s := range segments {
+			if len(s.Segment) == 2 {
+				segmentMap[int(s.Segment[0]*frameSeconds)] = true
+				segmentMap[int(s.Segment[1]*frameSeconds)] = true
+			}
+		}
+
+		return segmentMap
 	}
 
-	return segmentMap
+	return nil
+
 }
 
 // From a map of segments returns an encoded string
@@ -248,6 +269,7 @@ func decodeSegments(segments string) map[int]bool {
 	if segments == "" {
 		return nil
 	}
+
 	mapSegments := make(map[int]bool)
 	splitted := strings.Split(segments, ",")
 
