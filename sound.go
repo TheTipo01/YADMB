@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Plays a song from a given file
 func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string) {
 	var (
 		opuslen int16
@@ -147,6 +148,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 }
 
+// Plays a song from a io.Reader
 func soundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel string, stdout io.Reader) {
 	var (
 		opuslen int16

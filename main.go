@@ -516,7 +516,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		files, _ := ioutil.ReadDir("./audio_cache")
 
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Stats™", "Called by "+m.Author.Username).AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).AddField("Shard", strconv.Itoa(s.ShardID)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*15)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Stats™", "Called by "+m.Author.Username).AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*15)
 		break
 
 		// We search for possible custom commands

@@ -24,6 +24,7 @@ func play(s *discordgo.Session, song, textChannel, voiceChannel, guild, username
 	}
 }
 
+// Wrapper function for soundStream, also waits for the song to finish to download and then closes it's pipe
 func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel string, stdout io.ReadCloser, cmd *exec.Cmd) {
 	var (
 		err     error
