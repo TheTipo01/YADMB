@@ -38,8 +38,4 @@ Uses SponsorBlock API from https://sponsor.ajay.app/
 
 `!rmcustom <custom_command>` - Removes a custom command
 
-`!streamplay <link>` - Same as play, but it streams the song if it's not in cache
-
-`!streamshuffle <link>` - Same as shuffle, but it streams the song if it's not in cache
-
 `!stats` - Stats™

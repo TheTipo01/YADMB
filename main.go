@@ -217,7 +217,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false, false)
+		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
 		break
 
 		// Randomly plays a song (or a playlist)
@@ -238,49 +238,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 		}
 
-		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, true, false)
-		break
-
-		// Streams song if it's not in cache
-	case "streamplay":
-		go deleteMessage(s, m)
-
-		vs := findUserVoiceState(s, m)
-
-		// Check if user is not in a voice channel
-		if vs == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-			break
-		}
-
-		// Check if the user also sent a song
-		if len(splittedMessage) < 2 {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-			break
-		}
-
-		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false, true)
-		break
-
-		// Randomly plays a song (or a playlist) and streams it if it's not in cache
-	case "streamshuffle":
-		go deleteMessage(s, m)
-
-		vs := findUserVoiceState(s, m)
-
-		// Check if user is not in a voice channel
-		if vs == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-			break
-		}
-
-		// Check if the user also sent a song
-		if len(splittedMessage) < 2 {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-			break
-		}
-
-		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, true, true)
+		play(s, strings.TrimPrefix(m.Content, splittedMessage[0]+" "), m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, true)
 		break
 
 		// Skips a song
@@ -426,8 +384,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix + "restart - Restarts the bot (works only for the bot owner)\n" +
 			prefix + "custom <custom_command> <song/playlist> - Creates a custom command to play a song or playlist\n" +
 			prefix + "rmcustom <custom_command> - Removes a custom command\n" +
-			prefix + "streamplay <link> - Same as play, but it streams the song if it's not in cache\n" +
-			prefix + "streamshuffle <link> - Same as shuffle, but it streams the song if it's not in cache\n" +
 			prefix + "stats - Stats™\n" +
 			"```"
 		// If we have custom commands, we add them to the help message
@@ -577,7 +533,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				break
 			}
 
-			play(s, server[m.GuildID].custom[command], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false, false)
+			play(s, server[m.GuildID].custom[command], m.ChannelID, vs.ChannelID, m.GuildID, m.Author.Username, false)
 			break
 		}
 		break

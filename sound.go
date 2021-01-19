@@ -11,8 +11,10 @@ import (
 )
 
 func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel string) {
-	var opuslen int16
-	var skip bool
+	var (
+		opuslen int16
+		skip    bool
+	)
 
 	// Locks the mutex for the current server
 	server[guildID].server.Lock()
@@ -56,9 +58,6 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	_ = server[guildID].vc.Speaking(true)
 	server[guildID].skip = false
 
-	// Channel to send ok messages
-	c1 := make(chan string, 1)
-
 	for {
 		if server[guildID].queue[0].segments[server[guildID].queue[0].frame] {
 			skip = !skip
@@ -97,15 +96,8 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		// Stream data to discord
 		server[guildID].pause.Lock()
 		if !server[guildID].skip {
-			// Send data in a goroutine
-			go func() {
-				server[guildID].vc.OpusSend <- InBuf
-				c1 <- "ok"
-			}()
-
-			// So if the bot gets disconnect/moved we can rejoin the original channel and continue playing songs
 			select {
-			case _ = <-c1:
+			case server[guildID].vc.OpusSend <- InBuf:
 				break
 			case <-time.After(time.Second / 3):
 				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, channelID, false, true)
@@ -155,8 +147,11 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 }
 
-func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel string, stdout io.ReadCloser) {
-	var opuslen int16
+func soundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel string, stdout io.Reader) {
+	var (
+		opuslen int16
+		skip    bool
+	)
 
 	// Locks the mutex for the current server
 	server[guildID].server.Lock()
@@ -193,10 +188,11 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChan
 	_ = server[guildID].vc.Speaking(true)
 	server[guildID].skip = false
 
-	// Channel to send ok messages
-	c1 := make(chan string, 1)
-
 	for {
+		if server[guildID].queue[0].segments[server[guildID].queue[0].frame] {
+			skip = !skip
+		}
+
 		// Read opus frame length from dca file.
 		err = binary.Read(stdout, binary.LittleEndian, &opuslen)
 
@@ -205,32 +201,28 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChan
 			break
 		}
 
-		if opuslen < 0 || err != nil {
-			continue
-		}
-
 		// Read encoded pcm from dca file.
 		InBuf := make([]byte, opuslen)
 		err = binary.Read(stdout, binary.LittleEndian, &InBuf)
 
+		// Keep count of the frames of the song
+		server[guildID].queue[0].frame++
+
+		if skip {
+			continue
+		}
+
 		// Should not be any end of file errors
 		if err != nil {
-			lit.Error("Error reading from dca file: %s", err)
+			lit.Error("Error streaming from dca file: %s", err)
 			break
 		}
 
 		// Stream data to discord
 		server[guildID].pause.Lock()
 		if !server[guildID].skip {
-			// Send data in a goroutine
-			go func() {
-				server[guildID].vc.OpusSend <- InBuf
-				c1 <- "ok"
-			}()
-
-			// So if the bot gets disconnect/moved we can rejoin the original channel and continue playing songs
 			select {
-			case _ = <-c1:
+			case server[guildID].vc.OpusSend <- InBuf:
 				break
 			case <-time.After(time.Second / 3):
 				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, channelID, false, true)

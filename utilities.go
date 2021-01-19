@@ -156,22 +156,6 @@ func quitVC(guildID string) {
 	}
 }
 
-// Wrapper function for playing songs
-func play(s *discordgo.Session, song, textChannel, voiceChannel, guild, username string, random, stream bool) {
-	switch {
-	case strings.HasPrefix(song, "spotify:playlist:"):
-		spotifyPlaylist(s, guild, voiceChannel, username, song, textChannel, random, stream)
-		break
-
-	case isValidURL(song):
-		downloadAndPlay(s, guild, voiceChannel, song, username, textChannel, random, stream)
-		break
-
-	default:
-		searchDownloadAndPlay(s, guild, voiceChannel, song, username, textChannel, random, stream)
-	}
-}
-
 // DirSize gets size of a directory
 func DirSize(path string) int64 {
 	var size int64
