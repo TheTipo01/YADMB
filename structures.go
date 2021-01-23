@@ -45,6 +45,8 @@ type Queue struct {
 	frame int
 	// Segments of the song to skip. Uses SponsorBlock API
 	segments map[int]bool
+	// Channel where we are supposed to play the song. Used for moving the bot around
+	channel string
 }
 
 // YoutubeDL structure for holding youtube-dl data

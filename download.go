@@ -22,6 +22,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 		info, err := os.Stat("./audio_cache/" + el.id + ".dca")
 		if err == nil && info.Size() > 0 {
 			el.user = user
+			el.channel = channelID
 			server[guildID].queue = append(server[guildID].queue, el)
 			go playSound(s, guildID, channelID, el.id+".dca", txtChannel)
 			return
@@ -63,9 +64,9 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 		var el Queue
 		if ytdl.Extractor == "youtube" {
-			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID)}
+			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID), channelID}
 		} else {
-			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil}
+			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID}
 		}
 
 		// Checks if video is already downloaded

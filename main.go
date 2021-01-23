@@ -335,35 +335,47 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "summon":
 		go deleteMessage(s, m)
 
+		vs := findUserVoiceState(s, m)
+
 		// Check if user is not in a voice channel
-		if findUserVoiceState(s, m) == nil {
+		if vs == nil {
 			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-			return
+			break
 		}
 
-		// Check if the queue is empty
-		if len(server[m.GuildID].queue) == 0 {
-			var err error
+		var err error
 
-			vs := findUserVoiceState(s, m)
+		// If we are playing something, we lock the pause mutex
+		if len(server[m.GuildID].queue) > 0 {
+			server[m.GuildID].pause.Lock()
 
-			// Check if user is not in a voice channel
-			if vs == nil {
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
-				return
+			// Disconnect the bot
+			if server[m.GuildID].vc != nil {
+				_ = server[m.GuildID].vc.Disconnect()
 			}
 
-			server[m.GuildID].server.Lock()
+			// And reconnect the bot to the new voice channel
+			server[m.GuildID].queue[0].channel = vs.ChannelID
+			server[m.GuildID].vc, err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, true)
 
-			server[m.GuildID].vc, err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, false)
-			if err != nil {
-				lit.Error("%s", err)
-			}
+			server[m.GuildID].pause.Unlock()
+		} else {
+			// Else we just join the channel and wait
+			server[m.GuildID].server.Unlock()
+
+			server[m.GuildID].vc, err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, true)
+
+			// We also start the quitVC routine to disconnect the bot after a minute of inactivity
+			go quitVC(m.GuildID)
 
 			server[m.GuildID].server.Unlock()
-		} else {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't summon the bot!\nAlready playing in a voice channel.").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 		}
+
+		if err != nil {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't join voice channel!\n"+err.Error()).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			break
+		}
+
 		break
 
 		// Prints out supported commands

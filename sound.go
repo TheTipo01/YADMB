@@ -101,7 +101,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 			case server[guildID].vc.OpusSend <- InBuf:
 				break
 			case <-time.After(time.Second / 3):
-				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, channelID, false, true)
+				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, server[guildID].queue[0].channel, false, true)
 			}
 
 		} else {
@@ -227,7 +227,7 @@ func soundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel 
 			case server[guildID].vc.OpusSend <- InBuf:
 				break
 			case <-time.After(time.Second / 3):
-				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, channelID, false, true)
+				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, server[guildID].queue[0].channel, false, true)
 			}
 
 		} else {
