@@ -144,6 +144,7 @@ func main() {
 	dg.AddHandler(ready)
 	dg.AddHandler(guildCreate)
 	dg.AddHandler(messageCreate)
+	dg.AddHandler(voiceStateUpdate)
 
 	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildMessages | discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
@@ -552,4 +553,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 
+}
+
+// Used to reconnect the bot to the channel where it's moved
+// Still a bit broken, as it first reconnect to the old voice channel, disconnect, and connect to the new channel
+func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
+	if v.UserID == s.State.User.ID && server[v.GuildID].vc != nil && len(server[v.GuildID].queue) > 0 && v.ChannelID != server[v.GuildID].queue[0].channel && v.ChannelID != "" {
+		server[v.GuildID].pause.Lock()
+
+		lit.Debug("moving to " + v.ChannelID)
+
+		server[v.GuildID].queue[0].channel = v.ChannelID
+		_ = server[v.GuildID].vc.Disconnect()
+
+		server[v.GuildID].vc, _ = s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
+
+		server[v.GuildID].pause.Unlock()
+	}
 }
