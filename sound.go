@@ -32,7 +32,8 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 1 {
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").
+				SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
 			server[guildID].clear = false
 		}
 		server[guildID].server.Unlock()
@@ -40,7 +41,10 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 	}
 
 	// Sends now playing message
-	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed)
+	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).
+		AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+
+			" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).
+		SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed)
 	if err != nil {
 		lit.Error("%s", err)
 	}
@@ -119,7 +123,9 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName, txtChannel st
 
 	// If the song is skipped, we send a feedback message
 	if server[guildID].skip && !server[guildID].clear {
-		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed, txtChannel, time.Second*5)
+		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped",
+			server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).
+			SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed, txtChannel, time.Second*5)
 	}
 
 	// Resets the skip boolean
@@ -163,7 +169,8 @@ func soundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel 
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 1 {
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").
+				SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
 			server[guildID].clear = false
 		}
 		server[guildID].server.Unlock()
@@ -171,7 +178,8 @@ func soundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel 
 	}
 
 	// Sends now playing message
-	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed)
+	m, err := s.ChannelMessageSendEmbed(txtChannel, NewEmbed().SetTitle(s.State.User.Username).AddField("Now playing",
+		server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed)
 	if err != nil {
 		lit.Error("%s", err)
 	}
@@ -242,7 +250,9 @@ func soundStream(s *discordgo.Session, guildID, channelID, fileName, txtChannel 
 
 	// If the song is skipped, we send a feedback message
 	if server[guildID].skip && !server[guildID].clear {
-		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+		go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Skipped",
+			server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+" added by "+server[guildID].queue[0].user).
+			SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
 	}
 
 	// Resets the skip boolean

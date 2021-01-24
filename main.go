@@ -208,13 +208,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Check if user is not in a voice channel
 		if vs == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
 		// Check if the user also sent a song
 		if len(splittedMessage) < 2 {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
@@ -229,13 +231,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Check if user is not in a voice channel
 		if vs == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
 		// Check if the user also sent a song
 		if len(splittedMessage) < 2 {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song specified!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
@@ -248,7 +252,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Check if user is not in a voice channel
 		if findUserVoiceState(s, m) == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
@@ -261,7 +266,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Check if user is not in a voice channel
 		if findUserVoiceState(s, m) == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
@@ -279,7 +285,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			for i, el := range server[m.GuildID].queue {
 				if i == 0 {
 					if el.title != "" {
-						message += "Currently playing: " + el.title + " - " + formatDuration(float64(server[m.GuildID].queue[0].frame/frameSeconds)) + "/" + el.duration + " added by " + el.user + "\n\n"
+						message += "Currently playing: " + el.title + " - " + formatDuration(float64(server[m.GuildID].queue[0].frame/frameSeconds)) +
+							"/" + el.duration + " added by " + el.user + "\n\n"
 						continue
 					} else {
 						message += "Currently playing: Getting info...\n\n"
@@ -297,7 +304,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 
 			// Send embed
-			em, err := s.ChannelMessageSendEmbed(m.ChannelID, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", message).SetColor(0x7289DA).MessageEmbed)
+			em, err := s.ChannelMessageSendEmbed(m.ChannelID, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", message).
+				SetColor(0x7289DA).MessageEmbed)
 			if err != nil {
 				lit.Error("Error sending queue embed: %s", err)
 				return
@@ -311,7 +319,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 		} else {
 			// Queue is empty
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 		}
 		break
 
@@ -328,7 +337,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			server[m.GuildID].server.Unlock()
 		} else {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't disconnect the bot!\nStill playing in a voice channel.").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't disconnect the bot!\nStill playing in a voice channel.").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 		}
 		break
 
@@ -340,7 +350,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		// Check if user is not in a voice channel
 		if vs == nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
@@ -373,7 +384,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if err != nil {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't join voice channel!\n"+err.Error()).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't join voice channel!\n"+err.Error()).
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			break
 		}
 
@@ -432,7 +444,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		if len(server[m.GuildID].queue) > 0 && !server[m.GuildID].isPaused {
 			server[m.GuildID].isPaused = true
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Paused the current song").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			server[m.GuildID].pause.Lock()
 		}
 		break
@@ -443,7 +456,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		if server[m.GuildID].isPaused {
 			server[m.GuildID].isPaused = false
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Pause", "Resumed the current song").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 
 			server[m.GuildID].pause.Unlock()
 			err := server[m.GuildID].vc.Speaking(true)
@@ -460,9 +474,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(splittedMessage) == 3 {
 			err := addCommand(strings.ToLower(splittedMessage[1]), splittedMessage[2], m.GuildID)
 			if err != nil {
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).
+					SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			} else {
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Successful", "Custom command added!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Successful", "Custom command added!").
+					SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			}
 		}
 		break
@@ -530,7 +546,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		files, _ := ioutil.ReadDir("./audio_cache")
 
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Stats™", "Called by "+m.Author.Username).AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*15)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Stats™", "Called by "+m.Author.Username).
+			AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).
+			AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+
+			ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*15)
 		break
 
 	// Skips to a given time
@@ -540,7 +559,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(server[m.GuildID].queue) > 0 {
 			t, err := time.ParseDuration(strings.TrimPrefix(m.Content, splittedMessage[0]+" "))
 			if err != nil {
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s...").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s...").
+					SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			} else {
 				if server[m.GuildID].queue[0].segments == nil {
 					server[m.GuildID].queue[0].segments = make(map[int]bool)
@@ -554,7 +574,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				server[m.GuildID].pause.Unlock()
 			}
 		} else {
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No songs playing!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No songs playing!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 		}
 		break
 
@@ -568,7 +589,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			// Check if user is not in a voice channel
 			if vs == nil {
-				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+					SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 				break
 			}
 
