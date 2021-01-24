@@ -39,3 +39,5 @@ Uses SponsorBlock API from https://sponsor.ajay.app/
 `!rmcustom <custom_command>` - Removes a custom command
 
 `!stats` - Stats™
+
+`!goto <time>` - Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...

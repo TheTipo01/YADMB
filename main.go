@@ -398,6 +398,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix + "custom <custom_command> <song/playlist> - Creates a custom command to play a song or playlist\n" +
 			prefix + "rmcustom <custom_command> - Removes a custom command\n" +
 			prefix + "stats - Stats™\n" +
+			prefix + "goto <time> - Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...\n" +
 			"```"
 		// If we have custom commands, we add them to the help message
 		if len(server[m.GuildID].custom) > 0 {
@@ -530,6 +531,31 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		files, _ := ioutil.ReadDir("./audio_cache")
 
 		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Stats™", "Called by "+m.Author.Username).AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*15)
+		break
+
+	// Skips to a given time
+	case "goto":
+		go deleteMessage(s, m)
+
+		if len(server[m.GuildID].queue) > 0 {
+			t, err := time.ParseDuration(strings.TrimPrefix(m.Content, splittedMessage[0]+" "))
+			if err != nil {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s...").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			} else {
+				if server[m.GuildID].queue[0].segments == nil {
+					server[m.GuildID].queue[0].segments = make(map[int]bool)
+				}
+
+				server[m.GuildID].pause.Lock()
+
+				server[m.GuildID].queue[0].segments[server[m.GuildID].queue[0].frame+1] = true
+				server[m.GuildID].queue[0].segments[int(t.Seconds()*frameSeconds)] = true
+
+				server[m.GuildID].pause.Unlock()
+			}
+		} else {
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No songs playing!").SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+		}
 		break
 
 		// We search for possible custom commands
