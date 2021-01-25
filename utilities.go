@@ -192,7 +192,7 @@ func getSegments(videoID string) map[int]bool {
 	// Gets segments
 	resp, err := http.Get("https://sponsor.ajay.app/api/skipSegments?videoID=" + videoID + "&categories=[\"sponsor\",\"music_offtopic\"]")
 	if err != nil {
-		lit.Error("Can't get SponsorBlock segments", err)
+		lit.Error("Can't get SponsorBlock segments: %s", err)
 		return nil
 	}
 
@@ -203,19 +203,19 @@ func getSegments(videoID string) map[int]bool {
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			lit.Error("Can't read response body", err)
+			lit.Error("Can't read response body: %s", err)
 			return nil
 		}
 
 		err = resp.Body.Close()
 		if err != nil {
-			lit.Error("Can't close response body", err)
+			lit.Error("Can't close response body: %s", err)
 			return nil
 		}
 
 		err = json.Unmarshal(body, &segments)
 		if err != nil {
-			lit.Error("Can't unmarshal JSON", err)
+			lit.Error("Can't unmarshal JSON, %s", err)
 			return nil
 		}
 
