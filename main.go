@@ -170,7 +170,7 @@ func main() {
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 	// Set the playing status.
-	err := s.UpdateGameStatus(0, prefix+"help")
+	err := s.UpdateStatus(0, prefix+"help")
 	if err != nil {
 		lit.Error("Can't set status, %s", err)
 	}

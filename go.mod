@@ -3,7 +3,7 @@ module YADMB
 go 1.14
 
 require (
-	github.com/bwmarrin/discordgo v0.23.0
+	github.com/bwmarrin/discordgo v0.22.0
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/fsnotify/fsnotify v1.4.10-0.20200417215612-7f4cf4dd2b52 // indirect
 	github.com/go-sql-driver/mysql v1.5.1-0.20201127135436-f6dcc3d870a8
