@@ -110,7 +110,7 @@ func loadCustomCommands() {
 
 		// We need to allocate the Server structure before loading custom commands, otherwise we would get a nil pointer deference
 		if server[guild] == nil {
-			server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, custom: make(map[string]string)}
+			server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, custom: make(map[string]string)}
 		}
 
 		server[guild].custom[command] = song

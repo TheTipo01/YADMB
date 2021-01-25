@@ -101,8 +101,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 				break
 			}
 
-			_ = cmd.Start()
-
 			server[guildID].queue = append(server[guildID].queue, el)
 			go playSoundStream(s, guildID, channelID, fileName+".dca", txtChannel, pipe, cmd)
 		} else {

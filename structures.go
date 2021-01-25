@@ -11,6 +11,8 @@ type Server struct {
 	server *sync.Mutex
 	// Mutex for pausing/un-pausing songs
 	pause *sync.Mutex
+	// Mutex for streaming one song at a time
+	stream *sync.Mutex
 	// Need a boolean to check if song is paused, because the mutex is continuously locked and unlocked
 	isPaused bool
 	// Variable for skipping a single song
