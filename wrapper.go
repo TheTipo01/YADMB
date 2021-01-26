@@ -33,8 +33,6 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChan
 	_ = cmd.Start()
 	soundStream(s, guildID, channelID, fileName, txtChannel, stdout)
 
-	server[guildID].stream.Unlock()
-
 	switch runtime.GOOS {
 	case "windows":
 		_ = stdout.Close()
@@ -65,5 +63,7 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName, txtChan
 	}
 
 	_ = cmd.Wait()
+
+	server[guildID].stream.Unlock()
 
 }
