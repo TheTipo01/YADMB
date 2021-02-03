@@ -9,7 +9,6 @@ require (
 	github.com/go-sql-driver/mysql v1.5.1-0.20201127135436-f6dcc3d870a8
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/magiconair/properties v1.8.4 // indirect
-	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.2-0.20201124181426-2e01f733df54 // indirect
 	github.com/spf13/afero v1.5.1 // indirect
@@ -26,4 +25,5 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	modernc.org/sqlite v1.8.7
 )

@@ -6,12 +6,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
 	"math/rand"
+	_ "modernc.org/sqlite"
 	"os"
 	"os/signal"
 	"strconv"
@@ -489,7 +489,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			break
 
 		default:
-			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Too many! arguments!").
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Too many arguments!").
 				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 		}
 
