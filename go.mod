@@ -3,7 +3,7 @@ module YADMB
 go 1.14
 
 require (
-	github.com/bwmarrin/discordgo v0.22.0
+	github.com/bwmarrin/discordgo v0.23.1
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/fsnotify/fsnotify v1.4.10-0.20200417215612-7f4cf4dd2b52 // indirect
 	github.com/go-sql-driver/mysql v1.5.1-0.20201127135436-f6dcc3d870a8
@@ -17,10 +17,10 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.1-0.20200824194747-ce7498392da6 // indirect
 	github.com/spf13/pflag v1.0.6-0.20201009195203-85dd5c8bc61c // indirect
 	github.com/spf13/viper v1.7.2-0.20201203004352-bba82cfc61da
-	github.com/zmb3/spotify v0.0.0-20201231194903-e2d01d9b8bd2
+	github.com/zmb3/spotify v1.1.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
-	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3
+	golang.org/x/oauth2 v0.0.0-20210201163806-010130855d6c
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
