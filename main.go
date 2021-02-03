@@ -471,7 +471,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "custom":
 		go deleteMessage(s, m)
 
-		if len(splittedMessage) == 3 {
+		switch len(splittedMessage) {
+		case 0, 1, 2:
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Too few arguments!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
+			break
+
+		case 3:
 			err := addCommand(strings.ToLower(splittedMessage[1]), splittedMessage[2], m.GuildID)
 			if err != nil {
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).
@@ -480,7 +486,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Successful", "Custom command added!").
 					SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 			}
+			break
+
+		default:
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Too many! arguments!").
+				SetColor(0x7289DA).MessageEmbed, m.ChannelID, time.Second*5)
 		}
+
 		break
 
 		// Removes a custom command
