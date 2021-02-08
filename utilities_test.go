@@ -35,7 +35,7 @@ func TestFormatLongMessage(t *testing.T) {
 		if len(s) > 2000 {
 			t.Error("FormatLongMessage exceed the 2000 character mark.")
 		}
-		generated+=s
+		generated += s
 	}
 
 	generated = strings.ReplaceAll(strings.ReplaceAll(generated, "\n", ""), " ", "")
