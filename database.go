@@ -35,7 +35,7 @@ func addToDb(el Queue) {
 		if err != nil {
 			errStr := err.Error()
 			// First error is for SQLite, second one is for MySQL
-			if errStr != "UNIQUE constraint failed: song.link" && errStr != "Error 1062: Duplicate entry '"+el.link+"' for key 'PRIMARY'" {
+			if errStr != "constraint failed: UNIQUE constraint failed: song.link (1555)" && errStr != "Error 1062: Duplicate entry '"+el.link+"' for key 'PRIMARY'" {
 				lit.Error("Error inserting into the database, %s", err)
 			}
 		}

@@ -373,7 +373,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			server[m.GuildID].pause.Unlock()
 		} else {
 			// Else we just join the channel and wait
-			server[m.GuildID].server.Unlock()
+			server[m.GuildID].server.Lock()
 
 			server[m.GuildID].vc, err = s.ChannelVoiceJoin(m.GuildID, vs.ChannelID, false, true)
 
