@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/zmb3/spotify"
 	"io/ioutil"
 	"os"
@@ -59,7 +59,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 	// We parse every track as individual json, because youtube-dl
 	for _, singleJSON := range splittedOut {
-		_ = jsoniter.ConfigFastest.Unmarshal([]byte(singleJSON), &ytdl)
+		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
 
 		var el Queue
@@ -177,7 +177,7 @@ func lyrics(song string) []string {
 			// So we open and unmarshal the json file
 			file, _ := os.Open(filename)
 			byteValue, _ := ioutil.ReadAll(file)
-			_ = jsoniter.ConfigFastest.Unmarshal(byteValue, &lyrics)
+			_ = json.Unmarshal(byteValue, &lyrics)
 
 			// We remove the JSON
 			_ = file.Close()

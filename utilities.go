@@ -1,10 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	jsoniter "github.com/json-iterator/go"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -213,7 +213,7 @@ func getSegments(videoID string) map[int]bool {
 			return nil
 		}
 
-		err = jsoniter.ConfigFastest.Unmarshal(body, &segments)
+		err = json.Unmarshal(body, &segments)
 		if err != nil {
 			lit.Error("Can't unmarshal JSON, %s", err)
 			return nil

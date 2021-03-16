@@ -8,7 +8,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.10-0.20200417215612-7f4cf4dd2b52 // indirect
 	github.com/go-sql-driver/mysql v1.5.1-0.20201127135436-f6dcc3d870a8
 	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/json-iterator/go v1.1.10
 	github.com/magiconair/properties v1.8.4 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/pelletier/go-toml v1.8.2-0.20201124181426-2e01f733df54 // indirect
@@ -20,9 +19,9 @@ require (
 	github.com/zmb3/spotify v1.1.1
 	golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20210315170653-34ac3e1c2000 // indirect
+	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
-	golang.org/x/sys v0.0.0-20210315160823-c6e025ad8005 // indirect
+	golang.org/x/sys v0.0.0-20210316092937-0b90fd5c4c48 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
