@@ -15,7 +15,6 @@ import (
 
 // Finds user current voice channel
 func findUserVoiceState(session *discordgo.Session, i *discordgo.Interaction) *discordgo.VoiceState {
-
 	for _, guild := range session.State.Guilds {
 		if guild.ID != i.GuildID {
 			continue

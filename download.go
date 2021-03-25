@@ -15,7 +15,7 @@ import (
 
 // Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string, i *discordgo.Interaction, random bool) {
-	go sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i)
+	sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i)
 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
