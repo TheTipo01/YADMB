@@ -32,6 +32,11 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 0 {
+			err = s.InteractionResponseDelete(s.State.User.ID, i)
+			if err != nil {
+				lit.Error("InteractionResponseDelete: %s", err.Error())
+			}
+
 			server[guildID].clear = false
 		}
 		server[guildID].server.Unlock()
@@ -147,6 +152,11 @@ func soundStream(s *discordgo.Session, guildID, channelID, fileName string, i *d
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 0 {
+			err := s.InteractionResponseDelete(s.State.User.ID, i)
+			if err != nil {
+				lit.Error("InteractionResponseDelete: %s", err.Error())
+			}
+
 			server[guildID].clear = false
 		}
 		server[guildID].server.Unlock()

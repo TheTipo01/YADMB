@@ -191,7 +191,7 @@ var (
 			server[i.GuildID].skip = true
 
 			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue cleared!").
-				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 		},
 
 		// Randomly plays a song (or a playlist)
