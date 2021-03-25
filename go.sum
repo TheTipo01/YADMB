@@ -46,6 +46,8 @@ github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kB
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/bwmarrin/discordgo v0.23.2 h1:BzrtTktixGHIu9Tt7dEE6diysEF9HWnXeHuoJEt2fH4=
 github.com/bwmarrin/discordgo v0.23.2/go.mod h1:c1WtWUGN6nREDmzIpyTp/iD3VYt4Fpx+bVyfBG7JE+M=
+github.com/bwmarrin/discordgo v0.23.3-0.20210314162722-182d9b48f34b h1:hS1GR/OTQll44KPNT00/a6xevcCy4L9ZfPepUdUzV5Y=
+github.com/bwmarrin/discordgo v0.23.3-0.20210314162722-182d9b48f34b/go.mod h1:c1WtWUGN6nREDmzIpyTp/iD3VYt4Fpx+bVyfBG7JE+M=
 github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312 h1:g5NUBR8yN3F2RWN4vrkd8wVr7vyLxr0hbq4I6PAZQc0=
 github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312/go.mod h1:z4cxqo0ARxc42jGHYZT4XoICeLf9OVOkysN7LuqBZ24=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

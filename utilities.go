@@ -12,26 +12,16 @@ import (
 	"time"
 )
 
-// Logs and instantly delete a message
-func deleteMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	lit.Debug(m.Author.Username + ": " + m.Content)
-
-	err := s.ChannelMessageDelete(m.ChannelID, m.ID)
-	if err != nil {
-		lit.Error("Can't delete message, %s", err)
-	}
-}
-
 // Finds user current voice channel
-func findUserVoiceState(session *discordgo.Session, m *discordgo.MessageCreate) *discordgo.VoiceState {
+func findUserVoiceState(session *discordgo.Session, i *discordgo.Interaction) *discordgo.VoiceState {
 
 	for _, guild := range session.State.Guilds {
-		if guild.ID != m.GuildID {
+		if guild.ID != i.GuildID {
 			continue
 		}
 
 		for _, vs := range guild.VoiceStates {
-			if vs.UserID == m.Author.ID {
+			if vs.UserID == i.Member.User.ID {
 				return vs
 			}
 		}
@@ -61,18 +51,57 @@ func removeFromQueue(id string, guild string) {
 }
 
 // Sends and delete after three second an embed in a given channel
-func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string, wait time.Duration) {
-	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
+func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
+	sliceEmbed := []*discordgo.MessageEmbed{embed}
+	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionApplicationCommandResponseData{Embeds: sliceEmbed}})
 	if err != nil {
-		lit.Error("MessageSendEmbed failed: %s", err)
+		lit.Error("InteractionRespond failed: %s", err)
 		return
 	}
 
 	time.Sleep(wait)
 
-	err = s.ChannelMessageDelete(txtChannel, m.ID)
+	err = s.InteractionResponseDelete(s.State.User.ID, i)
 	if err != nil {
-		lit.Error("MessageDelete failed: %s", err)
+		lit.Error("InteractionResponseDelete failed: %s", err)
+		return
+	}
+}
+
+// Sends embed
+func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
+	sliceEmbed := []*discordgo.MessageEmbed{embed}
+	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionApplicationCommandResponseData{Embeds: sliceEmbed}})
+	if err != nil {
+		lit.Error("InteractionRespond failed: %s", err)
+		return
+	}
+}
+
+// Modify an already sent interaction
+func modfyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
+	sliceEmbed := []*discordgo.MessageEmbed{embed}
+	err := s.InteractionResponseEdit(s.State.User.ID, i, &discordgo.WebhookEdit{Embeds: sliceEmbed})
+	if err != nil {
+		lit.Error("InteractionResponseEdit failed: %s", err)
+		return
+	}
+}
+
+// Modify an already sent interaction
+func modfyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
+	sliceEmbed := []*discordgo.MessageEmbed{embed}
+	err := s.InteractionResponseEdit(s.State.User.ID, i, &discordgo.WebhookEdit{Embeds: sliceEmbed})
+	if err != nil {
+		lit.Error("InteractionResponseEdit failed: %s", err)
+		return
+	}
+
+	time.Sleep(wait)
+
+	err = s.InteractionResponseDelete(s.State.User.ID, i)
+	if err != nil {
+		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
 	}
 }
@@ -123,13 +152,6 @@ func formatLongMessage(text []string) []string {
 	return append(output, buffer)
 }
 
-// Deletes an array of discordgo.Message
-func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
-	for _, m := range messages {
-		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
-	}
-}
-
 // Shuffles a slice of strings
 func shuffle(a []string) []string {
 	final := make([]string, len(a))
@@ -141,16 +163,23 @@ func shuffle(a []string) []string {
 }
 
 // Disconnects the bot from the voice channel after 1 minute if nothing is playing
-func quitVC(guildID string) {
+func quitVC(s *discordgo.Session, i *discordgo.Interaction) {
+	// Delete interaction, as we have finished playing everything
+	err := s.InteractionResponseDelete(s.State.User.ID, i)
+	if err != nil {
+		lit.Error("InteractionResponseDelete failed: %s", err)
+		return
+	}
+
 	time.Sleep(1 * time.Minute)
 
-	if len(server[guildID].queue) == 0 && server[guildID].vc != nil {
-		server[guildID].server.Lock()
+	if len(server[i.GuildID].queue) == 0 && server[i.GuildID].vc != nil {
+		server[i.GuildID].server.Lock()
 
-		_ = server[guildID].vc.Disconnect()
-		server[guildID].vc = nil
+		_ = server[i.GuildID].vc.Disconnect()
+		server[i.GuildID].vc = nil
 
-		server[guildID].server.Unlock()
+		server[i.GuildID].server.Unlock()
 	}
 }
 

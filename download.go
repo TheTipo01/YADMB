@@ -14,7 +14,8 @@ import (
 )
 
 // Download and plays a song from a youtube link
-func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtChannel string, random bool) {
+func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string, i *discordgo.Interaction, random bool) {
+	go sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i)
 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
@@ -28,12 +29,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, el.id+".dca", txtChannel)
+			go playSound(s, guildID, channelID, el.id+".dca", i)
 			return
 		}
 	}
-
-	go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
 
 	// Gets info about songs
 	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
@@ -43,14 +42,14 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 
 	if err != nil {
 		lit.Error("Can't get info about song: %s", splittedOut[len(splittedOut)-1])
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
 	// Check if youtube-dl returned something
 	if strings.TrimSpace(splittedOut[0]) == "" {
 		lit.Error("youtube-dl returned no songs!")
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "youtube-dl returned no songs!").SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "youtube-dl returned no songs!").SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
@@ -109,27 +108,27 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user, txtCh
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSoundStream(s, guildID, channelID, fileName+".dca", txtChannel, pipe, cmd)
+			go playSoundStream(s, guildID, channelID, fileName+".dca", i, pipe, cmd)
 		} else {
 			server[guildID].queueMutex.Lock()
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, fileName+".dca", txtChannel)
+			go playSound(s, guildID, channelID, fileName+".dca", i)
 		}
 
 	}
 }
 
 // Searches a song from the query on youtube
-func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user, txtChannel string, random bool) {
+func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user string, i *discordgo.Interaction, random bool) {
 	// Gets video id
 	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
 	if err != nil {
 		splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
 		lit.Error("Can't find song on youtube: %s", splittedOut[len(splittedOut)-1])
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
@@ -137,24 +136,24 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 	// Calls download and play for every id we get
 	for _, id := range ids {
-		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+id, user, txtChannel, random)
+		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+id, user, i, random)
 	}
 }
 
 // Enqueues song from a spotify playlist, searching them on youtube
-func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID, txtChannel string, random bool) {
+func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID string, i *discordgo.Interaction, random bool) {
 
 	// We get the playlist from it's link
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
 		lit.Error("Can't get info on a spotify playlist: %s", err)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about spotify playlist!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, txtChannel, time.Second*5)
+		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about spotify playlist!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
 	// We parse every single song, searching it on youtube
 	for _, track := range playlist.Tracks.Tracks {
-		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, txtChannel, random)
+		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, i, random)
 	}
 
 }
