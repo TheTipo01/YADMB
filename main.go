@@ -181,7 +181,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 
 	if server[e.ID] == nil {
-		server[e.ID] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, custom: make(map[string]string)}
+		server[e.ID] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]string)}
 	}
 
 }
