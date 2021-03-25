@@ -79,8 +79,12 @@ func addCommand(command string, song string, guild string) error {
 }
 
 // Removes a custom command from the db and from the command map
-func removeCustom(command string, guild string) {
+func removeCustom(command string, guild string) error {
 	// Remove from DB
+	if server[guild].custom[command] == "" {
+		return errors.New("Command doesn't exist!")
+	}
+
 	statement, _ := db.Prepare("DELETE FROM customCommands WHERE guild=? AND command=?")
 	_, err := statement.Exec(guild, command)
 	if err != nil {
@@ -89,6 +93,8 @@ func removeCustom(command string, guild string) {
 
 	// Remove from the map
 	delete(server[guild].custom, command)
+
+	return nil
 }
 
 // Loads custom command from the database

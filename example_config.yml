@@ -5,10 +5,6 @@
 #click "Bot" on the left bar, click "Add bot" and confirm, then click "Copy" under "Click to reveal token"
 token: ""
 
-#Prefix for bot commands:
-#This is what you are going to put before your bot's commands (for example: !play, !pause)
-prefix: "!"
-
 #Owner id
 #Put here the id of the owner of the bot, so they can use commands like restart
 owner: ""

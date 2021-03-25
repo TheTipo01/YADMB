@@ -189,6 +189,9 @@ var (
 
 			server[i.GuildID].clear = true
 			server[i.GuildID].skip = true
+
+			sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue cleared!").
+				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.Interaction, time.Second*5)
 		},
 
 		// Randomly plays a song (or a playlist)
@@ -203,7 +206,6 @@ var (
 			}
 
 			play(s, i.Data.Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, true)
-
 		},
 
 		// Pause the song
@@ -255,7 +257,6 @@ var (
 					} else {
 						message += strconv.Itoa(cont) + ") " + el.title + " - " + el.duration + " by " + el.user + "\n"
 					}
-
 				}
 
 				// Send embed
@@ -277,7 +278,6 @@ var (
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
-
 		},
 
 		// Prints lyrics of a song
@@ -314,7 +314,6 @@ var (
 					mex, _ = s.ChannelMessageSend(i.ChannelID, "```"+t+"```")
 					server[i.GuildID].queue[0].messageID = append(server[i.GuildID].queue[0].messageID, *mex)
 				}
-
 			}
 		},
 
@@ -360,7 +359,12 @@ var (
 			if err != nil {
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't join voice channel!\n"+err.Error()).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-				return
+			} else {
+				c, err := s.Channel(vs.ChannelID)
+				if err == nil {
+					sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Summon", "Joined "+c.Name).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
 			}
 		},
 
@@ -374,6 +378,9 @@ var (
 				server[i.GuildID].vc = nil
 
 				server[i.GuildID].server.Unlock()
+
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Disconnected", "Bye bye!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			} else {
 				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't disconnect the bot!\nStill playing in a voice channel.").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -404,7 +411,14 @@ var (
 
 		// Removes a custom command
 		"rmcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			removeCustom(i.Data.Options[0].StringValue(), i.GuildID)
+			err := removeCustom(i.Data.Options[0].StringValue(), i.GuildID)
+			if err != nil {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			} else {
+				sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Successful", "Command removed successfully!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
 		},
 
 		// Stats™
@@ -458,7 +472,7 @@ var (
 
 		// Plays a custom commands
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			command := i.Data.Options[0].StringValue()
+			command := strings.ToLower(i.Data.Options[0].StringValue())
 
 			if server[i.GuildID].custom[command] != "" {
 
