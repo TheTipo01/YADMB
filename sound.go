@@ -32,8 +32,6 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 0 {
-			go modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").
-				SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 			server[guildID].clear = false
 		}
 		server[guildID].server.Unlock()
@@ -148,9 +146,7 @@ func soundStream(s *discordgo.Session, guildID, channelID, fileName string, i *d
 	if server[guildID].clear {
 		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
 		// If this is the last element, we have finished clearing the queue
-		if len(server[guildID].queue) == 1 {
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Cleared", "Queue cleared").
-				SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		if len(server[guildID].queue) == 0 {
 			server[guildID].clear = false
 		}
 		server[guildID].server.Unlock()
