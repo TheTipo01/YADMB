@@ -13,8 +13,8 @@ import (
 	_ "modernc.org/sqlite"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -35,8 +35,6 @@ var (
 	genius string
 	// Discord bot token
 	token string
-	// Prefix for bot commands
-	prefix string
 	// Database connection
 	db *sql.DB
 )
@@ -60,7 +58,6 @@ func init() {
 	} else {
 		// Config file found
 		token = viper.GetString("token")
-		prefix = viper.GetString("prefix")
 		genius = viper.GetString("genius")
 		owner = viper.GetString("owner")
 
@@ -127,11 +124,6 @@ func main() {
 		return
 	}
 
-	if prefix == "" {
-		lit.Error("No prefix provided. Please modify config.yml")
-		return
-	}
-
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
@@ -193,9 +185,8 @@ func main() {
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
-
 	// Set the playing status.
-	err := s.UpdateGameStatus(0, prefix+"help")
+	err := s.UpdateGameStatus(0, "Serving "+strconv.Itoa(len(s.State.Guilds))+" guilds!")
 	if err != nil {
 		lit.Error("Can't set status, %s", err)
 	}
@@ -204,11 +195,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 // Initialize Server structure
 func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
-
-	if server[e.ID] == nil {
-		server[e.ID] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]string)}
-	}
-
+	initializeServer(e.ID)
 }
 
 // Used to reconnect the bot to the channel where it's moved
