@@ -260,19 +260,8 @@ var (
 				}
 
 				// Send embed
-				em, err := s.ChannelMessageSendEmbed(i.ChannelID, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", message).
-					SetColor(0x7289DA).MessageEmbed)
-				if err != nil {
-					lit.Error("Error sending queue embed: %s", err)
-					return
-				}
-
-				// Wait for 15 seconds, then delete the message
-				time.Sleep(time.Second * 15)
-				err = s.ChannelMessageDelete(i.ChannelID, em.ID)
-				if err != nil {
-					lit.Error("Error deleting queue embed: %s", err)
-				}
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", message).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
 			} else {
 				// Queue is empty
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Queue", "Queue is empty!").

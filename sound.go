@@ -11,12 +11,9 @@ import (
 )
 
 // Plays a song from a io.Reader if specified, or tries to open a file with the given fileName
-func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, in io.Reader) {
-	// Delete interaction, so the user knows the song has been enqueued
-	err := s.InteractionResponseDelete(s.State.User.ID, i)
-	if err != nil {
-		lit.Error("InteractionResponseDelete failed: %s", err)
-		return
+func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, in io.Reader, delete bool) {
+	if delete {
+		deleteInteraction(s, i)
 	}
 
 	// Locks the mutex for the current server
@@ -26,6 +23,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		opuslen int16
 		skip    bool
 		file    *os.File
+		err 	error
 	)
 
 	if in == nil {

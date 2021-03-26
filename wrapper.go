@@ -28,10 +28,11 @@ func play(s *discordgo.Session, song string, i *discordgo.Interaction, voiceChan
 
 // Wrapper function for playSound, also waits for the song to finish to download and then closes it's pipe
 func playSoundStream(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, stdout io.ReadCloser, cmd *exec.Cmd) {
+	deleteInteraction(s, i)
 	server[guildID].stream.Lock()
 
 	_ = cmd.Start()
-	playSound(s, guildID, channelID, fileName, i, stdout)
+	playSound(s, guildID, channelID, fileName, i, stdout, false)
 
 	switch runtime.GOOS {
 	case "windows":

@@ -233,3 +233,11 @@ func initializeServer(guild string) {
 		server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]string)}
 	}
 }
+
+func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction) {
+	err := s.InteractionResponseDelete(s.State.User.ID, i)
+	if err != nil {
+		lit.Error("InteractionResponseDelete failed: %s", err)
+		return
+	}
+}
