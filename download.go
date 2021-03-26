@@ -15,7 +15,7 @@ import (
 
 // Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string, i *discordgo.Interaction, random bool) {
-	sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i)
+	sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i)
 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
@@ -29,7 +29,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, el.id+".dca", i)
+			go playSound(s, guildID, channelID, el.id+".dca", i, nil)
 			return
 		}
 	}
@@ -114,7 +114,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, fileName+".dca", i)
+			go playSound(s, guildID, channelID, fileName+".dca", i, nil)
 		}
 
 	}
@@ -128,7 +128,7 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 		splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
 		lit.Error("Can't find song on youtube: %s", splittedOut[len(splittedOut)-1])
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No song found!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
@@ -147,7 +147,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID 
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
 		lit.Error("Can't get info on a spotify playlist: %s", err)
-		sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about spotify playlist!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about spotify playlist!\nError code: "+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
