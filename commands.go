@@ -235,9 +235,9 @@ var (
 
 		// Prints out queue for the guild
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			var message string
-
 			if len(server[i.GuildID].queue) > 0 {
+				var message string
+
 				// Generate song info for message
 				for cont, el := range server[i.GuildID].queue {
 					if cont == 0 {
@@ -484,7 +484,7 @@ var (
 					return
 				}
 
-				play(s, i.Data.Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+				play(s, server[i.GuildID].custom[command], i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Not a valid custom command!\nSee /listcustom for a list of custom commands.").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
