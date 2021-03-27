@@ -23,7 +23,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		opuslen int16
 		skip    bool
 		file    *os.File
-		err 	error
+		err     error
 	)
 
 	if in == nil {

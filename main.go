@@ -153,26 +153,6 @@ func main() {
 		return
 	}
 
-	// Checks for unused commands and deletes them
-	if cmds, err := dg.ApplicationCommands(dg.State.User.ID, ""); err == nil {
-		for _, c := range cmds {
-			if commandHandlers[c.Name] == nil {
-				_ = dg.ApplicationCommandDelete(dg.State.User.ID, "", c.ID)
-				lit.Info("Deleted unused command %s", c.Name)
-			}
-		}
-	}
-
-	// And add commands used
-	lit.Info("Adding used commands...")
-	for _, v := range commands {
-		_, err := dg.ApplicationCommandCreate(dg.State.User.ID, "", v)
-		if err != nil {
-			lit.Error("Cannot create '%v' command: %v", v.Name, err)
-		}
-	}
-	lit.Info("Commands added!")
-
 	// Wait here until CTRL-C or other term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
@@ -191,6 +171,23 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 		lit.Error("Can't set status, %s", err)
 	}
 
+	// Checks for unused commands and deletes them
+	if cmds, err := s.ApplicationCommands(s.State.User.ID, ""); err == nil {
+		for _, c := range cmds {
+			if commandHandlers[c.Name] == nil {
+				_ = s.ApplicationCommandDelete(s.State.User.ID, "", c.ID)
+				lit.Info("Deleted unused command %s", c.Name)
+			}
+		}
+	}
+
+	// And add commands used
+	for _, v := range commands {
+		_, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
+		if err != nil {
+			lit.Error("Cannot create '%v' command: %v", v.Name, err)
+		}
+	}
 }
 
 // Initialize Server structure
