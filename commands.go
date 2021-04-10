@@ -273,8 +273,9 @@ var (
 		"lyrics": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// We search for lyrics only if there's something playing
 			if len(server[i.GuildID].queue) > 0 {
-				sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Lyrics", "Searching...").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction)
+				c := make(chan int)
+				go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Lyrics", "Searching...").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, &c)
 				var song string
 
 				// If the user didn't input a title, we use the currently playing video
@@ -286,6 +287,7 @@ var (
 
 				text := formatLongMessage(lyrics(song))
 
+				<-c
 				err := s.InteractionResponseDelete(s.State.User.ID, i.Interaction)
 				if err != nil {
 					lit.Error("InteractionResponseDelete failed: %s", err.Error())

@@ -15,7 +15,8 @@ import (
 
 // Download and plays a song from a youtube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string, i *discordgo.Interaction, random bool) {
-	sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i)
+	c := make(chan int)
+	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", link).SetColor(0x7289DA).MessageEmbed, i, &c)
 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(link)
@@ -29,7 +30,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, el.id+".dca", i, nil, true)
+			go playSound(s, guildID, channelID, el.id+".dca", i, nil, &c)
 			return
 		}
 	}
@@ -114,7 +115,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, fileName+".dca", i, nil, true)
+			go playSound(s, guildID, channelID, fileName+".dca", i, nil, &c)
 		}
 
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"github.com/bwmarrin/lit"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,22 +20,13 @@ func getSegments(videoID string) map[int]bool {
 
 	// If we get the HTTP code 200, segments were found for the given video
 	if resp.StatusCode == http.StatusOK {
-		var segments SponsorBlock
-		segmentMap := make(map[int]bool)
+		var (
+			segments   SponsorBlock
+			segmentMap = make(map[int]bool)
+		)
 
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			lit.Error("Can't read response body: %s", err)
-			return nil
-		}
-
-		err = resp.Body.Close()
-		if err != nil {
-			lit.Error("Can't close response body: %s", err)
-			return nil
-		}
-
-		err = json.Unmarshal(body, &segments)
+		err = json.NewDecoder(resp.Body).Decode(&segments)
+		_ = resp.Body.Close()
 		if err != nil {
 			lit.Error("Can't unmarshal JSON, %s", err)
 			return nil

@@ -11,9 +11,9 @@ import (
 )
 
 // Plays a song from a io.Reader if specified, or tries to open a file with the given fileName
-func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, in io.Reader, delete bool) {
-	if delete {
-		deleteInteraction(s, i)
+func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, in io.Reader, c *chan int) {
+	if c != nil {
+		go deleteInteraction(s, i, c)
 	}
 
 	// Locks the mutex for the current server

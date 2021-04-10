@@ -60,33 +60,23 @@ func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 	return m
 }
 
-// Sends and delete after three second an embed in a given channel
-func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string, wait time.Duration) {
-	m := sendEmbed(s, embed, txtChannel)
-	if m != nil {
-		time.Sleep(wait)
-
-		err := s.ChannelMessageDelete(txtChannel, m.ID)
-		if err != nil {
-			lit.Error("MessageDelete failed: %s", err)
-			return
-		}
-	}
-}
-
 // Sends embed as response to an interaction
-func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
+func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c *chan int) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionApplicationCommandResponseData{Embeds: sliceEmbed}})
 	if err != nil {
 		lit.Error("InteractionRespond failed: %s", err)
 		return
 	}
+
+	if c != nil {
+		*c <- 1
+	}
 }
 
 // Sends and delete after three second an embed in a given channel
 func sendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
-	sendEmbedInteraction(s, embed, i)
+	sendEmbedInteraction(s, embed, i, nil)
 
 	time.Sleep(wait)
 
@@ -234,7 +224,10 @@ func initializeServer(guild string) {
 	}
 }
 
-func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction) {
+func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan int) {
+	if c != nil {
+		<-*c
+	}
 	err := s.InteractionResponseDelete(s.State.User.ID, i)
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
