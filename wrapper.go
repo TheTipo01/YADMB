@@ -15,11 +15,9 @@ func play(s *discordgo.Session, song string, i *discordgo.Interaction, voiceChan
 	switch {
 	case strings.HasPrefix(song, "spotify:playlist:"):
 		spotifyPlaylist(s, guild, voiceChannel, username, song, i, random)
-		break
 
 	case isValidURL(song):
 		downloadAndPlay(s, guild, voiceChannel, song, username, i, random)
-		break
 
 	default:
 		searchDownloadAndPlay(s, guild, voiceChannel, song, username, i, random)
@@ -37,8 +35,8 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName string, 
 	switch runtime.GOOS {
 	case "windows":
 		_ = stdout.Close()
-		break
-		// TODO: On linux, if we close the pipe, tee just quits without waiting for the song to completely download
+
+	// TODO: On linux, if we close the pipe, tee just quits without waiting for the song to completely download
 	default:
 		var err error
 		var opuslen int16
@@ -59,7 +57,7 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName string, 
 
 			// Read encoded pcm from dca file.
 			InBuf := make([]byte, opuslen)
-			err = binary.Read(stdout, binary.LittleEndian, &InBuf)
+			_ = binary.Read(stdout, binary.LittleEndian, &InBuf)
 		}
 	}
 
