@@ -540,7 +540,7 @@ var (
 
 			// Creates output pipe and element for the queue
 			stdout, _ := cmd.StdoutPipe()
-			el := Queue{url, "NaN", url, url, i.User.Username, nil, "", 0, nil, i.ChannelID}
+			el := Queue{url, "NaN", url, url, i.Member.User.Username, nil, "", 0, nil, i.ChannelID}
 
 			// Adds to queue
 			server[i.GuildID].queueMutex.Lock()
