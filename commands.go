@@ -5,6 +5,8 @@ import (
 	"github.com/bwmarrin/lit"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -139,6 +141,18 @@ var (
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "command",
 					Description: "Command to play",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "stream",
+			Description: "Streams a song from a given URL",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "url",
+					Description: "URL to play",
 					Required:    true,
 				},
 			},
@@ -491,6 +505,55 @@ var (
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Not a valid custom command!\nSee /listcustom for a list of custom commands.").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
+		},
+
+		// Streams a song from a given URL
+		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			var (
+				cmd *exec.Cmd
+				url = i.Data.Options[0].StringValue()
+				vs  = findUserVoiceState(s, i.Interaction)
+			)
+
+			if strings.HasPrefix(url, "file") || !isValidURL(url) {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Invalid URL!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
+			}
+
+			// Check if user is not in a voice channel
+			if vs == nil {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
+			}
+
+			server[i.GuildID].stream.Lock()
+
+			// Start streaming from URL
+			switch runtime.GOOS {
+			case "windows":
+				cmd = exec.Command("stream.bat", url)
+			default:
+				cmd = exec.Command("sh", "stream.sh", url)
+			}
+
+			// Creates output pipe and element for the queue
+			stdout, _ := cmd.StdoutPipe()
+			el := Queue{url, "NaN", url, url, i.User.Username, nil, "", 0, nil, i.ChannelID}
+
+			// Adds to queue
+			server[i.GuildID].queueMutex.Lock()
+			server[i.GuildID].queue = append(server[i.GuildID].queue, el)
+			server[i.GuildID].queueMutex.Unlock()
+
+			// Starts command and plays URL
+			_ = cmd.Start()
+			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil)
+
+			// After we have finished, closes pipe and unlocks mutex
+			_ = stdout.Close()
+			server[i.GuildID].stream.Unlock()
 		},
 	}
 )

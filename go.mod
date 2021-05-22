@@ -10,24 +10,21 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/pelletier/go-toml v1.9.0 // indirect
+	github.com/pelletier/go-toml v1.9.1 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.2-0.20200723214538-8d17101741c8 // indirect
 	github.com/spf13/jwalterweatherman v1.1.1-0.20200824194747-ce7498392da6 // indirect
 	github.com/spf13/pflag v1.0.6-0.20201009195203-85dd5c8bc61c // indirect
 	github.com/spf13/viper v1.7.2-0.20201203004352-bba82cfc61da
 	github.com/zmb3/spotify v1.1.2
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
-	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20210414194228-064579744ee0 // indirect
-	golang.org/x/oauth2 v0.0.0-20210413134643-5e61552d6c78
-	golang.org/x/sys v0.0.0-20210415045647-66c3f260301c // indirect
-	golang.org/x/tools v0.1.0 // indirect
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
+	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect
+	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
+	golang.org/x/sys v0.0.0-20210521203332-0cec03c779c1 // indirect
+	golang.org/x/tools v0.1.1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	modernc.org/cc/v3 v3.32.3 // indirect
-	modernc.org/ccgo/v3 v3.9.1 // indirect
-	modernc.org/sqlite v1.10.2
+	modernc.org/sqlite v1.10.7
 	modernc.org/strutil v1.1.1 // indirect
 )

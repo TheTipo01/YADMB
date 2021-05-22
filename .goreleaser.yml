@@ -33,6 +33,8 @@ archives:
       - example_config.yml
       - gen.bat
       - gen.sh
+      - stream.bat
+      - stream.sh
 checksum:
   name_template: checksums.txt
 snapshot:
