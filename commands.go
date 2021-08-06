@@ -173,7 +173,7 @@ var (
 				return
 			}
 
-			play(s, i.Data.Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+			play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
 		},
 
 		// Skips a song
@@ -219,7 +219,7 @@ var (
 				return
 			}
 
-			play(s, i.Data.Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, true)
+			play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, true)
 		},
 
 		// Pause the song
@@ -293,8 +293,8 @@ var (
 				var song string
 
 				// If the user didn't input a title, we use the currently playing video
-				if len(i.Data.Options) > 0 {
-					song = i.Data.Options[0].StringValue()
+				if len(i.ApplicationCommandData().Options) > 0 {
+					song = i.ApplicationCommandData().Options[0].StringValue()
 				} else {
 					song = server[i.GuildID].queue[0].title
 				}
@@ -414,7 +414,7 @@ var (
 
 		// Adds a custom command
 		"addcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := addCommand(strings.ToLower(i.Data.Options[0].StringValue()), i.Data.Options[1].StringValue(), i.GuildID)
+			err := addCommand(strings.ToLower(i.ApplicationCommandData().Options[0].StringValue()), i.ApplicationCommandData().Options[1].StringValue(), i.GuildID)
 			if err != nil {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -426,7 +426,7 @@ var (
 
 		// Removes a custom command
 		"rmcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := removeCustom(i.Data.Options[0].StringValue(), i.GuildID)
+			err := removeCustom(i.ApplicationCommandData().Options[0].StringValue(), i.GuildID)
 			if err != nil {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -449,7 +449,7 @@ var (
 		// Skips to a given time
 		"goto": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if len(server[i.GuildID].queue) > 0 {
-				t, err := time.ParseDuration(i.Data.Options[0].StringValue())
+				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].StringValue())
 				if err != nil {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s...").
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -487,7 +487,7 @@ var (
 
 		// Plays a custom commands
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			command := strings.ToLower(i.Data.Options[0].StringValue())
+			command := strings.ToLower(i.ApplicationCommandData().Options[0].StringValue())
 
 			if server[i.GuildID].custom[command] != "" {
 
@@ -511,7 +511,7 @@ var (
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			var (
 				cmd *exec.Cmd
-				url = i.Data.Options[0].StringValue()
+				url = i.ApplicationCommandData().Options[0].StringValue()
 				vs  = findUserVoiceState(s, i.Interaction)
 			)
 

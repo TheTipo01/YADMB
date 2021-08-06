@@ -139,7 +139,7 @@ func main() {
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		// Ignores commands from DM
 		if i.User == nil {
-			if h, ok := commandHandlers[i.Data.Name]; ok {
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 				h(s, i)
 			}
 		}
