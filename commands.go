@@ -528,8 +528,6 @@ var (
 				return
 			}
 
-			server[i.GuildID].stream.Lock()
-
 			// Start streaming from URL
 			switch runtime.GOOS {
 			case "windows":
@@ -548,8 +546,7 @@ var (
 			server[i.GuildID].queueMutex.Unlock()
 
 			// Starts command and plays URL
-			_ = cmd.Start()
-			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil)
+			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil, cmd)
 
 			// After we have finished, closes pipe and unlocks mutex
 			_ = stdout.Close()

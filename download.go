@@ -30,7 +30,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, el.id+".dca", i, nil, &c)
+			go playSound(s, guildID, channelID, el.id+".dca", i, nil, &c, nil)
 			return
 		}
 	}
@@ -115,7 +115,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			server[guildID].queue = append(server[guildID].queue, el)
 			server[guildID].queueMutex.Unlock()
 
-			go playSound(s, guildID, channelID, fileName+".dca", i, nil, &c)
+			go playSound(s, guildID, channelID, fileName+".dca", i, nil, &c, nil)
 		}
 
 	}
