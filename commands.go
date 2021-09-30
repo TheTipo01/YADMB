@@ -161,7 +161,7 @@ var (
 
 	// Handler
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
-		// Plays a song
+		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 			vs := findUserVoiceState(s, i.Interaction)
@@ -176,7 +176,7 @@ var (
 			play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
 		},
 
-		// Skips a song
+		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.Interaction) == nil {
@@ -192,7 +192,7 @@ var (
 				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.Interaction, time.Second*5)
 		},
 
-		// Clear the queue of the guild
+		// Clears the entire queue
 		"clear": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.Interaction) == nil {
@@ -208,7 +208,7 @@ var (
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 		},
 
-		// Randomly plays a song (or a playlist)
+		// Inserts the song from the given playlist in a random order in the queue
 		"shuffle": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			vs := findUserVoiceState(s, i.Interaction)
 
@@ -222,7 +222,7 @@ var (
 			play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, true)
 		},
 
-		// Pause the song
+		// Pauses the currently playing song
 		"pause": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if len(server[i.GuildID].queue) > 0 && !server[i.GuildID].isPaused {
 				server[i.GuildID].isPaused = true
@@ -232,7 +232,7 @@ var (
 			}
 		},
 
-		// Resume playing
+		// Resumes current song
 		"resume": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if server[i.GuildID].isPaused {
 				server[i.GuildID].isPaused = false
@@ -247,7 +247,7 @@ var (
 			}
 		},
 
-		// Prints out queue for the guild
+		// Prints the currently playing song and the next songs
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if len(server[i.GuildID].queue) > 0 {
 				var message string
@@ -283,7 +283,7 @@ var (
 			}
 		},
 
-		// Prints lyrics of a song
+		// Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song
 		"lyrics": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// We search for lyrics only if there's something playing
 			if len(server[i.GuildID].queue) > 0 {
@@ -332,7 +332,7 @@ var (
 			}
 		},
 
-		// We summon the bot in the user current voice channel
+		// Make the bot join your voice channel
 		"summon": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			vs := findUserVoiceState(s, i.Interaction)
 
@@ -383,7 +383,7 @@ var (
 			}
 		},
 
-		// Disconnect the bot from the guild voice channel
+		// Disconnect the bot from the voice channel
 		"disconnect": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if the queue is empty
 			if len(server[i.GuildID].queue) == 0 {
@@ -402,7 +402,7 @@ var (
 			}
 		},
 
-		// Makes the bot exit
+		// Restarts the bot
 		"restart": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if the owner of the bot required the restart
 			if owner == i.Member.User.ID {
@@ -412,7 +412,7 @@ var (
 			}
 		},
 
-		// Adds a custom command
+		// Creates a custom command to play a song or playlist
 		"addcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			err := addCommand(strings.ToLower(i.ApplicationCommandData().Options[0].StringValue()), i.ApplicationCommandData().Options[1].StringValue(), i.GuildID)
 			if err != nil {
@@ -424,7 +424,7 @@ var (
 			}
 		},
 
-		// Removes a custom command
+		// Removes a custom command from the DB
 		"rmcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			err := removeCustom(i.ApplicationCommandData().Options[0].StringValue(), i.GuildID)
 			if err != nil {
@@ -436,7 +436,7 @@ var (
 			}
 		},
 
-		// Stats™
+		// Stats, like latency, and the size of the local cache
 		"stats": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			files, _ := ioutil.ReadDir("./audio_cache")
 
@@ -446,7 +446,7 @@ var (
 				ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
 		},
 
-		// Skips to a given time
+		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
 		"goto": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if len(server[i.GuildID].queue) > 0 {
 				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].StringValue())
@@ -471,7 +471,7 @@ var (
 			}
 		},
 
-		// List custom commands
+		// Lists all custom commands for the current server
 		"listcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			message := ""
 
@@ -485,7 +485,7 @@ var (
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*30)
 		},
 
-		// Plays a custom commands
+		// Calls a custom command
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			command := strings.ToLower(i.ApplicationCommandData().Options[0].StringValue())
 
@@ -507,7 +507,7 @@ var (
 			}
 		},
 
-		// Streams a song from a given URL
+		// Streams a song from the given URL, useful for radios
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			var (
 				cmd *exec.Cmd
