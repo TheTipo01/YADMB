@@ -394,7 +394,7 @@ var (
 
 				server[i.GuildID].server.Unlock()
 
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Disconnected", "Bye bye!").
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Disconnected", "Bye-bye!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't disconnect the bot!\nStill playing in a voice channel.").
@@ -406,6 +406,8 @@ var (
 		"restart": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if the owner of the bot required the restart
 			if owner == i.Member.User.ID {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Restart", "Bye-bye!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*1)
 				os.Exit(0)
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "I'm sorry "+i.Member.User.Username+", I'm afraid I can't do that").SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -464,6 +466,9 @@ var (
 					server[i.GuildID].queue[0].segments[int(t.Seconds()*frameSeconds)] = true
 
 					server[i.GuildID].pause.Unlock()
+
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Goto", "Skipped to "+t.String()).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "No songs playing!").
