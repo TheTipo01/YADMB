@@ -24,9 +24,9 @@ USER yadmb
 WORKDIR /app
 
 RUN git clone https://github.com/TheTipo01/YADMB . \
-	&& go mod download \
-	&& go get -d github.com/bwmarrin/dca/cmd/dca \
-	&& go install github.com/bwmarrin/dca/cmd/dca
+  && go mod download \
+  && go get -d github.com/bwmarrin/dca/cmd/dca \
+  && go install github.com/bwmarrin/dca/cmd/dca
 
 RUN go build -o build \
   && chmod +x ./build
