@@ -26,7 +26,7 @@ genius: ""
 #DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
 #DB Info, like username, password...
 #SQLite
-datasourcename: ./yadmb.db
+datasourcename: ./data/yadmb.db
 #MySQL
 #datasourcename: user:pass@tcp(ip:3306)/database
 
