@@ -89,7 +89,7 @@ var (
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "customCommand",
+					Name:        "custom-command",
 					Description: "Name of the custom command",
 					Required:    true,
 				},
@@ -107,7 +107,7 @@ var (
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "customCommand",
+					Name:        "custom-command",
 					Description: "Name of the custom command",
 					Required:    true,
 				},
