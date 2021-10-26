@@ -18,6 +18,7 @@
 audio_cache/
 .idea/
 config.yml
+data/config.yml
 dist/
 download/
 *.db

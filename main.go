@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/spf13/viper"
+	"github.com/kkyr/fig"
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
 	"math/rand"
@@ -23,6 +23,17 @@ const (
 	// How many DCA frames are needed for a second. It's not perfect, but good enough.
 	frameSeconds = 50
 )
+
+type Config struct {
+	Token        string `fig:"token" validate:"required"`
+	Owner        string `fig:"owner" validate:"required"`
+	ClientID     string `fig:"clientid" validate:"required"`
+	ClientSecret string `fig:"clientsecret" validate:"required"`
+	DSN          string `fig:"datasourcename" validate:"required"`
+	Driver       string `fig:"drivername" validate:"required"`
+	Genius       string `fig:"genius" validate:"required"`
+	LogLevel     string `fig:"loglevel" validate:"required"`
+}
 
 var (
 	// Holds all the info about a server
@@ -45,74 +56,63 @@ func init() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	viper.SetConfigName("config")
-	viper.SetConfigType("yml")
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("./data")
+	var cfg Config
+	err := fig.Load(&cfg, fig.File("config.yml"), fig.Dirs(".", "./data"))
+	if err != nil {
+		lit.Error(err.Error())
+		return
+	}
+	// Config file found
+	token = cfg.Token
+	genius = cfg.Genius
+	owner = cfg.Owner
 
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Config file not found
-			lit.Error("Config file not found! See example_config.yml")
-			return
+	// Set lit.LogLevel to the given value
+	switch strings.ToLower(cfg.LogLevel) {
+	case "logwarning", "warning":
+		lit.LogLevel = lit.LogWarning
+
+	case "loginformational", "informational":
+		lit.LogLevel = lit.LogInformational
+
+	case "logdebug", "debug":
+		lit.LogLevel = lit.LogDebug
+	}
+
+	// Spotify credentials
+	config := &clientcredentials.Config{
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+		TokenURL:     spotify.TokenURL,
+	}
+
+	// Check spotify token and create spotify client
+	token, err := config.Token(context.Background())
+	if err != nil {
+		lit.Error("Spotify: couldn't get token: %s", err)
+	}
+
+	client = spotify.Authenticator{}.NewClient(token)
+
+	// Open database connection
+	db, err = sql.Open(cfg.Driver, cfg.DSN)
+	if err != nil {
+		lit.Error("Error opening db connection, %s", err)
+		return
+	}
+
+	// Create tables used by the bots
+	execQuery(tblSong)
+	execQuery(tblCommands)
+
+	// And load custom commands from the db
+	loadCustomCommands()
+
+	// Create folders used by the bot
+	if _, err = os.Stat("./audio_cache"); err != nil {
+		if err = os.Mkdir("./audio_cache", 0755); err != nil {
+			lit.Error("Cannot create audio_cache directory, %s", err)
 		}
-	} else {
-		// Config file found
-		token = viper.GetString("token")
-		genius = viper.GetString("genius")
-		owner = viper.GetString("owner")
-
-		// Set lit.LogLevel to the given value
-		switch strings.ToLower(viper.GetString("loglevel")) {
-		case "logerror", "error":
-			lit.LogLevel = lit.LogError
-
-		case "logwarning", "warning":
-			lit.LogLevel = lit.LogWarning
-
-		case "loginformational", "informational":
-			lit.LogLevel = lit.LogInformational
-
-		case "logdebug", "debug":
-			lit.LogLevel = lit.LogDebug
-		}
-
-		// Spotify credentials
-		config := &clientcredentials.Config{
-			ClientID:     viper.GetString("clientid"),
-			ClientSecret: viper.GetString("clientsecret"),
-			TokenURL:     spotify.TokenURL,
-		}
-
-		// Check spotify token and create spotify client
-		token, err := config.Token(context.Background())
-		if err != nil {
-			lit.Error("Spotify: couldn't get token: %s", err)
-		}
-
-		client = spotify.Authenticator{}.NewClient(token)
-
-		// Open database connection
-		db, err = sql.Open(viper.GetString("drivername"), viper.GetString("datasourcename"))
-		if err != nil {
-			lit.Error("Error opening db connection, %s", err)
-			return
-		}
-
-		// Create tables used by the bots
-		execQuery(tblSong)
-		execQuery(tblCommands)
-
-		// And load custom commands from the db
-		loadCustomCommands()
-
-		// Create folders used by the bot
-		if _, err = os.Stat("./audio_cache"); err != nil {
-			if err = os.Mkdir("./audio_cache", 0755); err != nil {
-				lit.Error("Cannot create audio_cache directory, %s", err)
-			}
-		}
-
 	}
 
 }
