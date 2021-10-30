@@ -36,7 +36,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 	}
 
 	// Gets info about songs
-	out, err := exec.Command("youtube-dl", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
+	out, err := exec.Command("yt-dlp", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
 
 	// Parse output as string, splitting it on every newline
 	splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
@@ -47,21 +47,21 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		return
 	}
 
-	// Check if youtube-dl returned something
+	// Check if yt-dlp returned something
 	if strings.TrimSpace(splittedOut[0]) == "" {
-		lit.Error("youtube-dl returned no songs!")
-		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "youtube-dl returned no songs!").SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		lit.Error("yt-dlp returned no songs!")
+		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "yt-dlp returned no songs!").SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
-	var ytdl YoutubeDL
+	var ytdl YtDLP
 
 	// If we want to play the song in a random order, we just shuffle the slice
 	if random {
 		splittedOut = shuffle(splittedOut)
 	}
 
-	// We parse every track as individual json, because youtube-dl
+	// We parse every track as individual json, because yt-dlp
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 		fileName := ytdl.ID + "-" + ytdl.Extractor
@@ -124,7 +124,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 // Searches a song from the query on youtube
 func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user string, i *discordgo.Interaction, random bool) {
 	// Gets video id
-	out, err := exec.Command("youtube-dl", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
+	out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
 	if err != nil {
 		splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 

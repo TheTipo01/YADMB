@@ -53,8 +53,8 @@ type Queue struct {
 	channel string
 }
 
-// YoutubeDL structure for holding youtube-dl data
-type YoutubeDL struct {
+// YtDLP structure for holding yt-dlp data
+type YtDLP struct {
 	License           interface{} `json:"license"`
 	AltTitle          interface{} `json:"alt_title"`
 	Vbr               interface{} `json:"vbr"`

@@ -24,7 +24,7 @@ func execQuery(query string) {
 	}
 }
 
-// Adds a song to the db, so next time we encounter it we don't need to call youtube-dl
+// Adds a song to the db, so next time we encounter it we don't need to call yt-dlp
 func addToDb(el Queue) {
 	// We check for empty strings, just to be sure
 	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {

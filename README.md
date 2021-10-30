@@ -7,7 +7,7 @@ Yet Another Discord Music Bot - A music bot written in go
 # Notes
 - We now use slash commands (from release [0.8.0](https://github.com/TheTipo01/YADMB/releases/tag/0.8.0))
 - All commands check to see if the caller is in the same voice channel as the bot (only if the skip songs, play a new one)
-- Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [youtube-dl](https://youtube-dl.org/), [ffmpeg](https://ffmpeg.org/download.html) and [LyricsGenius](https://github.com/johnwmillr/LyricsGenius).
+- Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ffmpeg](https://ffmpeg.org/download.html) and [LyricsGenius](https://github.com/johnwmillr/LyricsGenius).
 - For tutorials on how to install the bot, see the wiki.
 - Uses [SponsorBlock API](https://sponsor.ajay.app/)
 

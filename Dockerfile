@@ -12,12 +12,11 @@ RUN apk add --no-cache \
   g++ \
   make \
   ffmpeg \
-  youtube-dl \
   opus \
   python3 \
   py3-pip \
   && ln -sf python3 /usr/bin/python \
-  && pip3 install lyricsgenius
+  && pip3 install lyricsgenius yt-dlp
 
 USER yadmb
 
