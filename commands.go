@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"io/ioutil"
@@ -256,20 +257,20 @@ var (
 				for cont, el := range server[i.GuildID].queue {
 					if cont == 0 {
 						if el.title != "" {
-							message += "Currently playing: " + el.title + " - " + formatDuration(float64(server[i.GuildID].queue[0].frame/frameSeconds)) +
-								"/" + el.duration + " added by " + el.user + "\n\n"
+							message += fmt.Sprintf("%d) [%s](%s) - %s/%s added by %s\n", cont+1, el.title, el.link,
+								formatDuration(float64(server[i.GuildID].queue[0].frame/frameSeconds)), el.duration, el.user)
 							continue
 						} else {
 							message += "Currently playing: Getting info...\n\n"
 							continue
 						}
-
 					}
+
 					// If we don't have the title, we use some placeholder text
 					if el.title == "" {
-						message += strconv.Itoa(cont) + ") Getting info...\n"
+						message += fmt.Sprintf("%d) Getting info...\n", cont+1)
 					} else {
-						message += strconv.Itoa(cont) + ") " + el.title + " - " + el.duration + " by " + el.user + "\n"
+						message += fmt.Sprintf("%d) [%s](%s) - %s added by %s\n", cont+1, el.title, el.link, el.duration, el.user)
 					}
 				}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"io"
@@ -60,9 +61,9 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 
 	// Sends now playing message
 	m := sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
-		AddField("Now playing", server[guildID].queue[0].title+" - "+server[guildID].queue[0].duration+
-			" added by "+server[guildID].queue[0].user).SetColor(0x7289DA).
-		SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed, i.ChannelID)
+		AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", server[guildID].queue[0].title,
+			server[guildID].queue[0].link, server[guildID].queue[0].duration, server[guildID].queue[0].user)).
+		SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed, i.ChannelID)
 
 	// Join the provided voice channel.
 	if server[guildID].vc == nil || server[guildID].vc.ChannelID != channelID {
