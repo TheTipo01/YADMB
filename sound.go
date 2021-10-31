@@ -20,7 +20,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 
 	// Locks the mutex for the current server
 	server[guildID].server.Lock()
-	if c == nil {
+	if len(cmds) > 0 {
 		server[guildID].stream.Lock()
 		cmdsStart(cmds)
 	}

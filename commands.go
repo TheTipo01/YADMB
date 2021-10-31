@@ -531,6 +531,9 @@ var (
 				return
 			}
 
+			c := make(chan int)
+			go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", url).SetColor(0x7289DA).MessageEmbed, i.Interaction, &c)
+
 			stdout, cmds := stream(url)
 			el := Queue{url, "NaN", url, url, i.Member.User.Username, nil, "", 0, nil, i.ChannelID}
 
@@ -540,7 +543,7 @@ var (
 			server[i.GuildID].queueMutex.Unlock()
 
 			// Starts command and plays URL
-			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil, cmds)
+			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, &c, cmds)
 
 			// After we have finished, closes pipe and unlocks mutex
 			_ = stdout.Close()
