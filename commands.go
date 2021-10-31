@@ -6,8 +6,6 @@ import (
 	"github.com/bwmarrin/lit"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -516,7 +514,6 @@ var (
 		// Streams a song from the given URL, useful for radios
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			var (
-				cmd *exec.Cmd
 				url = i.ApplicationCommandData().Options[0].StringValue()
 				vs  = findUserVoiceState(s, i.Interaction)
 			)
@@ -534,16 +531,7 @@ var (
 				return
 			}
 
-			// Start streaming from URL
-			switch runtime.GOOS {
-			case "windows":
-				cmd = exec.Command("stream.bat", url)
-			default:
-				cmd = exec.Command("sh", "stream.sh", url)
-			}
-
-			// Creates output pipe and element for the queue
-			stdout, _ := cmd.StdoutPipe()
+			stdout, cmds := stream(url)
 			el := Queue{url, "NaN", url, url, i.Member.User.Username, nil, "", 0, nil, i.ChannelID}
 
 			// Adds to queue
@@ -552,7 +540,7 @@ var (
 			server[i.GuildID].queueMutex.Unlock()
 
 			// Starts command and plays URL
-			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil, []*exec.Cmd{cmd})
+			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil, cmds)
 
 			// After we have finished, closes pipe and unlocks mutex
 			_ = stdout.Close()

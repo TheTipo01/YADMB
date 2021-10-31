@@ -5,7 +5,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/zmb3/spotify"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -184,31 +183,4 @@ func lyrics(song string) []string {
 
 	return []string{"No lyrics found"}
 
-}
-
-// gen substitues the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
-func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
-	// Starts yt-dlp with the arguments to select the best audio
-	ytDlp := exec.Command("yt-dlp", "-q", "-f", "bestaudio", "-a", "-", "-o", "-")
-	ytDlp.Stdin = strings.NewReader(link)
-	ytOut, _ := ytDlp.StdoutPipe()
-
-	// We pass it down to ffmpeg
-	ffmpeg := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", "pipe:", "-f", "s16le",
-		"-ar", "48000", "-ac", "2", "pipe:1")
-	ffmpeg.Stdin = ytOut
-	ffmpegOut, _ := ffmpeg.StdoutPipe()
-
-	// dca converts it to a format useful for playing back on discord
-	dca := exec.Command("dca")
-	dca.Stdin = ffmpegOut
-	dcaOut, _ := dca.StdoutPipe()
-
-	// tee saves the output from dca to file and also gives it back to us
-	tee := exec.Command("tee", "./audio_cache/"+filename+".dca")
-	tee.Stdin = dcaOut
-	teeOut, _ := tee.StdoutPipe()
-
-	// We give back
-	return teeOut, []*exec.Cmd{ytDlp, ffmpeg, dca, tee}
 }

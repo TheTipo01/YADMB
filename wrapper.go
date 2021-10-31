@@ -64,17 +64,3 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName string, 
 	server[guildID].stream.Unlock()
 
 }
-
-// cmdsStart starts all the exec.Cmd inside the slice
-func cmdsStart(cmds []*exec.Cmd) {
-	for _, cmd := range cmds {
-		_ = cmd.Start()
-	}
-}
-
-// cmdsWait waits for all the exec.Cmd inside the slice to finish processing, to free up resources
-func cmdsWait(cmds []*exec.Cmd) {
-	for _, cmd := range cmds {
-		_ = cmd.Wait()
-	}
-}

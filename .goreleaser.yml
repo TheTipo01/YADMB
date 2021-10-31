@@ -26,8 +26,6 @@ archives:
       - README.md
       - LICENSE
       - example_config.yml
-      - stream.bat
-      - stream.sh
 checksum:
   name_template: checksums.txt
 snapshot:
