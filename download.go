@@ -5,10 +5,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/zmb3/spotify"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -87,23 +87,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			var cmd *exec.Cmd
-
-			// Download and conversion to DCA
-			switch runtime.GOOS {
-			case "windows":
-				cmd = exec.Command("gen.bat", fileName)
-			default:
-				cmd = exec.Command("sh", "gen.sh", fileName)
-			}
-
-			cmd.Stdin = strings.NewReader(ytdl.WebpageURL)
-
-			pipe, err := cmd.StdoutPipe()
-			if err != nil {
-				lit.Error("Can't create StdoutPipe: %s", err)
-				break
-			}
+			pipe, cmd := gen(ytdl.WebpageURL, fileName)
 
 			server[guildID].queueMutex.Lock()
 			server[guildID].queue = append(server[guildID].queue, el)
@@ -143,7 +127,6 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 // Enqueues song from a spotify playlist, searching them on youtube
 func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID string, i *discordgo.Interaction, random bool) {
-
 	// We get the playlist from it's link
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
@@ -201,4 +184,31 @@ func lyrics(song string) []string {
 
 	return []string{"No lyrics found"}
 
+}
+
+// gen substitues the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
+func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
+	// Starts yt-dlp with the arguments to select the best audio
+	ytDlp := exec.Command("yt-dlp", "-q", "-f", "bestaudio", "-a", "-", "-o", "-")
+	ytDlp.Stdin = strings.NewReader(link)
+	ytOut, _ := ytDlp.StdoutPipe()
+
+	// We pass it down to ffmpeg
+	ffmpeg := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", "pipe:", "-f", "s16le",
+		"-ar", "48000", "-ac", "2", "pipe:1")
+	ffmpeg.Stdin = ytOut
+	ffmpegOut, _ := ffmpeg.StdoutPipe()
+
+	// dca converts it to a format useful for playing back on discord
+	dca := exec.Command("dca")
+	dca.Stdin = ffmpegOut
+	dcaOut, _ := dca.StdoutPipe()
+
+	// tee saves the output from dca to file and also gives it back to us
+	tee := exec.Command("tee", "./audio_cache/"+filename+".dca")
+	tee.Stdin = dcaOut
+	teeOut, _ := tee.StdoutPipe()
+
+	// We give back
+	return teeOut, []*exec.Cmd{ytDlp, ffmpeg, dca, tee}
 }

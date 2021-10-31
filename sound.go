@@ -13,7 +13,7 @@ import (
 )
 
 // Plays a song from a io.Reader if specified, or tries to open a file with the given fileName
-func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, in io.Reader, c *chan int, cmd *exec.Cmd) {
+func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *discordgo.Interaction, in io.Reader, c *chan int, cmds []*exec.Cmd) {
 	if c != nil {
 		go deleteInteraction(s, i, c)
 	}
@@ -22,7 +22,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 	server[guildID].server.Lock()
 	if c == nil {
 		server[guildID].stream.Lock()
-		_ = cmd.Start()
+		cmdsStart(cmds)
 	}
 
 	var (

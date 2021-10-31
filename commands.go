@@ -552,7 +552,7 @@ var (
 			server[i.GuildID].queueMutex.Unlock()
 
 			// Starts command and plays URL
-			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil, cmd)
+			playSound(s, i.GuildID, vs.ChannelID, url, i.Interaction, stdout, nil, []*exec.Cmd{cmd})
 
 			// After we have finished, closes pipe and unlocks mutex
 			_ = stdout.Close()

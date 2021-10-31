@@ -14,11 +14,6 @@ builds:
       - 386
       - arm
       - arm64
-    ignore:
-      - goos: darwin
-        goarch: arm64
-      - goos: darwin
-        goarch: arm
 archives:
   - format: zip
     replacements:
@@ -31,8 +26,6 @@ archives:
       - README.md
       - LICENSE
       - example_config.yml
-      - gen.bat
-      - gen.sh
       - stream.bat
       - stream.sh
 checksum:
