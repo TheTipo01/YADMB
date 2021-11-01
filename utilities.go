@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
@@ -220,7 +221,7 @@ func ByteCountSI(b int64) string {
 // If server is nil, tries to initialize it
 func initializeServer(guild string) {
 	if server[guild] == nil {
-		server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]string)}
+		server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]*CustomCommand)}
 	}
 }
 
@@ -233,4 +234,49 @@ func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan i
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
 	}
+}
+
+// Downloads a song (if it's not cached), deletes an interaction response, and return a prepared Queue element
+func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c *chan int) (*Queue, error) {
+	// Check if the song is the db, to speedup things
+	el := checkInDb(url)
+
+	info, err := os.Stat("./audio_cache/" + el.id + ".dca")
+	if el.title == "" || err != nil || info.Size() <= 0 {
+		// Not in db, download it
+		cmds := download(url)
+
+		// Get info about it
+		splittedOut, err := getInfo(url)
+		if err != nil {
+			return nil, err
+		}
+
+		var ytdl YtDLP
+		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
+		fileName := ytdl.ID + "-" + ytdl.Extractor
+
+		if ytdl.Extractor == "youtube" {
+			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID), i.ChannelID}
+		} else {
+			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, i.ChannelID}
+		}
+
+		addToDb(el)
+
+		// Opens the file, writes file to it, closes it
+		file, _ := os.OpenFile("./audio_cache/"+fileName+".dca", os.O_CREATE|os.O_WRONLY, 644)
+		cmds[2].Stdout = file
+
+		go deleteInteraction(s, i, c)
+
+		server[i.GuildID].stream.Lock()
+		cmdsStart(cmds)
+		cmdsWait(cmds)
+		server[i.GuildID].stream.Unlock()
+	} else {
+		go deleteInteraction(s, i, c)
+	}
+
+	return &el, nil
 }

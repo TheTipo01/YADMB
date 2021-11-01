@@ -26,7 +26,13 @@ type Server struct {
 	// Voice connection
 	vc *discordgo.VoiceConnection
 	// Custom commands, maps a command to a song
-	custom map[string]string
+	custom map[string]*CustomCommand
+}
+
+// CustomCommand holds data about a custom command
+type CustomCommand struct {
+	link string
+	loop bool
 }
 
 // Queue structure for holding infos about a song

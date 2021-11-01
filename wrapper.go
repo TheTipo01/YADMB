@@ -62,5 +62,4 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName string, 
 	cmdsWait(cmds)
 
 	server[guildID].stream.Unlock()
-
 }

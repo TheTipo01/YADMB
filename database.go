@@ -7,7 +7,7 @@ import (
 
 const (
 	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, `segments` varchar(1000) NOT NULL, PRIMARY KEY (`link`));"
-	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL,  PRIMARY KEY (`guild`,`command`));"
+	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL, `loop` tinyint(1) NOT NULL DEFAULT 0,  PRIMARY KEY (`guild`,`command`));"
 )
 
 // Executes a simple query given a DB
@@ -43,8 +43,10 @@ func addToDb(el Queue) {
 
 // Checks if we already have downloaded a song and we've got info about it
 func checkInDb(link string) Queue {
-	var el Queue
-	var encodedSegments string
+	var (
+		el              Queue
+		encodedSegments string
+	)
 
 	el.link = link
 
@@ -57,23 +59,20 @@ func checkInDb(link string) Queue {
 }
 
 // Adds a custom command to db and to the command map
-func addCommand(command string, song string, guild string) error {
+func addCommand(command string, song string, guild string, loop bool) error {
 	// If the song is already in the map, we ignore it
-	if server[guild].custom[command] != "" {
+	if server[guild].custom[command].link != "" {
 		return errors.New("command already exists")
 	}
 
 	// Else, we add it to the database
-	statement, _ := db.Prepare("INSERT INTO customCommands (guild, command, song) VALUES(?, ?, ?)")
-
-	_, err := statement.Exec(guild, command, song)
+	_, err := db.Exec("INSERT INTO customCommands (guild, command, song, loop) VALUES(?, ?, ?, ?)", guild, command, song, loop)
 	if err != nil {
-		lit.Error("error inserting into the database: %s", err)
 		return errors.New("error inserting into the database: " + err.Error())
 	}
 
 	// And the map
-	server[guild].custom[command] = song
+	server[guild].custom[command].link = song
 
 	return nil
 }
@@ -81,7 +80,7 @@ func addCommand(command string, song string, guild string) error {
 // Removes a custom command from the db and from the command map
 func removeCustom(command string, guild string) error {
 	// Remove from DB
-	if server[guild].custom[command] == "" {
+	if server[guild].custom[command].link == "" {
 		return errors.New("command doesn't exist")
 	}
 
@@ -99,7 +98,10 @@ func removeCustom(command string, guild string) error {
 
 // Loads custom command from the database
 func loadCustomCommands() {
-	var guild, command, song string
+	var (
+		guild, command, song string
+		loop                 bool
+	)
 
 	rows, err := db.Query("SELECT * FROM customCommands")
 	if err != nil {
@@ -107,7 +109,7 @@ func loadCustomCommands() {
 	}
 
 	for rows.Next() {
-		err = rows.Scan(&guild, &command, &song)
+		err = rows.Scan(&guild, &command, &song, &loop)
 		if err != nil {
 			lit.Error("Error scanning rows from query, %s", err)
 			continue
@@ -116,6 +118,14 @@ func loadCustomCommands() {
 		// We need to allocate the Server structure before loading custom commands, otherwise we would get a nil pointer deference
 		initializeServer(guild)
 
-		server[guild].custom[command] = song
+		server[guild].custom[command] = &CustomCommand{link: song, loop: loop}
+	}
+}
+
+// Removes an element from the DB
+func removeFromDB(el Queue) {
+	_, err := db.Exec("DELETE FROM song WHERE id=?", el.id)
+	if err != nil {
+		lit.Error(err.Error())
 	}
 }

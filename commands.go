@@ -1,12 +1,9 @@
 package main
 
 import (
-	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -101,6 +98,12 @@ var (
 					Description: "Link to the song/playlist",
 					Required:    true,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "loop",
+					Description: "If you want to loop the song when called, set this to true",
+					Required:    true,
+				},
 			},
 		},
 		{
@@ -167,6 +170,30 @@ var (
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "link",
 					Description: "Link to play in loop",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "update",
+			Description: "Update info about a song, segments from SponsorBlock, or re-download the song",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "link",
+					Description: "Song to update",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "info",
+					Description: "Update info like thumbnail and title",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "song",
+					Description: "Re-downloads the song",
 					Required:    true,
 				},
 			},
@@ -429,7 +456,7 @@ var (
 
 		// Creates a custom command to play a song or playlist
 		"addcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := addCommand(strings.ToLower(i.ApplicationCommandData().Options[0].StringValue()), i.ApplicationCommandData().Options[1].StringValue(), i.GuildID)
+			err := addCommand(strings.ToLower(i.ApplicationCommandData().Options[0].StringValue()), i.ApplicationCommandData().Options[1].StringValue(), i.GuildID, i.ApplicationCommandData().Options[1].BoolValue())
 			if err != nil {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -507,8 +534,7 @@ var (
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			command := strings.ToLower(i.ApplicationCommandData().Options[0].StringValue())
 
-			if server[i.GuildID].custom[command] != "" {
-
+			if server[i.GuildID].custom[command].link != "" {
 				vs := findUserVoiceState(s, i.Interaction)
 
 				// Check if user is not in a voice channel
@@ -518,7 +544,11 @@ var (
 					return
 				}
 
-				play(s, server[i.GuildID].custom[command], i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+				if server[i.GuildID].custom[command].loop {
+					playLoop(s, i.Interaction, server[i.GuildID].custom[command].link)
+				} else {
+					play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Not a valid custom command!\nSee /listcustom for a list of custom commands.").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -566,210 +596,42 @@ var (
 
 		// Loops a song from the url
 		"loop": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			vs := findUserVoiceState(s, i.Interaction)
+			playLoop(s, i.Interaction, i.ApplicationCommandData().Options[0].StringValue())
+		},
 
-			// Check if user is not in a voice channel
-			if vs == nil {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-				return
-			}
-
-			// Checks if the provided url is, indeed, an url
+		// Refreshes things about a song
+		"update": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			url := i.ApplicationCommandData().Options[0].StringValue()
+			info := i.ApplicationCommandData().Options[1].BoolValue()
+			song := i.ApplicationCommandData().Options[2].BoolValue()
+
 			if !isValidURL(url) {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Invalid URL!").
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Not a valid URL!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				return
 			}
 
-			c := make(chan int)
-			go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", url).SetColor(0x7289DA).MessageEmbed, i.Interaction, &c)
-
-			// Check if the song is the db, to speedup things
 			el := checkInDb(url)
-
-			info, err := os.Stat("./audio_cache/" + el.id + ".dca")
-			if el.title == "" || err != nil || info.Size() <= 0 {
-				// Not in db, download it
-				cmds := download(url)
-
-				// Get info about it
-				splittedOut, err := getInfo(url)
-				if err != nil {
-					modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-					return
-				}
-
-				var ytdl YtDLP
-				_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
-				fileName := ytdl.ID + "-" + ytdl.Extractor
-
-				if ytdl.Extractor == "youtube" {
-					el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID), i.ChannelID}
-				} else {
-					el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, i.ChannelID}
-				}
-
-				addToDb(el)
-
-				// Opens the file, writes file to it, closes it
-				file, _ := os.OpenFile("./audio_cache/"+fileName+".dca", os.O_CREATE|os.O_WRONLY, 644)
-				cmds[2].Stdout = file
-
-				go deleteInteraction(s, i.Interaction, &c)
-
-				server[i.GuildID].stream.Lock()
-				cmdsStart(cmds)
-				cmdsWait(cmds)
-				server[i.GuildID].stream.Unlock()
-			} else {
-				go deleteInteraction(s, i.Interaction, &c)
+			if el.title == "" {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Song is not cached!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
 			}
 
-			// Add to queue
-			server[i.GuildID].queueMutex.Lock()
-			server[i.GuildID].queue = append(server[i.GuildID].queue, el)
-			server[i.GuildID].queueMutex.Unlock()
+			if info {
+				removeFromDB(el)
+			}
 
-			var (
-				opuslen int16
-				skip    bool
-				file    *os.File
-				exit    bool
-			)
-			server[i.GuildID].server.Lock()
-
-			m := sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
-				AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", server[i.GuildID].queue[0].title,
-					server[i.GuildID].queue[0].link, server[i.GuildID].queue[0].duration, server[i.GuildID].queue[0].user)).
-				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID)
-
-			// Join the provided voice channel.
-			if server[i.GuildID].vc == nil || server[i.GuildID].vc.ChannelID != vs.ChannelID {
-				server[i.GuildID].vc, err = s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+			if song {
+				err := os.Remove("./audio_cache/" + el.id + ".dca")
 				if err != nil {
-					lit.Error("%s", err)
-					server[i.GuildID].server.Unlock()
-					return
+					lit.Error(err.Error())
 				}
 			}
 
-			// Start speaking.
-			_ = server[i.GuildID].vc.Speaking(true)
-			server[i.GuildID].skip = false
-
-			for {
-				file, err = os.Open("./audio_cache/" + el.id + ".dca")
-				if err != nil {
-					lit.Error("Error opening dca file: %s", err)
-					server[i.GuildID].server.Unlock()
-					return
-				}
-
-				// Check if we need to clear
-				if server[i.GuildID].clear {
-					removeFromQueue(strings.TrimSuffix(el.id, ".dca"), i.GuildID)
-					// If this is the last element, we have finished clearing the queue
-					if len(server[i.GuildID].queue) == 0 {
-						err = s.InteractionResponseDelete(s.State.User.ID, i.Interaction)
-						if err != nil {
-							lit.Error("InteractionResponseDelete: %s", err.Error())
-						}
-
-						server[i.GuildID].clear = false
-					}
-					server[i.GuildID].server.Unlock()
-					return
-				}
-
-				for {
-					if server[i.GuildID].queue[0].segments[server[i.GuildID].queue[0].frame] {
-						skip = !skip
-					}
-
-					// Read opus frame length from dca file.
-					err = binary.Read(file, binary.LittleEndian, &opuslen)
-
-					// If this is the end of the file, just return.
-					if err == io.ErrUnexpectedEOF {
-						exit = true
-						break
-					}
-
-					if err == io.EOF {
-						break
-					}
-
-					// Read encoded pcm from dca file.
-					InBuf := make([]byte, opuslen)
-					err = binary.Read(file, binary.LittleEndian, &InBuf)
-
-					// Keep count of the frames of the song
-					server[i.GuildID].queue[0].frame++
-
-					if skip {
-						continue
-					}
-
-					// Should not be any end of file errors
-					if err != nil {
-						lit.Error("Error streaming from dca file: %s", err)
-						exit = true
-						break
-					}
-
-					// Stream data to discord
-					server[i.GuildID].pause.Lock()
-					if !server[i.GuildID].skip {
-						select {
-						case server[i.GuildID].vc.OpusSend <- InBuf:
-							break
-						case <-time.After(time.Second / 3):
-							server[i.GuildID].vc, _ = s.ChannelVoiceJoin(i.GuildID, server[i.GuildID].queue[0].channel, false, true)
-						}
-
-					} else {
-						server[i.GuildID].pause.Unlock()
-						exit = true
-						break
-					}
-					server[i.GuildID].pause.Unlock()
-				}
-
-				if exit {
-					// Stop speaking
-					_ = server[i.GuildID].vc.Speaking(false)
-
-					// Resets the skip boolean
-					server[i.GuildID].skip = false
-
-					// Delete old message
-					if m != nil {
-						err = s.ChannelMessageDelete(m.ChannelID, m.ID)
-						if err != nil {
-							lit.Error("%s", err)
-						}
-
-						deleteMessages(s, server[i.GuildID].queue[0].messageID)
-					}
-
-					// Remove from queue the song
-					removeFromQueue(strings.TrimSuffix(el.id, ".dca"), i.GuildID)
-
-					// If this is the last song, we wait a minute before disconnecting from the voice channel
-					if len(server[i.GuildID].queue) == 0 {
-						go quitVC(i.GuildID)
-					}
-
-					// Releases the mutex lock for the server
-					server[i.GuildID].server.Unlock()
-
-					break
-				}
-				_ = file.Close()
-			}
-
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Successful",
+				"Requested data will be updated next time the song is played!").
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 		},
 	}
 )

@@ -35,7 +35,7 @@ Yet Another Discord Music Bot - A music bot written in go
 
 `/restart` - Restarts the bot (works only for the bot owner, see `config.yml`)
 
-`/addcustom <custom_command> <song/playlist>` - Creates a custom command to play a song or playlist
+`/addcustom <custom_command> <song/playlist> <loop>` - Creates a custom command to play a song or playlist. Set `loop` to true to play the song looped
 
 `/rmcustom <custom_command>` - Removes a custom command from the DB
 
@@ -50,3 +50,7 @@ Yet Another Discord Music Bot - A music bot written in go
 `/stream <link>` - Streams a song from the given URL, useful for radios
 
 `/loop <link>` - Loops the given song until skip is called
+
+`/update <link> <info> <song>` - Next time the song `<link>` is played, the bot will (if set to true):
+- `<info>` - Update info about the song, like thumbnail, segments from SponsorBlock, title...
+- `<song>` - Redownload the entire song
