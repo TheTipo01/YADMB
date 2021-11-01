@@ -66,7 +66,7 @@ func addCommand(command string, song string, guild string, loop bool) error {
 	}
 
 	// Else, we add it to the database
-	_, err := db.Exec("INSERT INTO customCommands (guild, command, song, loop) VALUES(?, ?, ?, ?)", guild, command, song, loop)
+	_, err := db.Exec("INSERT INTO customCommands (`guild`, `command`, `song`, `loop`) VALUES(?, ?, ?, ?)", guild, command, song, loop)
 	if err != nil {
 		return errors.New("error inserting into the database: " + err.Error())
 	}
