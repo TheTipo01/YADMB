@@ -14,6 +14,9 @@ builds:
       - 386
       - arm
       - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
 archives:
   - format: zip
     replacements:
