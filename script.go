@@ -20,8 +20,8 @@ func cmdsWait(cmds []*exec.Cmd) {
 	}
 }
 
-// gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
-func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
+// download downloads the song and gives back a pipe with DCA audio
+func download(link string) []*exec.Cmd {
 	// Starts yt-dlp with the arguments to select the best audio
 	ytDlp := exec.Command("yt-dlp", "-q", "-f", "bestaudio", "-a", "-", "-o", "-")
 	ytDlp.Stdin = strings.NewReader(link)
@@ -36,7 +36,14 @@ func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
 	// dca converts it to a format useful for playing back on discord
 	dca := exec.Command("dca")
 	dca.Stdin = ffmpegOut
-	dcaOut, _ := dca.StdoutPipe()
+
+	return []*exec.Cmd{ytDlp, ffmpeg, dca}
+}
+
+// gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
+func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
+	cmds := download(link)
+	dcaOut, _ := cmds[2].StdoutPipe()
 
 	// tee saves the output from dca to file and also gives it back to us
 	tee := exec.Command("tee", "./audio_cache/"+filename+".dca")
@@ -44,7 +51,7 @@ func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
 	teeOut, _ := tee.StdoutPipe()
 
 	// We give back
-	return teeOut, []*exec.Cmd{ytDlp, ffmpeg, dca, tee}
+	return teeOut, append(cmds, tee)
 }
 
 // stream substitutes the old scripts for streaming directly to discord from a given source

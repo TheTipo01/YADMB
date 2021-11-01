@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/zmb3/spotify"
@@ -34,22 +35,9 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		}
 	}
 
-	// Gets info about songs
-	out, err := exec.Command("yt-dlp", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
-
-	// Parse output as string, splitting it on every newline
-	splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
-
+	splittedOut, err := getInfo(link)
 	if err != nil {
-		lit.Error("Can't get info about song: %s", splittedOut[len(splittedOut)-1])
-		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Can't get info about song!\n"+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
-		return
-	}
-
-	// Check if yt-dlp returned something
-	if strings.TrimSpace(splittedOut[0]) == "" {
-		lit.Error("yt-dlp returned no songs!")
-		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "yt-dlp returned no songs!").SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
@@ -183,4 +171,24 @@ func lyrics(song string) []string {
 
 	return []string{"No lyrics found"}
 
+}
+
+// getInfo returns info about a song, with every line of the returned array as JSON of type YtDLP
+func getInfo(link string) ([]string, error) {
+	// Gets info about songs
+	out, err := exec.Command("yt-dlp", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
+
+	// Parse output as string, splitting it on every newline
+	splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+
+	if err != nil {
+		return nil, errors.New("Can't get info about song: " + splittedOut[len(splittedOut)-1])
+	}
+
+	// Check if yt-dlp returned something
+	if strings.TrimSpace(splittedOut[0]) == "" {
+		return nil, errors.New("yt-dlp returned no songs")
+	}
+
+	return splittedOut, nil
 }

@@ -48,3 +48,5 @@ Yet Another Discord Music Bot - A music bot written in go
 `/goto <time>` - Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
 
 `/stream <link>` - Streams a song from the given URL, useful for radios
+
+`/loop <link>` - Loops the given song until skip is called
