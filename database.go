@@ -61,7 +61,7 @@ func checkInDb(link string) Queue {
 // Adds a custom command to db and to the command map
 func addCommand(command string, song string, guild string, loop bool) error {
 	// If the song is already in the map, we ignore it
-	if server[guild].custom[command].link != "" {
+	if server[guild].custom[command] != nil {
 		return errors.New("command already exists")
 	}
 
@@ -72,7 +72,7 @@ func addCommand(command string, song string, guild string, loop bool) error {
 	}
 
 	// And the map
-	server[guild].custom[command].link = song
+	server[guild].custom[command] = &CustomCommand{link: song, loop: loop}
 
 	return nil
 }
@@ -80,7 +80,7 @@ func addCommand(command string, song string, guild string, loop bool) error {
 // Removes a custom command from the db and from the command map
 func removeCustom(command string, guild string) error {
 	// Remove from DB
-	if server[guild].custom[command].link == "" {
+	if server[guild].custom[command] == nil {
 		return errors.New("command doesn't exist")
 	}
 
