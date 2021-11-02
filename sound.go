@@ -220,8 +220,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 		file, err = os.Open("./audio_cache/" + el.id + ".dca")
 		if err != nil {
 			lit.Error("Error opening dca file: %s", err)
-			server[i.GuildID].server.Unlock()
-			return
+			break
 		}
 
 		// Check if we need to clear
@@ -236,8 +235,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 
 				server[i.GuildID].clear = false
 			}
-			server[i.GuildID].server.Unlock()
-			return
+			break
 		}
 
 		for {
@@ -285,7 +283,6 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 				case <-time.After(time.Second / 3):
 					server[i.GuildID].vc, _ = s.ChannelVoiceJoin(i.GuildID, server[i.GuildID].queue[0].channel, false, true)
 				}
-
 			} else {
 				server[i.GuildID].pause.Unlock()
 				exit = true
@@ -294,37 +291,39 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 			server[i.GuildID].pause.Unlock()
 		}
 
+		_ = file.Close()
+		server[i.GuildID].queue[0].frame = 0
+
+		// If exit was raised, we exit from the for
 		if exit {
-			// Stop speaking
-			_ = server[i.GuildID].vc.Speaking(false)
-
-			// Resets the skip boolean
-			server[i.GuildID].skip = false
-
-			// Delete old message
-			if m != nil {
-				err = s.ChannelMessageDelete(m.ChannelID, m.ID)
-				if err != nil {
-					lit.Error("%s", err)
-				}
-
-				deleteMessages(s, server[i.GuildID].queue[0].messageID)
-			}
-
-			// Remove from queue the song
-			removeFromQueue(strings.TrimSuffix(el.id, ".dca"), i.GuildID)
-
-			// If this is the last song, we wait a minute before disconnecting from the voice channel
-			if len(server[i.GuildID].queue) == 0 {
-				go quitVC(i.GuildID)
-			}
-
-			// Releases the mutex lock for the server
-			server[i.GuildID].server.Unlock()
-
 			break
 		}
-		_ = file.Close()
 	}
 
+	// Stop speaking
+	_ = server[i.GuildID].vc.Speaking(false)
+
+	// Resets the skip boolean
+	server[i.GuildID].skip = false
+
+	// Delete old message
+	if m != nil {
+		err = s.ChannelMessageDelete(m.ChannelID, m.ID)
+		if err != nil {
+			lit.Error("%s", err)
+		}
+
+		deleteMessages(s, server[i.GuildID].queue[0].messageID)
+	}
+
+	// Remove from queue the song
+	removeFromQueue(strings.TrimSuffix(el.id, ".dca"), i.GuildID)
+
+	// If this is the last song, we wait a minute before disconnecting from the voice channel
+	if len(server[i.GuildID].queue) == 0 {
+		go quitVC(i.GuildID)
+	}
+
+	// Releases the mutex lock for the server
+	server[i.GuildID].server.Unlock()
 }
