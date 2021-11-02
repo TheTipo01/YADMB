@@ -33,7 +33,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 	)
 
 	if in == nil {
-		file, err = os.Open("./audio_cache/" + fileName)
+		file, err = os.Open(cachePath + fileName)
 		if err != nil {
 			lit.Error("Error opening dca file: %s", err)
 			server[guildID].server.Unlock()
@@ -45,7 +45,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 
 	// Check if we need to clear
 	if server[guildID].clear {
-		removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
+		removeFromQueue(strings.TrimSuffix(fileName, audioExtension), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 0 {
 			err = s.InteractionResponseDelete(s.State.User.ID, i)
@@ -148,7 +148,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 	}
 
 	// Remove from queue the song
-	removeFromQueue(strings.TrimSuffix(fileName, ".dca"), guildID)
+	removeFromQueue(strings.TrimSuffix(fileName, audioExtension), guildID)
 
 	// If this is the last song, we wait a minute before disconnecting from the voice channel
 	if len(server[guildID].queue) == 0 {
@@ -164,23 +164,23 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 
 	// Check if user is not in a voice channel
 	if vs == nil {
-		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "You're not in a voice channel in this guild!").
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 			SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
 	if !isValidURL(url) {
-		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", "Invalid URL!").
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
 			SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
 	c := make(chan int)
-	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Enqueued", url).SetColor(0x7289DA).MessageEmbed, i, &c)
+	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i, &c)
 
 	el, err := downloadSong(s, i, url, &c)
 	if err != nil {
-		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField("Error", err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
@@ -217,7 +217,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 	server[i.GuildID].skip = false
 
 	for {
-		file, err = os.Open("./audio_cache/" + el.id + ".dca")
+		file, err = os.Open(cachePath + el.id + audioExtension)
 		if err != nil {
 			lit.Error("Error opening dca file: %s", err)
 			break
@@ -225,7 +225,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 
 		// Check if we need to clear
 		if server[i.GuildID].clear {
-			removeFromQueue(strings.TrimSuffix(el.id, ".dca"), i.GuildID)
+			removeFromQueue(strings.TrimSuffix(el.id, audioExtension), i.GuildID)
 			// If this is the last element, we have finished clearing the queue
 			if len(server[i.GuildID].queue) == 0 {
 				err = s.InteractionResponseDelete(s.State.User.ID, i)
@@ -317,7 +317,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 	}
 
 	// Remove from queue the song
-	removeFromQueue(strings.TrimSuffix(el.id, ".dca"), i.GuildID)
+	removeFromQueue(strings.TrimSuffix(el.id, audioExtension), i.GuildID)
 
 	// If this is the last song, we wait a minute before disconnecting from the voice channel
 	if len(server[i.GuildID].queue) == 0 {

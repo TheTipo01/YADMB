@@ -241,7 +241,7 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 	// Check if the song is the db, to speedup things
 	el := checkInDb(url)
 
-	info, err := os.Stat("./audio_cache/" + el.id + ".dca")
+	info, err := os.Stat(cachePath + el.id + audioExtension)
 	if el.title == "" || err != nil || info.Size() <= 0 {
 		// Not in db, download it
 		cmds := download(url)
@@ -265,7 +265,7 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 		addToDb(el)
 
 		// Opens the file, writes file to it, closes it
-		file, _ := os.OpenFile("./audio_cache/"+fileName+".dca", os.O_CREATE|os.O_WRONLY, 644)
+		file, _ := os.OpenFile(cachePath+fileName+audioExtension, os.O_CREATE|os.O_WRONLY, 644)
 		cmds[2].Stdout = file
 
 		go deleteInteraction(s, i, c)

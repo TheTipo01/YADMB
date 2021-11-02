@@ -46,7 +46,7 @@ func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
 	dcaOut, _ := cmds[2].StdoutPipe()
 
 	// tee saves the output from dca to file and also gives it back to us
-	tee := exec.Command("tee", "./audio_cache/"+filename+".dca")
+	tee := exec.Command("tee", cachePath+filename+audioExtension)
 	tee.Stdin = dcaOut
 	teeOut, _ := tee.StdoutPipe()
 
