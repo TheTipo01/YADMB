@@ -273,6 +273,7 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 		server[i.GuildID].stream.Lock()
 		cmdsStart(cmds)
 		cmdsWait(cmds)
+		_ = file.Close()
 		server[i.GuildID].stream.Unlock()
 	} else {
 		go deleteInteraction(s, i, c)

@@ -30,14 +30,15 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		skip    bool
 		file    *os.File
 		err     error
+		m *discordgo.Message
 	)
 
 	if in == nil {
 		file, err = os.Open(cachePath + fileName)
 		if err != nil {
 			lit.Error("Error opening dca file: %s", err)
-			server[guildID].server.Unlock()
-			return
+			// TODO: Maybe don't use goto? idk
+			goto end
 		}
 
 		in = file
@@ -60,7 +61,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 	}
 
 	// Sends now playing message
-	m := sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+	m = sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
 		AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", server[guildID].queue[0].title,
 			server[guildID].queue[0].link, server[guildID].queue[0].duration, server[guildID].queue[0].user)).
 		SetColor(0x7289DA).SetThumbnail(server[guildID].queue[0].thumbnail).MessageEmbed, i.ChannelID)
@@ -126,6 +127,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		server[guildID].pause.Unlock()
 	}
 
+	end:
 	// If we are using a file, close it
 	if file != nil {
 		_ = file.Close()
