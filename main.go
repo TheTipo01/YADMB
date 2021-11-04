@@ -110,8 +110,8 @@ func init() {
 	loadCustomCommands()
 
 	// Create folders used by the bot
-	if _, err = os.Stat("./audio_cache"); err != nil {
-		if err = os.Mkdir("./audio_cache", 0755); err != nil {
+	if _, err = os.Stat(cachePath); err != nil {
+		if err = os.Mkdir(cachePath, 0755); err != nil {
 			lit.Error("Cannot create audio_cache directory, %s", err)
 		}
 	}
@@ -182,16 +182,23 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 				_ = s.ApplicationCommandDelete(s.State.User.ID, "", c.ID)
 				lit.Info("Deleted unused command %s", c.Name)
 			}
+
+			// Compare commands with the ones in commands, if they are different we re-create them
+			for _, v := range commands {
+				if c.Name == v.Name {
+					if !isCommandEqual(c, v) {
+						_, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
+						if err != nil {
+							lit.Error("Cannot create '%v' command: %v", v.Name, err)
+						}
+					}
+					break
+				}
+
+			}
 		}
 	}
 
-	// And add commands used
-	for _, v := range commands {
-		_, err := s.ApplicationCommandCreate(s.State.User.ID, "", v)
-		if err != nil {
-			lit.Error("Cannot create '%v' command: %v", v.Name, err)
-		}
-	}
 }
 
 // Initialize Server structure

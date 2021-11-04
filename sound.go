@@ -30,7 +30,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		skip    bool
 		file    *os.File
 		err     error
-		m *discordgo.Message
+		m       *discordgo.Message
 	)
 
 	if in == nil {
@@ -127,7 +127,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		server[guildID].pause.Unlock()
 	}
 
-	end:
+end:
 	// If we are using a file, close it
 	if file != nil {
 		_ = file.Close()
