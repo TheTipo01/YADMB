@@ -37,8 +37,11 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		file, err = os.Open(cachePath + fileName)
 		if err != nil {
 			lit.Error("Error opening dca file: %s", err)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+				AddField(errorTitle, err.Error()).
+				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
 			// TODO: Maybe don't use goto? idk
-			goto end
+			goto cleanup
 		}
 
 		in = file
@@ -71,8 +74,10 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		server[guildID].vc, err = s.ChannelVoiceJoin(guildID, channelID, false, true)
 		if err != nil {
 			lit.Error("%s", err)
-			server[guildID].server.Unlock()
-			return
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+				AddField(errorTitle, err.Error()).
+				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
+			goto cleanup
 		}
 	}
 
@@ -107,6 +112,9 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		// Should not be any end of file errors
 		if err != nil {
 			lit.Error("Error streaming from dca file: %s", err)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+				AddField(errorTitle, err.Error()).
+				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
 			break
 		}
 
@@ -127,7 +135,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		server[guildID].pause.Unlock()
 	}
 
-end:
+cleanup:
 	// If we are using a file, close it
 	if file != nil {
 		_ = file.Close()
@@ -209,8 +217,10 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 		server[i.GuildID].vc, err = s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
 		if err != nil {
 			lit.Error("%s", err)
-			server[i.GuildID].server.Unlock()
-			return
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+				AddField(errorTitle, err.Error()).
+				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
+			goto cleanup
 		}
 	}
 
@@ -222,6 +232,9 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 		file, err = os.Open(cachePath + el.id + audioExtension)
 		if err != nil {
 			lit.Error("Error opening dca file: %s", err)
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+				AddField(errorTitle, err.Error()).
+				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
 			break
 		}
 
@@ -251,6 +264,9 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 			// If this is the end of the file, just return.
 			if err == io.ErrUnexpectedEOF {
 				exit = true
+				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+					AddField(errorTitle, err.Error()).
+					SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
 				break
 			}
 
@@ -273,6 +289,9 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 			if err != nil {
 				lit.Error("Error streaming from dca file: %s", err)
 				exit = true
+				go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+					AddField(errorTitle, err.Error()).
+					SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.ChannelID, time.Second*5)
 				break
 			}
 
@@ -301,7 +320,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 			break
 		}
 	}
-
+cleanup:
 	// Stop speaking
 	_ = server[i.GuildID].vc.Speaking(false)
 

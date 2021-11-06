@@ -62,6 +62,18 @@ func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 	return m
 }
 
+func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string, wait time.Duration) {
+	m := sendEmbed(s, embed, txtChannel)
+	if m != nil {
+		time.Sleep(wait)
+		err := s.ChannelMessageDelete(m.ChannelID, m.ID)
+		if err != nil {
+			lit.Error("ChannelMessageDelete failed: %s", err)
+		}
+	}
+
+}
+
 // Sends embed as response to an interaction
 func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c *chan int) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}

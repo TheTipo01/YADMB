@@ -103,8 +103,7 @@ func init() {
 	}
 
 	// Create tables used by the bots
-	execQuery(tblSong)
-	execQuery(tblCommands)
+	execQuery(tblSong, tblCommands)
 
 	// And load custom commands from the db
 	loadCustomCommands()
@@ -112,7 +111,7 @@ func init() {
 	// Create folders used by the bot
 	if _, err = os.Stat(cachePath); err != nil {
 		if err = os.Mkdir(cachePath, 0755); err != nil {
-			lit.Error("Cannot create audio_cache directory, %s", err)
+			lit.Error("Cannot create %s, %s", cachePath, err)
 		}
 	}
 
@@ -165,6 +164,8 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	_ = dg.Close()
+	// And the DB connection
+	_ = db.Close()
 
 }
 

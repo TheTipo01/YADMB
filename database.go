@@ -11,16 +11,12 @@ const (
 )
 
 // Executes a simple query given a DB
-func execQuery(query string) {
-	statement, err := db.Prepare(query)
-	if err != nil {
-		lit.Error("Error preparing query, %s", err)
-		return
-	}
-
-	_, err = statement.Exec()
-	if err != nil {
-		lit.Error("Error creating table, %s", err)
+func execQuery(query ...string) {
+	for _, q := range query {
+		_, err := db.Exec(q)
+		if err != nil {
+			lit.Error("Error executing query, %s", err)
+		}
 	}
 }
 
@@ -28,9 +24,8 @@ func execQuery(query string) {
 func addToDb(el Queue) {
 	// We check for empty strings, just to be sure
 	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
-		statement, _ := db.Prepare("INSERT INTO song (link, id, title, duration, thumbnail, segments) VALUES(?, ?, ?, ?, ?, ?)")
-
-		_, err := statement.Exec(el.link, el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
+		_, err := db.Exec("INSERT INTO song (link, id, title, duration, thumbnail, segments) VALUES(?, ?, ?, ?, ?, ?)",
+			el.link, el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
 		if err != nil {
 			errStr := err.Error()
 			// First error is for SQLite, second one is for MySQL
@@ -50,8 +45,8 @@ func checkInDb(link string) Queue {
 
 	el.link = link
 
-	row := db.QueryRow("SELECT * FROM song WHERE link = ?", link)
-	_ = row.Scan(&el.link, &el.id, &el.title, &el.duration, &el.thumbnail, &encodedSegments)
+	_ = db.QueryRow("SELECT * FROM song WHERE link = ?", link).
+		Scan(&el.link, &el.id, &el.title, &el.duration, &el.thumbnail, &encodedSegments)
 
 	el.segments = decodeSegments(encodedSegments)
 
@@ -84,8 +79,7 @@ func removeCustom(command string, guild string) error {
 		return errors.New("command doesn't exist")
 	}
 
-	statement, _ := db.Prepare("DELETE FROM customCommands WHERE guild=? AND command=?")
-	_, err := statement.Exec(guild, command)
+	_, err := db.Exec("DELETE FROM customCommands WHERE guild=? AND command=?", guild, command)
 	if err != nil {
 		lit.Error("Error removing from the database, %s", err)
 	}
@@ -126,6 +120,6 @@ func loadCustomCommands() {
 func removeFromDB(el Queue) {
 	_, err := db.Exec("DELETE FROM song WHERE id=?", el.id)
 	if err != nil {
-		lit.Error(err.Error())
+		lit.Error("Error while deleting from database, %s", err)
 	}
 }
