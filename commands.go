@@ -534,7 +534,7 @@ var (
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			command := strings.ToLower(i.ApplicationCommandData().Options[0].StringValue())
 
-			if server[i.GuildID].custom[command].link != "" {
+			if server[i.GuildID].custom[command] != nil {
 				vs := findUserVoiceState(s, i.Interaction)
 
 				// Check if user is not in a voice channel
