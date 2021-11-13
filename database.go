@@ -132,8 +132,13 @@ func loadCustomCommands() {
 
 // Removes an element from the DB
 func removeFromDB(el Queue) {
-	_, err := db.Exec("DELETE FROM song WHERE id=?", el.id)
+	_, err := db.Exec("DELETE FROM link WHERE songID=?", el.id)
 	if err != nil {
-		lit.Error("Error while deleting from database, %s", err)
+		lit.Error("Error while deleting from link, %s", err)
+	}
+
+	_, err = db.Exec("DELETE FROM song WHERE id=?", el.id)
+	if err != nil {
+		lit.Error("Error while deleting from song, %s", err)
 	}
 }
