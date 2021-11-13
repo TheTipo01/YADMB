@@ -59,3 +59,8 @@ const (
 	disconnected = "Bye-bye!"
 	joined       = "Joined "
 )
+
+const (
+	sqlite = "sqlite"
+	mysql  = "mysql"
+)

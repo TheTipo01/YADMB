@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -267,18 +269,28 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 
 		var ytdl YtDLP
 		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
-		fileName := ytdl.ID + "-" + ytdl.Extractor
 
-		if ytdl.Extractor == "youtube" {
-			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID), i.ChannelID}
-		} else {
-			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, i.ChannelID}
+		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, i.ChannelID}
+		switch ytdl.Extractor {
+		case "youtube":
+			el.id = ytdl.ID + "-" + ytdl.Extractor
+			// SponsorBlock is supported only on youtube
+			el.segments = getSegments(ytdl.ID)
+		case "generic":
+			// The generic extractor doesn't give out something unique, so we generate one from the link
+			el.id = idGen(el.link) + "-" + ytdl.Extractor
+		default:
+			el.id = ytdl.ID + "-" + ytdl.Extractor
 		}
 
-		addToDb(el)
+		addToDb(el, false)
+		if el.link != url {
+			el.link = url
+			addToDb(el, true)
+		}
 
 		// Opens the file, writes file to it, closes it
-		file, _ := os.OpenFile(cachePath+fileName+audioExtension, os.O_CREATE|os.O_WRONLY, 644)
+		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 644)
 		cmds[2].Stdout = file
 
 		go deleteInteraction(s, i, c)
@@ -310,4 +322,12 @@ func isCommandEqual(c *discordgo.ApplicationCommand, v *discordgo.ApplicationCom
 	vBytes, _ := json.Marshal(&v)
 
 	return bytes.Compare(cBytes, vBytes) == 0
+}
+
+// idGen returns the first 11 characters of the SHA1 hash for the given link
+func idGen(link string) string {
+	h := sha1.New()
+	h.Write([]byte(link))
+
+	return strings.ToLower(base32.HexEncoding.EncodeToString(h.Sum(nil))[0:11])
 }

@@ -51,39 +51,44 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 	// We parse every track as individual json, because yt-dlp
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
-		fileName := ytdl.ID + "-" + ytdl.Extractor
 
-		var el Queue
-		if ytdl.Extractor == "youtube" {
-			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, getSegments(ytdl.ID), channelID}
-		} else {
-			el = Queue{ytdl.Title, formatDuration(ytdl.Duration), fileName, ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID}
+		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID}
+		switch ytdl.Extractor {
+		case "youtube":
+			el.id = ytdl.ID + "-" + ytdl.Extractor
+			// SponsorBlock is supported only on youtube
+			el.segments = getSegments(ytdl.ID)
+		case "generic":
+			// The generic extractor doesn't give out something unique, so we generate one from the link
+			el.id = idGen(el.link) + "-" + ytdl.Extractor
+		default:
+			el.id = ytdl.ID + "-" + ytdl.Extractor
 		}
 
 		// Checks if video is already downloaded
-		info, err := os.Stat(cachePath + fileName + audioExtension)
+		info, err := os.Stat(cachePath + el.id + audioExtension)
 
 		// We add the song to the db, for faster parsing
-		addToDb(el)
+		addToDb(el, false)
 
 		// If we have a single song, we also add it with the given link
-		if len(splittedOut) == 1 {
+		if len(splittedOut) == 1 && el.link != link {
 			el.link = link
-			addToDb(el)
+			addToDb(el, true)
 		}
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			pipe, cmd := gen(ytdl.WebpageURL, fileName)
+			pipe, cmd := gen(ytdl.WebpageURL, el.id)
 
 			server[guildID].queueMutex.Lock()
 			server[guildID].queue = append(server[guildID].queue, el)
-			go playSoundStream(s, guildID, channelID, fileName+audioExtension, i, pipe, cmd)
+			go playSoundStream(s, guildID, channelID, el.id+audioExtension, i, pipe, cmd)
 			server[guildID].queueMutex.Unlock()
 		} else {
 			server[guildID].queueMutex.Lock()
 			server[guildID].queue = append(server[guildID].queue, el)
-			go playSound(s, guildID, channelID, fileName+audioExtension, i, nil, &c, nil)
+			go playSound(s, guildID, channelID, el.id+audioExtension, i, nil, &c, nil)
 			server[guildID].queueMutex.Unlock()
 		}
 

@@ -63,6 +63,15 @@ func init() {
 		lit.Error(err.Error())
 		return
 	}
+
+	// Check to make sure we are using one of supported drivers
+	switch cfg.Driver {
+	case sqlite, mysql:
+	default:
+		lit.Error("Wrong db driver! Valid drivers are %s and %s", sqlite, mysql)
+		return
+	}
+
 	// Config file found
 	token = cfg.Token
 	genius = cfg.Genius
@@ -103,7 +112,12 @@ func init() {
 	}
 
 	// Create tables used by the bots
-	execQuery(tblSong, tblCommands)
+	switch cfg.Driver {
+	case sqlite:
+		execQuery(tblSong, tblLinkLite, tblCommands)
+	case mysql:
+		execQuery(tblSong, tblLinkMy, tblCommands)
+	}
 
 	// And load custom commands from the db
 	loadCustomCommands()

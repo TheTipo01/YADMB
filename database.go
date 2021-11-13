@@ -5,9 +5,20 @@ import (
 	"github.com/bwmarrin/lit"
 )
 
+// Generic tables, this query can be used on both drivers
 const (
-	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`link` varchar(500) NOT NULL, `id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, `segments` varchar(1000) NOT NULL, PRIMARY KEY (`link`));"
+	tblSong     = "CREATE TABLE IF NOT EXISTS `song` (`id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, `segments` varchar(1000) NOT NULL, PRIMARY KEY (`id`));"
 	tblCommands = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL, `loop` tinyint(1) NOT NULL DEFAULT 0,  PRIMARY KEY (`guild`,`command`));"
+)
+
+// MySQL specific tables
+const (
+	tblLinkMy = "CREATE TABLE IF NOT EXISTS `link` ( `songID` varchar(200) NOT NULL, `link` varchar(500) NOT NULL, PRIMARY KEY (`link`), KEY `FK__song2` (`songID`), CONSTRAINT `FK__song2` FOREIGN KEY (`songID`) REFERENCES `song` (`id`) );"
+)
+
+// SQLite specific tables
+const (
+	tblLinkLite = "create table if not exists link ( songID varchar(200) not null references song, link varchar(500) not null constraint link_pk primary key );"
 )
 
 // Executes a simple query given a DB
@@ -21,17 +32,20 @@ func execQuery(query ...string) {
 }
 
 // Adds a song to the db, so next time we encounter it we don't need to call yt-dlp
-func addToDb(el Queue) {
+func addToDb(el Queue, exist bool) {
 	// We check for empty strings, just to be sure
 	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
-		_, err := db.Exec("INSERT INTO song (link, id, title, duration, thumbnail, segments) VALUES(?, ?, ?, ?, ?, ?)",
-			el.link, el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
-		if err != nil {
-			errStr := err.Error()
-			// First error is for SQLite, second one is for MySQL
-			if errStr != "constraint failed: UNIQUE constraint failed: song.link (1555)" && errStr != "Error 1062: Duplicate entry '"+el.link+"' for key 'PRIMARY'" {
-				lit.Error("Error inserting into the database, %s", err)
+		if !exist {
+			_, err := db.Exec("INSERT INTO song (id, title, duration, thumbnail, segments) VALUES (?, ?, ?, ?, ?)",
+				el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
+			if err != nil {
+				lit.Error("Error inserting into song, %s", err)
 			}
+		}
+
+		_, err := db.Exec("INSERT INTO link (songID, link) VALUES (?, ?)", el.id, el.link)
+		if err != nil {
+			lit.Error("Error inserting into link, %s", err)
 		}
 	}
 }
@@ -45,7 +59,7 @@ func checkInDb(link string) Queue {
 
 	el.link = link
 
-	_ = db.QueryRow("SELECT * FROM song WHERE link = ?", link).
+	_ = db.QueryRow("SELECT link, songID, title, duration, thumbnail, segments FROM song JOIN link ON songID = id WHERE link = ?", link).
 		Scan(&el.link, &el.id, &el.title, &el.duration, &el.thumbnail, &encodedSegments)
 
 	el.segments = decodeSegments(encodedSegments)
