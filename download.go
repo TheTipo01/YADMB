@@ -53,11 +53,19 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 
 		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID}
+
+		exist := false
 		switch ytdl.Extractor {
 		case "youtube":
 			el.id = ytdl.ID + "-" + ytdl.Extractor
 			// SponsorBlock is supported only on youtube
 			el.segments = getSegments(ytdl.ID)
+
+			// If the song is on YouTube, we also add it with its compact url, for faster parsing
+			addToDb(el, false)
+			exist = true
+
+			el.link = "https://youtu.be/" + ytdl.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
 			el.id = idGen(el.link) + "-" + ytdl.Extractor
@@ -69,13 +77,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		info, err := os.Stat(cachePath + el.id + audioExtension)
 
 		// We add the song to the db, for faster parsing
-		addToDb(el, false)
-
-		// If we have a single song, we also add it with the given link
-		if len(splittedOut) == 1 && el.link != link {
-			el.link = link
-			addToDb(el, true)
-		}
+		addToDb(el, exist)
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
@@ -91,7 +93,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			go playSound(s, guildID, channelID, el.id+audioExtension, i, nil, &c, nil)
 			server[guildID].queueMutex.Unlock()
 		}
-
 	}
 }
 

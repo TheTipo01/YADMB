@@ -271,11 +271,19 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
 
 		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, i.ChannelID}
+
+		exist := false
 		switch ytdl.Extractor {
 		case "youtube":
 			el.id = ytdl.ID + "-" + ytdl.Extractor
 			// SponsorBlock is supported only on youtube
 			el.segments = getSegments(ytdl.ID)
+
+			// If the song is on YouTube, we also add it with its compact url, for faster parsing
+			addToDb(el, false)
+			exist = true
+
+			el.link = "https://youtu.be/" + ytdl.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
 			el.id = idGen(el.link) + "-" + ytdl.Extractor
@@ -283,14 +291,10 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 			el.id = ytdl.ID + "-" + ytdl.Extractor
 		}
 
-		addToDb(el, false)
-		if el.link != url {
-			el.link = url
-			addToDb(el, true)
-		}
+		addToDb(el, exist)
 
 		// Opens the file, writes file to it, closes it
-		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 644)
+		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 0644)
 		cmds[2].Stdout = file
 
 		go deleteInteraction(s, i, c)
