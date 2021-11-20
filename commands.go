@@ -225,11 +225,16 @@ var (
 				return
 			}
 
-			server[i.GuildID].skip = true
+			if len(server[i.GuildID].queue) > 0 {
+				server[i.GuildID].skip = true
 
-			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(skipTitle,
-				server[i.GuildID].queue[0].title+" - "+server[i.GuildID].queue[0].duration+" added by "+server[i.GuildID].queue[0].user).
-				SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(skipTitle,
+					server[i.GuildID].queue[0].title+" - "+server[i.GuildID].queue[0].duration+" added by "+server[i.GuildID].queue[0].user).
+					SetColor(0x7289DA).SetThumbnail(server[i.GuildID].queue[0].thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingPlaying).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
 		},
 
 		// Clears the entire queue
@@ -241,11 +246,16 @@ var (
 				return
 			}
 
-			server[i.GuildID].clear = true
-			server[i.GuildID].skip = true
+			if len(server[i.GuildID].queue) > 0 {
+				server[i.GuildID].clear = true
+				server[i.GuildID].skip = true
 
-			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueCleared).
-				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueCleared).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingPlaying).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
 		},
 
 		// Inserts the song from the given playlist in a random order in the queue
