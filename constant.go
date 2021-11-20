@@ -1,6 +1,11 @@
 package main
 
-// Used to store the various messages that we send and the directory and extension for the audio cache
+// This file is used to hold all things constant from the bot
+
+const (
+	// How many DCA frames are needed for a second. It's not perfect, but good enough.
+	frameSeconds = 50.00067787
+)
 
 const (
 	cachePath      = "./audio_cache/"

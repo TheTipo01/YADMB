@@ -297,7 +297,7 @@ var (
 					if cont == 0 {
 						if el.title != "" {
 							message += fmt.Sprintf("%d) [%s](%s) - %s/%s added by %s\n", cont+1, el.title, el.link,
-								formatDuration(float64(server[i.GuildID].queue[0].frame/frameSeconds)), el.duration, el.user)
+								formatDuration(float64(server[i.GuildID].queue[0].frame)/frameSeconds), el.duration, el.user)
 							continue
 						} else {
 							message += "Currently playing: Getting info...\n\n"

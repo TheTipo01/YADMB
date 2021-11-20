@@ -19,11 +19,6 @@ import (
 	"time"
 )
 
-const (
-	// How many DCA frames are needed for a second. It's not perfect, but good enough.
-	frameSeconds = 50
-)
-
 // Config holds data parsed from the config.yml
 type Config struct {
 	Token        string `fig:"token" validate:"required"`
