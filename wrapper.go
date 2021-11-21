@@ -36,6 +36,10 @@ func playSoundStream(s *discordgo.Session, guildID, channelID, fileName string, 
 
 	// TODO: On linux, if we close the pipe, tee just quits without waiting for the song to completely download
 	default:
+		if stdout == nil {
+			break
+		}
+
 		var err error
 		var opuslen int16
 

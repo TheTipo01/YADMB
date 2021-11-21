@@ -43,7 +43,6 @@ func getSegments(videoID string) map[int]bool {
 	}
 
 	return nil
-
 }
 
 // From a map of segments returns an encoded string
