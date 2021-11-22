@@ -29,7 +29,7 @@ func download(link string) []*exec.Cmd {
 
 	// We pass it down to ffmpeg
 	ffmpeg := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", "pipe:", "-f", "s16le",
-		"-ar", "48000", "-ac", "2", "pipe:1")
+		"-ar", "48000", "-ac", "2", "pipe:1", "-af", "loudnorm=I=-16:LRA=11:TP=-1.5")
 	ffmpeg.Stdin = ytOut
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
 
@@ -57,7 +57,7 @@ func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
 // stream substitutes the old scripts for streaming directly to discord from a given source
 func stream(link string) (io.ReadCloser, []*exec.Cmd) {
 	ffmpeg := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", link, "-f", "s16le",
-		"-ar", "48000", "-ac", "2", "pipe:1")
+		"-ar", "48000", "-ac", "2", "pipe:1", "-af", "loudnorm=I=-16:LRA=11:TP=-1.5")
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
 
 	dca := exec.Command("dca")
