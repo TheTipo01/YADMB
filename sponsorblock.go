@@ -6,13 +6,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Returns a map for skipping certain frames of a song
 func getSegments(videoID string) map[int]bool {
-
 	// Gets segments
-	resp, err := http.Get("https://sponsor.ajay.app/api/skipSegments?videoID=" + videoID + "&categories=[\"sponsor\",\"music_offtopic\"]")
+	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments?videoID="+videoID+"&categories=[\"sponsor\",\"music_offtopic\"]", nil)
+	// Sets timeout to one second, as sometime i
+	client := http.Client{Timeout: time.Second}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		lit.Error("Can't get SponsorBlock segments: %s", err)
 		return nil
