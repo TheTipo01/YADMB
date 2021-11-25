@@ -23,7 +23,7 @@ func cmdsWait(cmds []*exec.Cmd) {
 // download downloads the song and gives back a pipe with DCA audio
 func download(link string) []*exec.Cmd {
 	// Starts yt-dlp with the arguments to select the best audio
-	ytDlp := exec.Command("yt-dlp", "-q", "-f", "bestaudio", "-a", "-", "-o", "-")
+	ytDlp := exec.Command("yt-dlp", "-q", "-f", "bestaudio*", "-a", "-", "-o", "-", "--geo-bypass")
 	ytDlp.Stdin = strings.NewReader(link)
 	ytOut, _ := ytDlp.StdoutPipe()
 
