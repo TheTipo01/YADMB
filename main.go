@@ -233,15 +233,26 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 // Still a bit broken, as it first reconnect to the old voice channel, disconnect, and connect to the new channel
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	if v.UserID == s.State.User.ID && server[v.GuildID].vc != nil && len(server[v.GuildID].queue) > 0 && v.ChannelID != server[v.GuildID].queue[0].channel && v.ChannelID != "" {
+		var err error
+
 		server[v.GuildID].pause.Lock()
 
 		lit.Debug("moving to " + v.ChannelID)
 
-		server[v.GuildID].queue[0].channel = v.ChannelID
 		_ = server[v.GuildID].vc.Disconnect()
 
-		server[v.GuildID].vc, _ = s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
+		server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
+		if err != nil {
+			// Send error and join old vc
+			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+				SetColor(0x7289DA).MessageEmbed, server[v.GuildID].queue[0].txtChannel, time.Second*5)
+
+			server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].queue[0].channel, false, true)
+		} else {
+			server[v.GuildID].queue[0].channel = v.ChannelID
+		}
 
 		server[v.GuildID].pause.Unlock()
+
 	}
 }

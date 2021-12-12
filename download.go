@@ -6,7 +6,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/zmb3/spotify"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -25,6 +24,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		if err == nil && info.Size() > 0 {
 			el.user = user
 			el.channel = channelID
+			el.txtChannel = i.ChannelID
 
 			server[guildID].queueMutex.Lock()
 			server[guildID].queue = append(server[guildID].queue, el)
@@ -52,7 +52,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 
-		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID}
+		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID, i.ChannelID}
 
 		exist := false
 		switch ytdl.Extractor {
@@ -160,8 +160,8 @@ func lyrics(song string) []string {
 
 			// So we open and unmarshal the json file
 			file, _ := os.Open(filename)
-			byteValue, _ := ioutil.ReadAll(file)
-			_ = json.Unmarshal(byteValue, &lyrics)
+
+			_ = json.NewDecoder(file).Decode(&lyrics)
 
 			// We remove the JSON
 			_ = file.Close()

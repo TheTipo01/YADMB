@@ -188,7 +188,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 	c := make(chan int)
 	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i, &c)
 
-	el, err := downloadSong(s, i, url, &c)
+	el, err := downloadSong(s, i, url, &c, vs.ChannelID)
 	if err != nil {
 		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return

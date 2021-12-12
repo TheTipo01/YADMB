@@ -405,8 +405,13 @@ var (
 				}
 
 				// And reconnect the bot to the new voice channel
-				server[i.GuildID].queue[0].channel = vs.ChannelID
 				server[i.GuildID].vc, err = s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+				// If we have an error joining while playing music, we join back the old vc
+				if err != nil {
+					server[i.GuildID].vc, _ = s.ChannelVoiceJoin(i.GuildID, server[i.GuildID].queue[0].channel, false, true)
+				} else {
+					server[i.GuildID].queue[0].channel = vs.ChannelID
+				}
 
 				server[i.GuildID].pause.Unlock()
 			} else {
@@ -589,7 +594,7 @@ var (
 			go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, &c)
 
 			stdout, cmds := stream(url)
-			el := Queue{url, "NaN", url, url, i.Member.User.Username, nil, "", 0, nil, i.ChannelID}
+			el := Queue{url, "NaN", url, url, i.Member.User.Username, nil, "", 0, nil, vs.ChannelID, i.ChannelID}
 
 			// Adds to queue
 			server[i.GuildID].queueMutex.Lock()

@@ -47,7 +47,7 @@ func removeFromQueue(id string, guild string) {
 	for i, q := range server[guild].queue {
 		if q.id == id {
 			copy(server[guild].queue[i:], server[guild].queue[i+1:])
-			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, "", 0, nil, ""}
+			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, "", 0, nil, "", ""}
 			server[guild].queue = server[guild].queue[:len(server[guild].queue)-1]
 			return
 		}
@@ -252,7 +252,7 @@ func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan i
 }
 
 // Downloads a song (if it's not cached), deletes an interaction response, and return a prepared Queue element
-func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c *chan int) (*Queue, error) {
+func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c *chan int, channelID string) (*Queue, error) {
 	// Check if the song is the db, to speedup things
 	el := checkInDb(url)
 
@@ -270,7 +270,7 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 		var ytdl YtDLP
 		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
 
-		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, i.ChannelID}
+		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, channelID, i.ChannelID}
 
 		exist := false
 		switch ytdl.Extractor {
@@ -293,13 +293,12 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 
 		addToDb(el, exist)
 
-		// Opens the file, writes file to it, closes it
-		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 0644)
-		cmds[2].Stdout = file
-
 		go deleteInteraction(s, i, c)
 
 		server[i.GuildID].stream.Lock()
+		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 0644)
+		cmds[2].Stdout = file
+
 		cmdsStart(cmds)
 		cmdsWait(cmds)
 		_ = file.Close()
