@@ -81,7 +81,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			pipe, cmd := gen(ytdl.WebpageURL, el.id)
+			pipe, cmd := gen(ytdl.WebpageURL, el.id, checkAudioOnly(ytdl.RequestedFormats))
 
 			server[guildID].queueMutex.Lock()
 			server[guildID].queue = append(server[guildID].queue, el)

@@ -21,9 +21,18 @@ func cmdsWait(cmds []*exec.Cmd) {
 }
 
 // download downloads the song and gives back a pipe with DCA audio
-func download(link string) []*exec.Cmd {
+func download(link string, audioOnly bool) []*exec.Cmd {
+	var format string
+
+	// If the flag audioOnly is raised, we use an audio only format to save bandwidth
+	if audioOnly {
+		format = "bestaudio"
+	} else {
+		format = "bestaudio*"
+	}
+
 	// Starts yt-dlp with the arguments to select the best audio
-	ytDlp := exec.Command("yt-dlp", "-q", "-f", "bestaudio*", "-a", "-", "-o", "-", "--geo-bypass")
+	ytDlp := exec.Command("yt-dlp", "-q", "-f", format, "-a", "-", "-o", "-", "--geo-bypass")
 	ytDlp.Stdin = strings.NewReader(link)
 	ytOut, _ := ytDlp.StdoutPipe()
 
@@ -41,8 +50,8 @@ func download(link string) []*exec.Cmd {
 }
 
 // gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
-func gen(link string, filename string) (io.ReadCloser, []*exec.Cmd) {
-	cmds := download(link)
+func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
+	cmds := download(link, audioOnly)
 	dcaOut, _ := cmds[2].StdoutPipe()
 
 	// tee saves the output from dca to file and also gives it back to us

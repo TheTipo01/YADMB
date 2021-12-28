@@ -63,12 +63,18 @@ type Queue struct {
 
 // YtDLP structure for holding yt-dlp data
 type YtDLP struct {
-	Duration   float64 `json:"duration"`
-	Thumbnail  string  `json:"thumbnail"`
-	Extractor  string  `json:"extractor"`
-	ID         string  `json:"id"`
-	WebpageURL string  `json:"webpage_url"`
-	Title      string  `json:"title"`
+	Duration         float64          `json:"duration"`
+	Thumbnail        string           `json:"thumbnail"`
+	Extractor        string           `json:"extractor"`
+	ID               string           `json:"id"`
+	WebpageURL       string           `json:"webpage_url"`
+	Title            string           `json:"title"`
+	RequestedFormats RequestedFormats `json:"requested_formats"`
+}
+
+// RequestedFormats is used to detect if an audio only codec is available
+type RequestedFormats []struct {
+	Resolution string `json:"resolution"`
 }
 
 // Lyrics structure for storing lyrics of a song

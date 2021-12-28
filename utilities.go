@@ -257,10 +257,8 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 	el := checkInDb(url)
 
 	info, err := os.Stat(cachePath + el.id + audioExtension)
+	// Not in db, download it
 	if el.title == "" || err != nil || info.Size() <= 0 {
-		// Not in db, download it
-		cmds := download(url)
-
 		// Get info about it
 		splittedOut, err := getInfo(url)
 		if err != nil {
@@ -269,6 +267,8 @@ func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c 
 
 		var ytdl YtDLP
 		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
+
+		cmds := download(url, checkAudioOnly(ytdl.RequestedFormats))
 
 		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, channelID, i.ChannelID}
 
@@ -333,4 +333,14 @@ func idGen(link string) string {
 	h.Write([]byte(link))
 
 	return strings.ToLower(base32.HexEncoding.EncodeToString(h.Sum(nil))[0:11])
+}
+
+func checkAudioOnly(formats RequestedFormats) bool {
+	for _, f := range formats {
+		if f.Resolution == "audio only" {
+			return true
+		}
+	}
+
+	return false
 }
