@@ -58,6 +58,8 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 			}
 
 			server[guildID].clear = false
+
+			go quitVC(i.GuildID)
 		}
 		server[guildID].server.Unlock()
 		return
