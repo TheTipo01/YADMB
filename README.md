@@ -1,6 +1,5 @@
 # YADMB
 [![Go Report Card](https://goreportcard.com/badge/github.com/TheTipo01/YADMB)](https://goreportcard.com/report/github.com/TheTipo01/YADMB)
-[![Build Status](https://app.travis-ci.com/TheTipo01/YADMB.svg?branch=master)](https://app.travis-ci.com/TheTipo01/YADMB)
 
 Yet Another Discord Music Bot - A music bot written in go
 
@@ -55,3 +54,5 @@ Yet Another Discord Music Bot - A music bot written in go
 `/update <link> <info> <song>` - Next time the song `<link>` is played, the bot will (if set to true):
 - `<info>` - Update info about the song, like thumbnail, segments from SponsorBlock, title...
 - `<song>` - Redownload the entire song
+
+`/blacklist <user>` - Adds or remove a person from the bot blacklist
