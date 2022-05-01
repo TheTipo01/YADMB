@@ -44,6 +44,8 @@ var (
 	token string
 	// Database connection
 	db *sql.DB
+	// SQLite and MySQL have different syntax to ignore errors on insert
+	ignoreType string
 )
 
 func init() {
@@ -110,8 +112,10 @@ func init() {
 	switch cfg.Driver {
 	case sqlite:
 		execQuery(tblSong, tblLinkLite, tblCommands)
+		ignoreType = "OR"
 	case mysql:
 		execQuery(tblSong, tblLinkMy, tblCommands)
+		ignoreType = ""
 	}
 
 	// And load custom commands from the db

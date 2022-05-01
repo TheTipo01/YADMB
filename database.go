@@ -36,14 +36,14 @@ func addToDb(el Queue, exist bool) {
 	// We check for empty strings, just to be sure
 	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
 		if !exist {
-			_, err := db.Exec("INSERT INTO song (id, title, duration, thumbnail, segments) VALUES (?, ?, ?, ?, ?)",
+			_, err := db.Exec("INSERT "+ignoreType+" IGNORE INTO song (id, title, duration, thumbnail, segments) VALUES (?, ?, ?, ?, ?)",
 				el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
 			if err != nil {
 				lit.Error("Error inserting into song, %s", err)
 			}
 		}
 
-		_, err := db.Exec("INSERT INTO link (songID, link) VALUES (?, ?)", el.id, el.link)
+		_, err := db.Exec("INSERT "+ignoreType+" IGNORE INTO link (songID, link) VALUES (?, ?)", el.id, el.link)
 		if err != nil {
 			lit.Error("Error inserting into link, %s", err)
 		}
