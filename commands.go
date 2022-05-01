@@ -198,6 +198,18 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "blacklist",
+			Description: "Add or remove a person from the bot blacklist",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "User to remove or add to the blacklist",
+					Required:    true,
+				},
+			},
+		},
 	}
 
 	// Handler
@@ -647,6 +659,49 @@ var (
 			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle,
 				"Requested data will be updated next time the song is played!").
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+		},
+		"blacklist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Member.User.ID != owner {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"Only the owner of the bot can use this command!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				return
+			}
+
+			id := i.ApplicationCommandData().Options[0].UserValue(nil).ID
+
+			if id == i.Member.User.ID {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"You are really trying to add yourself to the blacklist?").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				return
+			}
+
+			if _, ok := blacklist[id]; ok {
+				// Removing from the blacklist
+				delete(blacklist, id)
+
+				_, err := db.Exec("DELETE FROM blacklist WHERE id=?", id)
+				if err != nil {
+					lit.Error("Error while deleting from blacklist, %s", err)
+				}
+
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
+					"User removed from the blacklist!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			} else {
+				// Adding
+				blacklist[id] = true
+
+				_, err := db.Exec("INSERT INTO blacklist (`id`) VALUES(?)", id)
+				if err != nil {
+					lit.Error("Error while inserting from blacklist, %s", err)
+				}
+
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
+					"User added to the blacklist!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
 		},
 	}
 )

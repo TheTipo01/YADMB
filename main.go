@@ -46,6 +46,8 @@ var (
 	db *sql.DB
 	// SQLite and MySQL have different syntax to ignore errors on insert
 	ignoreType string
+	// Cache for the blacklist
+	blacklist = make(map[string]bool)
 )
 
 func init() {
@@ -111,10 +113,10 @@ func init() {
 	// Create tables used by the bots
 	switch cfg.Driver {
 	case sqlite:
-		execQuery(tblSong, tblLinkLite, tblCommands)
+		execQuery(tblSong, tblLinkLite, tblCommands, tblBlacklist)
 		ignoreType = "OR"
 	case mysql:
-		execQuery(tblSong, tblLinkMy, tblCommands)
+		execQuery(tblSong, tblLinkMy, tblCommands, tblBlacklist)
 		ignoreType = ""
 	}
 
@@ -153,8 +155,15 @@ func main() {
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		// Ignores commands from DM
 		if i.User == nil {
-			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-				h(s, i)
+			if _, ok := blacklist[i.Member.User.ID]; ok {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"User is in blacklist!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				return
+			} else {
+				if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+					h(s, i)
+				}
 			}
 		}
 	})

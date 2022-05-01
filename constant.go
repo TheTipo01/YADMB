@@ -27,6 +27,7 @@ const (
 	restartTitle      = "Restart"
 	successfulTitle   = "Successful"
 	commandsTitle     = "Commands"
+	blacklistTitle    = "Blacklist"
 )
 
 // Messages for embeds
