@@ -352,7 +352,7 @@ var (
 				text := formatLongMessage(lyrics(song))
 
 				<-c
-				err := s.InteractionResponseDelete(s.State.User.ID, i.Interaction)
+				err := s.InteractionResponseDelete(i.Interaction)
 				if err != nil {
 					lit.Error("InteractionResponseDelete failed: %s", err.Error())
 				}

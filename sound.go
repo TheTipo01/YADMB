@@ -52,7 +52,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		removeFromQueue(strings.TrimSuffix(fileName, audioExtension), guildID)
 		// If this is the last element, we have finished clearing the queue
 		if len(server[guildID].queue) == 0 {
-			err = s.InteractionResponseDelete(s.State.User.ID, i)
+			err = s.InteractionResponseDelete(i)
 			if err != nil {
 				lit.Error("InteractionResponseDelete: %s", err.Error())
 			}
@@ -245,7 +245,7 @@ func playLoop(s *discordgo.Session, i *discordgo.Interaction, url string) {
 			removeFromQueue(strings.TrimSuffix(el.id, audioExtension), i.GuildID)
 			// If this is the last element, we have finished clearing the queue
 			if len(server[i.GuildID].queue) == 0 {
-				err = s.InteractionResponseDelete(s.State.User.ID, i)
+				err = s.InteractionResponseDelete(i)
 				if err != nil {
 					lit.Error("InteractionResponseDelete: %s", err.Error())
 				}
