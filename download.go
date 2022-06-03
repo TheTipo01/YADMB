@@ -65,6 +65,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			addToDb(el, false)
 			exist = true
 
+			// Youtube shorts can have two different links: the one that redirects to a classical youtube video
+			// and one that is played on the new UI. This is a workaround to save also the link to the new UI
+			if strings.Contains(link, "shorts") {
+				el.link = link
+				addToDb(el, exist)
+			}
+
 			el.link = "https://youtu.be/" + ytdl.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
