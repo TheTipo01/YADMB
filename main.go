@@ -130,6 +130,18 @@ func init() {
 		}
 	}
 
+	// Checks useful for knowing if every dependency
+	if isCommandNotAvailable("dca") {
+		lit.Error("Error: can't find dca!")
+	}
+
+	if isCommandNotAvailable("ffmpeg") {
+		lit.Error("Error: can't find ffmpeg!")
+	}
+
+	if isCommandNotAvailable("yt-dlp") {
+		lit.Error("Error: can't find yt-dlp!")
+	}
 }
 
 func main() {

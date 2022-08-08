@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -343,4 +344,10 @@ func checkAudioOnly(formats RequestedFormats) bool {
 	}
 
 	return false
+}
+
+// isCommandNotAvailable checks whatever a command is available
+func isCommandNotAvailable(name string) bool {
+	_, err := exec.LookPath(name)
+	return err != nil
 }
