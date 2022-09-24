@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Download and plays a song from a youtube link
+// Download and plays a song from a YouTube link
 func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string, i *discordgo.Interaction, random bool) {
 	c := make(chan int)
 	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, &c)
@@ -58,14 +58,14 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		switch ytdl.Extractor {
 		case "youtube":
 			el.id = ytdl.ID + "-" + ytdl.Extractor
-			// SponsorBlock is supported only on youtube
+			// SponsorBlock is supported only on YouTube
 			el.segments = getSegments(ytdl.ID)
 
 			// If the song is on YouTube, we also add it with its compact url, for faster parsing
 			addToDb(el, false)
 			exist = true
 
-			// Youtube shorts can have two different links: the one that redirects to a classical youtube video
+			// YouTube shorts can have two different links: the one that redirects to a classical YouTube video
 			// and one that is played on the new UI. This is a workaround to save also the link to the new UI
 			if strings.Contains(link, "shorts") {
 				el.link = link
@@ -103,7 +103,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 	}
 }
 
-// Searches a song from the query on youtube
+// Searches a song from the query on YouTube
 func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user string, i *discordgo.Interaction, random bool) {
 	// Gets video id
 	out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
@@ -117,15 +117,13 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 	ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-	// Calls download and play for every id we get
-	for _, id := range ids {
-		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+id, user, i, random)
-	}
+	// Calls download and play for only the first result
+	downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+ids[0], user, i, random)
 }
 
-// Enqueues song from a spotify playlist, searching them on youtube
+// Enqueues song from a spotify playlist, searching them on YouTube
 func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID string, i *discordgo.Interaction, random bool) {
-	// We get the playlist from it's link
+	// We get the playlist from its link
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
 		lit.Error("Can't get info on a spotify playlist: %s", err)
@@ -133,7 +131,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID 
 		return
 	}
 
-	// We parse every single song, searching it on youtube
+	// We parse every single song, searching it on YouTube
 	for _, track := range playlist.Tracks.Tracks {
 		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, i, random)
 	}
@@ -147,7 +145,7 @@ func lyrics(song string) []string {
 	// Command for downloading lyrics as a JSON file
 	cmd := exec.Command("python", "-m", "lyricsgenius", "song", "\""+song+"\"", "--save")
 
-	// We append to the environmental variables the genius token and we run the command
+	// We append to the environmental variables the genius token, and we run the command
 	cmd.Env = append(os.Environ(), "GENIUS_CLIENT_ACCESS_TOKEN="+genius)
 	out, err := cmd.Output()
 	if err != nil {

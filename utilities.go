@@ -107,7 +107,7 @@ func sendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.Messag
 // Modify an already sent interaction
 func modfyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
-	_, err := s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: sliceEmbed})
+	_, err := s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
 	if err != nil {
 		lit.Error("InteractionResponseEdit failed: %s", err)
 		return

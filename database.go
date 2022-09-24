@@ -51,7 +51,7 @@ func addToDb(el Queue, exist bool) {
 	}
 }
 
-// Checks if we already have downloaded a song and we've got info about it
+// Checks if we already have downloaded a song, and if we've got info about it
 func checkInDb(link string) Queue {
 	var (
 		el              Queue
