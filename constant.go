@@ -28,6 +28,7 @@ const (
 	successfulTitle   = "Successful"
 	commandsTitle     = "Commands"
 	blacklistTitle    = "Blacklist"
+	preloadTitle      = "Preloading"
 )
 
 // Messages for embeds

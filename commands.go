@@ -210,6 +210,18 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "preload",
+			Description: "Preloads a song",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "link",
+					Description: "Link of the song to preload",
+					Required:    true,
+				},
+			},
+		},
 	}
 
 	// Handler
@@ -701,6 +713,18 @@ var (
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
 					"User added to the blacklist!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
+		},
+		"preload": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			c := make(chan int)
+			url := i.ApplicationCommandData().Options[0].StringValue()
+
+			go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(preloadTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, &c)
+
+			_, err := downloadSong(s, i.Interaction, url, &c, "")
+			if err != nil {
+				modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
 			}
 		},
 	}

@@ -1,19 +1,24 @@
 # YADMB
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/TheTipo01/YADMB)](https://goreportcard.com/report/github.com/TheTipo01/YADMB)
 
 Yet Another Discord Music Bot - A music bot written in go
 
 # Notes
+
 - We now use slash commands (from release [0.8.0](https://github.com/TheTipo01/YADMB/releases/tag/0.8.0))
-- All commands check to see if the caller is in the same voice channel as the bot (only if the skip songs, play a new one)
-- Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ffmpeg](https://ffmpeg.org/download.html) and [LyricsGenius](https://github.com/johnwmillr/LyricsGenius).
+- All commands check to see if the caller is in the same voice channel as the bot (only if the skip songs, play a new
+  one)
+- Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+  , [ffmpeg](https://ffmpeg.org/download.html) and [LyricsGenius](https://github.com/johnwmillr/LyricsGenius).
 - For tutorials on how to install the bot, see the wiki.
 - Uses [SponsorBlock API](https://sponsor.ajay.app/) to automatically skip sponsors or moments when there's no music
 - Normalizes songs
 
 ## Bot commands
 
-`/play <link>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
+`/play <link>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue
+the first result for the given queue
 
 `/skip` - Skips the currently playing song
 
@@ -27,7 +32,8 @@ Yet Another Discord Music Bot - A music bot written in go
 
 `/queue` - Prints the currently playing song and the next songs
 
-`/lyrics <song>` - Tries to search for lyrics of the specified song, or if not specified searches for the title of the currently playing song
+`/lyrics <song>` - Tries to search for lyrics of the specified song, or if not specified searches for the title of the
+currently playing song
 
 `/summon` - Make the bot join your voice channel
 
@@ -35,7 +41,8 @@ Yet Another Discord Music Bot - A music bot written in go
 
 `/restart` - Restarts the bot (works only for the bot owner, see `config.yml`)
 
-`/addcustom <custom_command> <song/playlist> <loop>` - Creates a custom command to play a song or playlist. Set `loop` to true to play the song looped
+`/addcustom <custom_command> <song/playlist> <loop>` - Creates a custom command to play a song or playlist. Set `loop`
+to true to play the song looped
 
 `/rmcustom <custom_command>` - Removes a custom command from the DB
 
@@ -52,6 +59,7 @@ Yet Another Discord Music Bot - A music bot written in go
 `/loop <link>` - Loops the given song until skip is called
 
 `/update <link> <info> <song>` - Next time the song `<link>` is played, the bot will (if set to true):
+
 - `<info>` - Update info about the song, like thumbnail, segments from SponsorBlock, title...
 - `<song>` - Redownload the entire song
 
