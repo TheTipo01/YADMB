@@ -719,6 +719,12 @@ var (
 			c := make(chan int)
 			url := i.ApplicationCommandData().Options[0].StringValue()
 
+			if !isValidURL(url) {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
+			}
+
 			go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(preloadTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, &c)
 
 			_, err := downloadSong(s, i.Interaction, url, &c, "")
