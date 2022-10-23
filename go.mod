@@ -1,4 +1,4 @@
-module YADMB
+module github.com/TheTipo01/YADMB
 
 go 1.14
 
