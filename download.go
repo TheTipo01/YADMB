@@ -117,8 +117,12 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 
 	ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-	// Calls download and play for only the first result
-	downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+ids[0], user, i, random)
+	if ids[0] == "" {
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingFound).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+	} else {
+		// Calls download and play for only the first result
+		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+ids[0], user, i, random)
+	}
 }
 
 // Enqueues song from a spotify playlist, searching them on YouTube
