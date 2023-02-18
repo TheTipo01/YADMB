@@ -230,7 +230,9 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 			if v.ChannelID == "" {
 				var err error
 
+				server[v.GuildID].pause.Lock()
 				server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].queue[0].channel, false, true)
+				server[v.GuildID].pause.Unlock()
 				if err != nil {
 					lit.Error("Can't join voice channel, %s", err)
 				}
