@@ -221,8 +221,20 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 // Update the voice channel when the bot is moved
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	// If the bot is moved to another channel
-	if v.UserID == s.State.User.ID && v.ChannelID != "" && len(server[v.GuildID].queue) > 0 {
-		// Update the voice channel
-		server[v.GuildID].queue[0].channel = v.ChannelID
+	if v.UserID == s.State.User.ID {
+		if v.ChannelID != "" && len(server[v.GuildID].queue) > 0 {
+			// Update the voice channel
+			server[v.GuildID].queue[0].channel = v.ChannelID
+		} else {
+			// If the bot has been disconnected from the voice channel, reconnect it
+			if v.ChannelID == "" {
+				var err error
+
+				server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].queue[0].channel, false, true)
+				if err != nil {
+					lit.Error("Can't join voice channel, %s", err)
+				}
+			}
+		}
 	}
 }
