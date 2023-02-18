@@ -123,13 +123,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 		// Stream data to discord
 		server[guildID].pause.Lock()
 		if !server[guildID].skip {
-			select {
-			case server[guildID].vc.OpusSend <- InBuf:
-				break
-			case <-time.After(time.Second / 3):
-				server[guildID].vc, _ = s.ChannelVoiceJoin(guildID, server[guildID].queue[0].channel, false, true)
-			}
-
+			server[guildID].vc.OpusSend <- InBuf
 		} else {
 			server[guildID].pause.Unlock()
 			break
