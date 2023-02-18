@@ -9,7 +9,6 @@ import (
 	"github.com/kkyr/fig"
 	"github.com/zmb3/spotify"
 	"golang.org/x/oauth2/clientcredentials"
-	"math/rand"
 	_ "modernc.org/sqlite"
 	"os"
 	"os/signal"
@@ -51,10 +50,7 @@ var (
 )
 
 func init() {
-
 	lit.LogLevel = lit.LogError
-
-	rand.Seed(time.Now().UnixNano())
 
 	var cfg Config
 	err := fig.Load(&cfg, fig.File("config.yml"), fig.Dirs(".", "./data"))
@@ -145,7 +141,6 @@ func init() {
 }
 
 func main() {
-
 	if token == "" {
 		lit.Error("No token provided. Please modify config.yml")
 		return
@@ -190,6 +185,14 @@ func main() {
 		return
 	}
 
+	// Register commands
+	for _, v := range commands {
+		_, err = dg.ApplicationCommandCreate(dg.State.User.ID, "", v)
+		if err != nil {
+			lit.Error("Can't register command %s: %s", v.Name, err.Error())
+		}
+	}
+
 	// Wait here until CTRL-C or other term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
@@ -200,7 +203,6 @@ func main() {
 	_ = dg.Close()
 	// And the DB connection
 	_ = db.Close()
-
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
@@ -209,44 +211,6 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 	if err != nil {
 		lit.Error("Can't set status, %s", err)
 	}
-
-	// Checks for unused commands and deletes them
-	if cmds, err := s.ApplicationCommands(s.State.User.ID, ""); err == nil {
-		found := false
-
-		for _, l := range commands {
-			found = false
-
-			for _, o := range cmds {
-				// We compare every online command with the ones locally stored, to find if a command with the same name exists
-				if l.Name == o.Name {
-					// If the options of the command are not equal, we re-register it
-					if !isCommandEqual(l, o) {
-						lit.Info("Re-registering command `%s`", l.Name)
-
-						_, err = s.ApplicationCommandCreate(s.State.User.ID, "", l)
-						if err != nil {
-							lit.Error("Cannot create '%s' command: %s", l.Name, err)
-						}
-					}
-
-					found = true
-					break
-				}
-			}
-
-			// If we didn't found a match for the locally stored command, it means the command is new. We register it
-			if !found {
-				lit.Info("Registering new command `%s`", l.Name)
-
-				_, err = s.ApplicationCommandCreate(s.State.User.ID, "", l)
-				if err != nil {
-					lit.Error("Cannot create '%s' command: %s", l.Name, err)
-				}
-			}
-		}
-	}
-
 }
 
 // Initialize Server structure
@@ -254,30 +218,11 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 	initializeServer(e.ID)
 }
 
-// Used to reconnect the bot to the channel where it's moved
-// Still a bit broken, as it first reconnect to the old voice channel, disconnect, and connect to the new channel
+// Update the voice channel when the bot is moved
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
-	if v.UserID == s.State.User.ID && server[v.GuildID].vc != nil && len(server[v.GuildID].queue) > 0 && v.ChannelID != server[v.GuildID].queue[0].channel && v.ChannelID != "" {
-		var err error
-
-		server[v.GuildID].pause.Lock()
-
-		lit.Debug("moving to " + v.ChannelID)
-
-		_ = server[v.GuildID].vc.Disconnect()
-
-		server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
-		if err != nil {
-			// Send error and join old vc
-			go sendAndDeleteEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
-				SetColor(0x7289DA).MessageEmbed, server[v.GuildID].queue[0].txtChannel, time.Second*5)
-
-			server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].queue[0].channel, false, true)
-		} else {
-			server[v.GuildID].queue[0].channel = v.ChannelID
-		}
-
-		server[v.GuildID].pause.Unlock()
-
+	// If the bot is moved to another channel
+	if v.UserID == s.State.User.ID && v.ChannelID != "" && len(server[v.GuildID].queue) > 0 {
+		// Update the voice channel
+		server[v.GuildID].queue[0].channel = v.ChannelID
 	}
 }
