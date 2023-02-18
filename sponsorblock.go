@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/bwmarrin/lit"
+	"github.com/goccy/go-json"
 	"net/http"
 	"strconv"
 	"strings"

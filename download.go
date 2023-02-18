@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/goccy/go-json"
 	"github.com/zmb3/spotify"
 	"os"
 	"os/exec"

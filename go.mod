@@ -8,6 +8,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.0
+	github.com/goccy/go-json v0.10.0
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/kkyr/fig v0.3.1
 	github.com/kr/pretty v0.1.0 // indirect
