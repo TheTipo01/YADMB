@@ -15,7 +15,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20220927061507-ef77025ab5aa // indirect
 	github.com/zmb3/spotify v1.3.0
 	golang.org/x/crypto v0.4.0 // indirect
-	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.3.0
 	golang.org/x/tools v0.4.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
