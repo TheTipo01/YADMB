@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bwmarrin/lit"
 	"io"
 	"os/exec"
 	"strings"
@@ -9,14 +10,20 @@ import (
 // cmdsStart starts all the exec.Cmd inside the slice
 func cmdsStart(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
-		_ = cmd.Start()
+		err := cmd.Start()
+		if err != nil {
+			lit.Error("Error starting cmd: %s", err.Error())
+		}
 	}
 }
 
 // cmdsWait waits for all the exec.Cmd inside the slice to finish processing, to free up resources
 func cmdsWait(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
-		_ = cmd.Wait()
+		err := cmd.Wait()
+		if err != nil {
+			lit.Error("Error waiting for cmd: %s", err.Error())
+		}
 	}
 }
 

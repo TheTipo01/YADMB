@@ -97,6 +97,7 @@ func playSound(s *discordgo.Session, guildID, channelID, fileName string, i *dis
 
 		// If this is the end of the file, just return.
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			lit.Debug(err.Error())
 			break
 		}
 
