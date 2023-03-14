@@ -20,7 +20,7 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/oauth2 v0.6.0
 	golang.org/x/tools v0.7.0 // indirect
-	google.golang.org/protobuf v1.29.0 // indirect
+	google.golang.org/protobuf v1.29.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	modernc.org/sqlite v1.21.0
 	modernc.org/token v1.1.0 // indirect
