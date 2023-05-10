@@ -24,6 +24,12 @@ var (
 					Description: "Link or query to play",
 					Required:    true,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "playlist",
+					Description: "If the link is a playlist",
+					Required:    false,
+				},
 			},
 		},
 		{
@@ -237,7 +243,12 @@ var (
 				return
 			}
 
-			play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+			// If the user requested a playlist, don't remove the parameter
+			if len(i.ApplicationCommandData().Options) > 1 && i.ApplicationCommandData().Options[1].BoolValue() {
+				play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+			} else {
+				play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.Username, false)
+			}
 		},
 
 		// Skips the currently playing song

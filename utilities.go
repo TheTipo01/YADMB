@@ -333,3 +333,12 @@ func isCommandNotAvailable(name string) bool {
 	_, err := exec.LookPath(name)
 	return err != nil
 }
+
+// removePlaylist removes the playlist parameter from the url
+func removePlaylist(s string) string {
+	u, _ := url.Parse(s)
+	q := u.Query()
+	q.Del("list")
+	u.RawQuery = q.Encode()
+	return u.String()
+}
