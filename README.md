@@ -17,8 +17,9 @@ Yet Another Discord Music Bot - A music bot written in go
 
 ## Bot commands
 
-`/play <link>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue
-the first result for the given queue
+`/play <link> <playlist>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into
+the queue
+the first result for the given queue, and if the flag `playlist` is set to false/unspecified, it will ignore playlists.
 
 `/skip` - Skips the currently playing song
 
