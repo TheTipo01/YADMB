@@ -1,4 +1,4 @@
-FROM golang:1.20.4-alpine3.14
+FROM golang:1.20.4-alpine
 
 RUN addgroup -S -g 1000 yadmb \
   && adduser -S -G yadmb -u 999 yadmb \
