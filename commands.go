@@ -1,8 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
+	"time"
 )
 
 var (
@@ -216,15 +217,14 @@ var (
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			vs := findUserVoiceState(s, i.Interaction)
-
 			// Check if user is not in a voice channel
-			if vs != nil {
+			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
 				if server[i.GuildID].vc == nil {
 					// Join the voice channel
 					vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
 					if err != nil {
-						lit.Error("Error joining voice channel: %s", err.Error())
+						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 						return
 					}
 					server[i.GuildID].vc = vc
@@ -232,10 +232,13 @@ var (
 
 				// If the user requested a playlist, don't remove the parameter
 				if len(i.ApplicationCommandData().Options) > 1 && i.ApplicationCommandData().Options[1].BoolValue() {
-					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.ID, false)
+					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, false)
 				} else {
-					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.ChannelID, vs.GuildID, i.Member.User.ID, false)
+					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false)
 				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
 
@@ -244,6 +247,8 @@ var (
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.Interaction) != nil && server[i.GuildID].queue.GetFirstElement() != nil {
 				server[i.GuildID].skip = true
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(skipTitle, skipTitle).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
 
@@ -251,7 +256,51 @@ var (
 		"clear": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.Interaction) != nil {
-				server[i.GuildID].Clear()
+				if server[i.GuildID].queue.GetFirstElement() != nil {
+					server[i.GuildID].Clear()
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueCleared).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueEmpty).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if server[i.GuildID].queue.GetFirstElement() != nil {
+				var message string
+
+				// Generate song info for message
+				for cont, el := range server[i.GuildID].queue.GetAllQueue() {
+					if cont == 0 {
+						if el.Title != "" {
+							message += fmt.Sprintf("%d) [%s](%s) - %s/%s added by %s\n", cont+1, el.Title, el.Link,
+								formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el.Duration, el.User)
+							continue
+						} else {
+							message += "Currently playing: Getting info...\n\n"
+							continue
+						}
+					}
+
+					// If we don't have the title, we use some placeholder text
+					if el.Title == "" {
+						message += fmt.Sprintf("%d) Getting info...\n", cont+1)
+					} else {
+						message += fmt.Sprintf("%d) [%s](%s) - %s added by %s\n", cont+1, el.Title, el.Link, el.Duration, el.User)
+					}
+				}
+
+				// Send embed
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, message).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*20)
+			} else {
+				// Queue is empty
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueEmpty).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
 	}

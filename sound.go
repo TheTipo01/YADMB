@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/binary"
+	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/lit"
 	"io"
 )
 
 // Plays a song from a io.Reader if specified, or tries to open a file with the given fileName
-func playSound(guildID string, in io.Reader) {
+func playSound(guildID string, el *Queue.Element) {
 	var (
 		opuslen int16
 		skip    bool
@@ -20,12 +21,12 @@ func playSound(guildID string, in io.Reader) {
 	_ = server[guildID].vc.Speaking(true)
 
 	for {
-		if server[guildID].queue.GetFirstElement().Segments[server[guildID].frames] {
+		if el.Segments[server[guildID].frames] {
 			skip = !skip
 		}
 
 		// Read opus frame length from dca file.
-		err = binary.Read(in, binary.LittleEndian, &opuslen)
+		err = binary.Read(el.Reader, binary.LittleEndian, &opuslen)
 
 		// If this is the end of the file, just return.
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
@@ -35,7 +36,7 @@ func playSound(guildID string, in io.Reader) {
 
 		// Read encoded pcm from dca file.
 		InBuf := make([]byte, opuslen)
-		err = binary.Read(in, binary.LittleEndian, &InBuf)
+		err = binary.Read(el.Reader, binary.LittleEndian, &InBuf)
 
 		// Keep count of the frames of the song
 		server[guildID].frames++
@@ -59,5 +60,4 @@ func playSound(guildID string, in io.Reader) {
 
 	_ = server[guildID].vc.Speaking(false)
 	server[guildID].frames = 0
-	lit.Debug("Finished playing song %s", server[guildID].queue.GetFirstElement().ID)
 }

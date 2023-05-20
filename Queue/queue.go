@@ -22,6 +22,12 @@ type Element struct {
 	Segments map[int]bool
 	// Reader to the song
 	Reader io.Reader
+	// Closer to the song
+	Closer io.Closer
+	// Whether we are still downloading the song
+	Downloading bool
+	// Interaction to edit
+	TextChannel string
 }
 
 type Queue struct {
@@ -68,7 +74,7 @@ func (q *Queue) RemoveFirstElement() {
 // GetAllQueue returns a copy of the queue
 func (q *Queue) GetAllQueue() []Element {
 	q.rw.RLock()
-	defer q.rw.Unlock()
+	defer q.rw.RUnlock()
 
 	queueCopy := make([]Element, len(q.queue))
 

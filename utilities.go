@@ -61,7 +61,7 @@ func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txt
 }
 
 // Sends embed as response to an interaction
-func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c *chan int) {
+func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- int) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
 	if err != nil {
@@ -70,7 +70,7 @@ func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 	}
 
 	if c != nil {
-		*c <- 1
+		c <- 1
 	}
 }
 
@@ -88,7 +88,7 @@ func sendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.Messag
 }
 
 // Modify an already sent interaction
-func modfyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
+func modifyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	_, err := s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
 	if err != nil {
@@ -98,8 +98,8 @@ func modfyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *di
 }
 
 // Modify an already sent interaction and deletes it after the specified wait time
-func modfyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
-	modfyInteraction(s, embed, i)
+func modifyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
+	modifyInteraction(s, embed, i)
 
 	time.Sleep(wait)
 
@@ -213,9 +213,9 @@ func ByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan int) {
+func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c <-chan int) {
 	if c != nil {
-		<-*c
+		<-c
 	}
 	err := s.InteractionResponseDelete(i)
 	if err != nil {

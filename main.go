@@ -33,6 +33,8 @@ var (
 	ignoreType string
 	// Cache for the blacklist
 	blacklist = make(map[string]bool)
+	// Discord bot session
+	s *discordgo.Session
 )
 
 func init() {
@@ -170,6 +172,9 @@ func main() {
 		return
 	}
 
+	// Save the session
+	s = dg
+
 	// Register commands
 	for _, v := range commands {
 		_, err = dg.ApplicationCommandCreate(dg.State.User.ID, "", v)
@@ -199,7 +204,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 }
 
 // Initialize Server structure
-func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
+func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 	initializeServer(e.ID)
 }
 

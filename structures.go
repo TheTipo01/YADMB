@@ -18,12 +18,18 @@ type Server struct {
 	frames int
 	// Quit channel
 	skip bool
-
-	started      bool
-	mutex        sync.RWMutex
-	clear        bool
-	guildID      string
+	// Whether the job scheduler has started
+	started bool
+	// Mutex for synchronizing the job scheduler start/stop
+	mutex sync.RWMutex
+	// Whether to clear the queue
+	clear bool
+	// Guild ID
+	guildID string
+	// Voice channel where the bot is connected
 	voiceChannel string
+	// Last interaction
+	interaction *discordgo.Interaction
 }
 
 // CustomCommand holds data about a custom command
