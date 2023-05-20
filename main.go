@@ -18,6 +18,18 @@ import (
 	"time"
 )
 
+// Config holds data parsed from the config.yml
+type Config struct {
+	Token        string `fig:"token" validate:"required"`
+	Owner        string `fig:"owner" validate:"required"`
+	ClientID     string `fig:"clientid" validate:"required"`
+	ClientSecret string `fig:"clientsecret" validate:"required"`
+	DSN          string `fig:"datasourcename" validate:"required"`
+	Driver       string `fig:"drivername" validate:"required"`
+	Genius       string `fig:"genius" validate:"required"`
+	LogLevel     string `fig:"loglevel" validate:"required"`
+}
+
 var (
 	// Holds all the info about a server
 	server = make(map[string]*Server)
@@ -25,6 +37,8 @@ var (
 	owner string
 	// Spotify client
 	client spotify.Client
+	// Genius key
+	genius string
 	// Discord bot token
 	token string
 	// Database connection
@@ -55,6 +69,7 @@ func init() {
 
 	// Config file found
 	token = cfg.Token
+	genius = cfg.Genius
 	owner = cfg.Owner
 
 	// Set lit.LogLevel to the given value
@@ -206,16 +221,18 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 // Update the voice channel when the bot is moved
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	// If the bot is moved to another channel
-	if v.UserID == s.State.User.ID && server[v.GuildID].queue.GetFirstElement() != nil {
+	if v.UserID == s.State.User.ID && len(server[v.GuildID].queue) > 0 {
 		if v.ChannelID != "" {
 			// Update the voice channel
-			server[v.GuildID].voiceChannel = v.ChannelID
+			server[v.GuildID].queue[0].channel = v.ChannelID
 		} else {
 			// If the bot has been disconnected from the voice channel, reconnect it
 			if v.ChannelID == "" {
 				var err error
 
-				server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].voiceChannel, false, true)
+				server[v.GuildID].pause.Lock()
+				server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].queue[0].channel, false, true)
+				server[v.GuildID].pause.Unlock()
 				if err != nil {
 					lit.Error("Can't join voice channel, %s", err)
 				}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/lit"
 )
 
@@ -34,18 +33,18 @@ func execQuery(query ...string) {
 }
 
 // Adds a song to the db, so next time we encounter it we don't need to call yt-dlp
-func addToDb(el Queue.Element, exist bool) {
+func addToDb(el Queue, exist bool) {
 	// We check for empty strings, just to be sure
-	if el.Link != "" && el.ID != "" && el.Title != "" && el.Duration != "" {
+	if el.link != "" && el.id != "" && el.title != "" && el.duration != "" {
 		if !exist {
 			_, err := db.Exec("INSERT "+ignoreType+" IGNORE INTO song (id, title, duration, thumbnail, segments) VALUES (?, ?, ?, ?, ?)",
-				el.ID, el.Title, el.Duration, el.Thumbnail, encodeSegments(el.Segments))
+				el.id, el.title, el.duration, el.thumbnail, encodeSegments(el.segments))
 			if err != nil {
 				lit.Error("Error inserting into song, %s", err)
 			}
 		}
 
-		_, err := db.Exec("INSERT "+ignoreType+" IGNORE INTO link (songID, link) VALUES (?, ?)", el.ID, el.Link)
+		_, err := db.Exec("INSERT "+ignoreType+" IGNORE INTO link (songID, link) VALUES (?, ?)", el.id, el.link)
 		if err != nil {
 			lit.Error("Error inserting into link, %s", err)
 		}
@@ -53,20 +52,20 @@ func addToDb(el Queue.Element, exist bool) {
 }
 
 // Checks if we already have downloaded a song, and if we've got info about it
-func checkInDb(link string) (Queue.Element, error) {
+func checkInDb(link string) Queue {
 	var (
-		el              Queue.Element
+		el              Queue
 		encodedSegments string
 	)
 
-	err := db.QueryRow("SELECT link, songID, title, duration, thumbnail, segments FROM song JOIN link ON songID = id WHERE link = ?", link).
-		Scan(&el.Link, &el.ID, &el.Title, &el.Duration, &el.Thumbnail, &encodedSegments)
+	el.link = link
 
-	if err == nil {
-		el.Segments = decodeSegments(encodedSegments)
-	}
+	_ = db.QueryRow("SELECT link, songID, title, duration, thumbnail, segments FROM song JOIN link ON songID = id WHERE link = ?", link).
+		Scan(&el.link, &el.id, &el.title, &el.duration, &el.thumbnail, &encodedSegments)
 
-	return el, err
+	el.segments = decodeSegments(encodedSegments)
+
+	return el
 }
 
 // Adds a custom command to db and to the command map
@@ -133,13 +132,13 @@ func loadCustomCommands() {
 }
 
 // Removes an element from the DB
-func removeFromDB(el Queue.Element) {
-	_, err := db.Exec("DELETE FROM link WHERE songID=?", el.ID)
+func removeFromDB(el Queue) {
+	_, err := db.Exec("DELETE FROM link WHERE songID=?", el.id)
 	if err != nil {
 		lit.Error("Error while deleting from link, %s", err)
 	}
 
-	_, err = db.Exec("DELETE FROM song WHERE id=?", el.ID)
+	_, err = db.Exec("DELETE FROM song WHERE id=?", el.id)
 	if err != nil {
 		lit.Error("Error while deleting from song, %s", err)
 	}

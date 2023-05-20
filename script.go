@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/bwmarrin/lit"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
 )
@@ -58,14 +57,17 @@ func download(link string, audioOnly bool) []*exec.Cmd {
 }
 
 // gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
-func gen(link string, filename string, audioOnly bool) (io.Reader, []*exec.Cmd) {
+func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
 	cmds := download(link, audioOnly)
 	dcaOut, _ := cmds[2].StdoutPipe()
 
-	f, _ := os.OpenFile(cachePath+filename+".dca", os.O_CREATE|os.O_WRONLY, 0644)
+	// tee saves the output from dca to file and also gives it back to us
+	tee := exec.Command("tee", cachePath+filename+audioExtension)
+	tee.Stdin = dcaOut
+	teeOut, _ := tee.StdoutPipe()
 
-	// Returns a reader with the DCA audio, and writes it to a file even when the reader is closed
-	return io.TeeReader(dcaOut, f), cmds
+	// We give back
+	return teeOut, append(cmds, tee)
 }
 
 // stream substitutes the old scripts for streaming directly to discord from a given source

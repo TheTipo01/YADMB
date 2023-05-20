@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/goccy/go-json"
 	"math/rand"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -36,6 +38,20 @@ func findUserVoiceState(session *discordgo.Session, i *discordgo.Interaction) *d
 func isValidURL(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
 	return err == nil
+}
+
+// Removes element from the queue
+func removeFromQueue(id string, guild string) {
+	server[guild].queueMutex.Lock()
+	defer server[guild].queueMutex.Unlock()
+	for i, q := range server[guild].queue {
+		if q.id == id {
+			copy(server[guild].queue[i:], server[guild].queue[i+1:])
+			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, "", 0, nil, "", ""}
+			server[guild].queue = server[guild].queue[:len(server[guild].queue)-1]
+			return
+		}
+	}
 }
 
 func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) *discordgo.Message {
@@ -177,9 +193,13 @@ func shuffle(a []string) []string {
 func quitVC(guildID string) {
 	time.Sleep(1 * time.Minute)
 
-	if server[guildID].queue.GetFirstElement() == nil && server[guildID].vc != nil {
+	if len(server[guildID].queue) == 0 && server[guildID].vc != nil {
+		server[guildID].server.Lock()
+
 		_ = server[guildID].vc.Disconnect()
 		server[guildID].vc = nil
+
+		server[guildID].server.Unlock()
 	}
 }
 
@@ -213,6 +233,13 @@ func ByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
+// If server is nil, tries to initialize it
+func initializeServer(guild string) {
+	if server[guild] == nil {
+		server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]*CustomCommand)}
+	}
+}
+
 func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan int) {
 	if c != nil {
 		<-*c
@@ -222,6 +249,65 @@ func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan i
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
 	}
+}
+
+// Downloads a song (if it's not cached), deletes an interaction response, and return a prepared Queue element
+func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c *chan int, channelID string) (*Queue, error) {
+	// Check if the song is the db, to speedup things
+	el := checkInDb(url)
+
+	info, err := os.Stat(cachePath + el.id + audioExtension)
+	// Not in db, download it
+	if el.title == "" || err != nil || info.Size() <= 0 {
+		// Get info about it
+		splittedOut, err := getInfo(url)
+		if err != nil {
+			return nil, err
+		}
+
+		var ytdl YtDLP
+		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
+
+		cmds := download(url, checkAudioOnly(ytdl.RequestedFormats))
+
+		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, channelID, i.ChannelID}
+
+		exist := false
+		switch ytdl.Extractor {
+		case "youtube":
+			el.id = ytdl.ID + "-" + ytdl.Extractor
+			// SponsorBlock is supported only on youtube
+			el.segments = getSegments(ytdl.ID)
+
+			// If the song is on YouTube, we also add it with its compact url, for faster parsing
+			addToDb(el, false)
+			exist = true
+
+			el.link = "https://youtu.be/" + ytdl.ID
+		case "generic":
+			// The generic extractor doesn't give out something unique, so we generate one from the link
+			el.id = idGen(el.link) + "-" + ytdl.Extractor
+		default:
+			el.id = ytdl.ID + "-" + ytdl.Extractor
+		}
+
+		addToDb(el, exist)
+
+		go deleteInteraction(s, i, c)
+
+		server[i.GuildID].stream.Lock()
+		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 0644)
+		cmds[2].Stdout = file
+
+		cmdsStart(cmds)
+		cmdsWait(cmds)
+		_ = file.Close()
+		server[i.GuildID].stream.Unlock()
+	} else {
+		go deleteInteraction(s, i, c)
+	}
+
+	return &el, nil
 }
 
 // idGen returns the first 11 characters of the SHA1 hash for the given link
@@ -255,10 +341,4 @@ func removePlaylist(s string) string {
 	q.Del("list")
 	u.RawQuery = q.Encode()
 	return u.String()
-}
-
-func initializeServer(guild string) {
-	if _, ok := server[guild]; !ok {
-		server[guild] = NewServer(guild)
-	}
 }
