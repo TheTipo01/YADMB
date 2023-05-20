@@ -1,6 +1,9 @@
 package Queue
 
-import "sync"
+import (
+	"io"
+	"sync"
+)
 
 type Element struct {
 	// ID of the song
@@ -17,6 +20,8 @@ type Element struct {
 	Thumbnail string
 	// Segments of the song to skip. Uses SponsorBlock API
 	Segments map[int]bool
+	// Reader to the song
+	Reader io.Reader
 }
 
 type Queue struct {

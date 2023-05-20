@@ -16,12 +16,6 @@ owner: ""
 clientid: ""
 clientsecret: ""
 
-#Genius API key, to make the "!lyrics" command work:
-#To get a Genius API key, open https://docs.genius.com and login or create a new account,
-#click the grey "Authorize With Genius" button on the left, after that, if you scroll down you will find a line on the left side
-# that says "Authorization: Bearer XXXXXXXXXX" but with your API key instead of XXXXXXXXXX, copy that and paste it below
-genius: ""
-
 
 #DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
 #DB Info, like username, password...
