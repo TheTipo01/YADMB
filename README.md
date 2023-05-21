@@ -10,7 +10,7 @@ Yet Another Discord Music Bot - A music bot written in go
 - All commands check to see if the caller is in the same voice channel as the bot (only if the skip songs, play a new
   one)
 - Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-  , [ffmpeg](https://ffmpeg.org/download.html) and [LyricsGenius](https://github.com/johnwmillr/LyricsGenius).
+  , [ffmpeg](https://ffmpeg.org/download.html).
 - For tutorials on how to install the bot, see the wiki.
 - Uses [SponsorBlock API](https://sponsor.ajay.app/) to automatically skip sponsors or moments when there's no music
 - Normalizes songs
@@ -32,11 +32,6 @@ the first result for the given queue, and if the flag `playlist` is set to false
 `/resume` - Resumes current song
 
 `/queue` - Prints the currently playing song and the next songs
-
-`/lyrics <song>` - Tries to search for lyrics of the specified song, or if not specified searches for the title of the
-currently playing song
-
-`/summon` - Make the bot join your voice channel
 
 `/disconnect` - Disconnect the bot from the voice channel
 

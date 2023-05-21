@@ -16,7 +16,7 @@ RUN apk add --no-cache \
   python3 \
   py3-pip \
   && ln -sf python3 /usr/bin/python \
-  && pip3 install lyricsgenius yt-dlp
+  && pip3 install yt-dlp
 
 USER yadmb
 
