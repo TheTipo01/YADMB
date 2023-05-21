@@ -4,6 +4,7 @@ import (
 	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/discordgo"
 	"sync"
+	"sync/atomic"
 )
 
 // Server holds all info about a single server
@@ -17,19 +18,25 @@ type Server struct {
 	// Frames
 	frames int
 	// Quit channel
-	skip bool
+	skip chan struct{}
 	// Whether the job scheduler has started
-	started bool
+	started atomic.Bool
 	// Mutex for synchronizing the job scheduler start/stop
 	mutex sync.RWMutex
 	// Whether to clear the queue
-	clear bool
+	clear atomic.Bool
 	// Guild ID
 	guildID string
 	// Voice channel where the bot is connected
 	voiceChannel string
 	// Last interaction
 	interaction *discordgo.Interaction
+	// Whether the bot is paused
+	paused atomic.Bool
+	// Channel for pausing
+	pause chan struct{}
+	// Channel for resuming
+	resume chan struct{}
 }
 
 // CustomCommand holds data about a custom command
@@ -52,11 +59,6 @@ type YtDLP struct {
 // RequestedFormats is used to detect if an audio only codec is available
 type RequestedFormats []struct {
 	Resolution string `json:"resolution"`
-}
-
-// Lyrics structure for storing lyrics of a song
-type Lyrics struct {
-	Lyrics string `json:"lyrics"`
 }
 
 // SponsorBlock holds data for segments of sponsors in youtube video

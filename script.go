@@ -28,6 +28,16 @@ func cmdsWait(cmds []*exec.Cmd) {
 	}
 }
 
+// cmdsKill kills all the exec.Cmd inside the slice
+func cmdsKill(cmds []*exec.Cmd) {
+	for _, cmd := range cmds {
+		err := cmd.Process.Kill()
+		if err != nil {
+			lit.Error("Error killing cmd: %s", err.Error())
+		}
+	}
+}
+
 // download downloads the song and gives back a pipe with DCA audio
 func download(link string, audioOnly bool) []*exec.Cmd {
 	var format string

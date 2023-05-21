@@ -15,7 +15,6 @@ const (
 	EmbedLimitFieldName   = 256
 	EmbedLimitField       = 25
 	EmbedLimitFooter      = 2048
-	EmbedLimit            = 4000
 )
 
 // NewEmbed returns a new embed object

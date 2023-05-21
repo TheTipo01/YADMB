@@ -48,18 +48,6 @@ func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 	return m
 }
 
-func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string, wait time.Duration) {
-	m := sendEmbed(s, embed, txtChannel)
-	if m != nil {
-		time.Sleep(wait)
-		err := s.ChannelMessageDelete(m.ChannelID, m.ID)
-		if err != nil {
-			lit.Error("ChannelMessageDelete failed: %s", err)
-		}
-	}
-
-}
-
 // Sends embed as response to an interaction
 func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- int) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
@@ -107,13 +95,6 @@ func modifyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEm
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
-	}
-}
-
-// Deletes an array of discordgo.Message
-func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
-	for _, m := range messages {
-		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
 }
 
@@ -177,7 +158,7 @@ func shuffle(a []string) []string {
 func quitVC(guildID string) {
 	time.Sleep(1 * time.Minute)
 
-	if server[guildID].queue.GetFirstElement() == nil && server[guildID].vc != nil {
+	if server[guildID].queue.IsEmpty() && server[guildID].vc != nil {
 		_ = server[guildID].vc.Disconnect()
 		server[guildID].vc = nil
 	}

@@ -3,70 +3,82 @@ package main
 import (
 	"fmt"
 	"github.com/TheTipo01/YADMB/Queue"
+	"github.com/bwmarrin/discordgo"
 	"io"
 	"os"
-	"sync"
+	"sync/atomic"
 )
 
 func NewServer(guildID string) *Server {
 	return &Server{
 		queue:   Queue.NewQueue(),
 		custom:  make(map[string]*CustomCommand),
-		mutex:   sync.RWMutex{},
 		guildID: guildID,
+		pause:   make(chan struct{}),
+		resume:  make(chan struct{}),
+		skip:    make(chan struct{}),
+		started: atomic.Bool{},
+		clear:   atomic.Bool{},
+		paused:  atomic.Bool{},
 	}
 }
 
-func (m *Server) AddSong(el Queue.Element) {
-	m.queue.AddElements(el)
+func (m *Server) AddSong(el ...Queue.Element) {
+	m.queue.AddElements(el...)
 
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-	if !m.started {
+	if m.started.CompareAndSwap(false, true) {
 		go m.play()
 	}
 }
 
 func (m *Server) play() {
-	m.mutex.Lock()
-	m.started = true
-	m.mutex.Unlock()
+	msg := make(chan *discordgo.Message)
 
-	m.clear = false
+	m.clear.Store(false)
+	m.paused.Store(false)
 
-	for el := m.queue.GetFirstElement(); el != nil && !m.clear; el = m.queue.GetFirstElement() {
-		go modifyInteraction(s, NewEmbed().SetTitle(s.State.User.Username).
-			AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", el.Title,
-				el.Link, el.Duration, el.User)).
-			SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, m.interaction)
+	for el := m.queue.GetFirstElement(); el != nil && !m.clear.Load(); el = m.queue.GetFirstElement() {
+		// Send Now playing message
+		go func() {
+			msg <- sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
+				AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", el.Title,
+					el.Link, el.Duration, el.User)).
+				SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, el.TextChannel)
+		}()
 
-		playSound(m.guildID, el)
-		if el.Closer != nil {
-			_ = el.Closer.Close()
+		if el.BeforePlay != nil {
+			el.BeforePlay()
 		}
 
+		skipped := playSound(m.guildID, el)
+
 		// If we are still downloading the song, we need to finish writing it to disk
-		if el.Downloading && (!m.clear || m.skip) {
+		if el.Downloading && (m.clear.Load() || skipped) {
 			devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0755)
 			_, _ = io.Copy(devnull, el.Reader)
 			_ = devnull.Close()
 		}
 
+		if el.AfterPlay != nil {
+			el.AfterPlay()
+		}
+
+		// Delete it after it has been played
+		go func() {
+			message := <-msg
+			_ = s.ChannelMessageDelete(message.ChannelID, message.ID)
+		}()
+
 		m.queue.RemoveFirstElement()
 	}
 
-	deleteInteraction(s, m.interaction, nil)
+	m.started.Store(false)
 
-	m.mutex.Lock()
-	m.started = false
-	m.mutex.Unlock()
+	go quitVC(m.guildID)
 }
 
 func (m *Server) Clear() {
-	m.skip = true
-	m.clear = true
-
-	for m.queue.GetFirstElement() != nil {
-		m.queue.RemoveFirstElement()
-	}
+	m.clear.Store(true)
+	m.skip <- struct{}{}
+	m.queue.Clear()
 }

@@ -204,14 +204,14 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 }
 
 // Initialize Server structure
-func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
+func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 	initializeServer(e.ID)
 }
 
 // Update the voice channel when the bot is moved
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	// If the bot is moved to another channel
-	if v.UserID == s.State.User.ID && server[v.GuildID].queue.GetFirstElement() != nil {
+	if v.UserID == s.State.User.ID && !server[v.GuildID].queue.IsEmpty() {
 		if v.ChannelID != "" {
 			// Update the voice channel
 			server[v.GuildID].voiceChannel = v.ChannelID

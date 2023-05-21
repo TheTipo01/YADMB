@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/discordgo"
+	"github.com/bwmarrin/lit"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -58,10 +63,6 @@ var (
 		{
 			Name:        "queue",
 			Description: "Returns all the songs in the server queue",
-		},
-		{
-			Name:        "summon",
-			Description: "Make the bot join your voice channel",
 		},
 		{
 			Name:        "disconnect",
@@ -199,18 +200,6 @@ var (
 				},
 			},
 		},
-		{
-			Name:        "preload",
-			Description: "Preloads a song",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "link",
-					Description: "Link of the song to preload",
-					Required:    true,
-				},
-			},
-		},
 	}
 
 	// Handler
@@ -232,22 +221,27 @@ var (
 
 				// If the user requested a playlist, don't remove the parameter
 				if len(i.ApplicationCommandData().Options) > 1 && i.ApplicationCommandData().Options[1].BoolValue() {
-					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, false)
+					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
 				} else {
-					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false)
+					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
 				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
-
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
-			if findUserVoiceState(s, i.Interaction) != nil && server[i.GuildID].queue.GetFirstElement() != nil {
-				server[i.GuildID].skip = true
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(skipTitle, skipTitle).
+			if findUserVoiceState(s, i.Interaction) != nil && !server[i.GuildID].queue.IsEmpty() {
+				el := server[i.GuildID].queue.GetFirstElement()
+				server[i.GuildID].skip <- struct{}{}
+				server[i.GuildID].paused.Store(false)
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(skipTitle,
+					el.Title+" - "+el.Duration+" added by "+el.User).
+					SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
@@ -256,8 +250,8 @@ var (
 		"clear": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.Interaction) != nil {
-				if server[i.GuildID].queue.GetFirstElement() != nil {
-					server[i.GuildID].Clear()
+				if !server[i.GuildID].queue.IsEmpty() {
+					go server[i.GuildID].Clear()
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueCleared).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				} else {
@@ -270,7 +264,7 @@ var (
 			}
 		},
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if server[i.GuildID].queue.GetFirstElement() != nil {
+			if !server[i.GuildID].queue.IsEmpty() {
 				var message string
 
 				// Generate song info for message
@@ -300,6 +294,328 @@ var (
 			} else {
 				// Queue is empty
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueEmpty).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		"pause": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if findUserVoiceState(s, i.Interaction) != nil {
+				if server[i.GuildID].paused.CompareAndSwap(false, true) {
+					server[i.GuildID].pause <- struct{}{}
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(pauseTitle, paused).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(pauseTitle, alreadyPaused).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		"resume": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if findUserVoiceState(s, i.Interaction) != nil {
+				if server[i.GuildID].paused.CompareAndSwap(true, false) {
+					server[i.GuildID].resume <- struct{}{}
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(resumeTitle, resumed).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(resumeTitle, alreadyResumed).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		"shuffle": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// Check if user is not in a voice channel
+			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+				if server[i.GuildID].vc == nil {
+					// Join the voice channel
+					vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+					if err != nil {
+						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						return
+					}
+					server[i.GuildID].vc = vc
+				}
+
+				play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, true, false)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		"disconnect": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// Check if user is not in a voice channel
+			if findUserVoiceState(s, i.Interaction) != nil {
+				if server[i.GuildID].queue.IsEmpty() {
+					_ = server[i.GuildID].vc.Disconnect()
+					server[i.GuildID].vc = nil
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(disconnectedTitle, disconnected).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, stillPlaying).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		// Restarts the bot
+		"restart": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// Check if the owner of the bot is the one who sent the command
+			if owner == i.Member.User.ID {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(restartTitle, disconnected).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*1)
+
+				_ = s.Close()
+				_ = db.Close()
+				os.Exit(0)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, "I'm sorry "+i.Member.User.Username+", I'm afraid I can't do that").SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		// Creates a custom command to play a song or playlist
+		"addcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			err := addCommand(strings.ToLower(i.ApplicationCommandData().Options[0].StringValue()), i.ApplicationCommandData().Options[1].StringValue(), i.GuildID, i.ApplicationCommandData().Options[2].BoolValue())
+			if err != nil {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle, commandAdded).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		// Removes a custom command from the DB
+		"rmcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			err := removeCustom(i.ApplicationCommandData().Options[0].StringValue(), i.GuildID)
+			if err != nil {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle, commandRemoved).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		// Lists all custom commands for the current server
+		"listcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			message := ""
+
+			for c := range server[i.GuildID].custom {
+				message += c + ", "
+			}
+
+			message = message[:len(message)-2]
+
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(commandsTitle, message).
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*30)
+		},
+		// Calls a custom command
+		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			command := strings.ToLower(i.ApplicationCommandData().Options[0].StringValue())
+
+			if server[i.GuildID].custom[command] != nil {
+				// Check if user is not in a voice channel
+				if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+					if server[i.GuildID].vc == nil {
+						// Join the voice channel
+						vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+						if err != nil {
+							sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+								SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+							return
+						}
+						server[i.GuildID].vc = vc
+					}
+
+					play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, commandInvalid).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		// Stats, like latency, and the size of the local cache
+		"stats": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			files, _ := os.ReadDir("./audio_cache")
+
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(statsTitle, "Called by "+i.Member.User.Username).
+				AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).
+				AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+
+				ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
+		},
+		// Refreshes things about a song
+		"update": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			url := i.ApplicationCommandData().Options[0].StringValue()
+			info := i.ApplicationCommandData().Options[1].BoolValue()
+			song := i.ApplicationCommandData().Options[2].BoolValue()
+
+			if !isValidURL(url) {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
+			}
+
+			el, err := checkInDb(url)
+			if err != nil {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notCached).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				return
+			}
+
+			if info {
+				removeFromDB(el)
+			}
+
+			if song {
+				err := os.Remove(cachePath + el.ID + audioExtension)
+				if err != nil {
+					lit.Error(err.Error())
+				}
+			}
+
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle,
+				"Requested data will be updated next time the song is played!").
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+		},
+		"blacklist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Member.User.ID != owner {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"Only the owner of the bot can use this command!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				return
+			}
+
+			id := i.ApplicationCommandData().Options[0].UserValue(nil).ID
+
+			if id == i.Member.User.ID {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"You are really trying to add yourself to the blacklist?").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				return
+			}
+
+			if _, ok := blacklist[id]; ok {
+				// Removing from the blacklist
+				delete(blacklist, id)
+
+				_, err := db.Exec("DELETE FROM blacklist WHERE id=?", id)
+				if err != nil {
+					lit.Error("Error while deleting from blacklist, %s", err)
+				}
+
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
+					"User removed from the blacklist!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			} else {
+				// Adding
+				blacklist[id] = true
+
+				_, err := db.Exec("INSERT INTO blacklist (`id`) VALUES(?)", id)
+				if err != nil {
+					lit.Error("Error while inserting from blacklist, %s", err)
+				}
+
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
+					"User added to the blacklist!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
+		},
+		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
+		"goto": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if !server[i.GuildID].queue.IsEmpty() {
+				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].StringValue())
+				if err != nil {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, gotoInvalid).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					server[i.GuildID].queue.ModifyFirstElement(func(e *Queue.Element) {
+						if e.Segments == nil {
+							e.Segments = make(map[int]bool)
+						}
+
+						server[i.GuildID].paused.Store(true)
+						server[i.GuildID].pause <- struct{}{}
+
+						e.Segments[server[i.GuildID].frames+1] = true
+						e.Segments[int(t.Seconds()*frameSeconds)] = true
+
+						server[i.GuildID].resume <- struct{}{}
+						server[i.GuildID].paused.Store(false)
+					})
+
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(gotoTitle, skippedTo+t.String()).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingPlaying).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		// Streams a song from the given URL, useful for radios
+		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+				url := i.ApplicationCommandData().Options[0].StringValue()
+				if !strings.HasPrefix(url, "file") && isValidURL(url) {
+					c := make(chan int)
+					go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c)
+
+					stdout, cmds := stream(url)
+					el := Queue.Element{
+						ID:          url,
+						Title:       "Stream",
+						Duration:    "NaN",
+						Link:        url,
+						User:        i.Member.User.Username,
+						TextChannel: i.ChannelID,
+						BeforePlay: func() {
+							cmdsStart(cmds)
+						},
+						AfterPlay: func() {
+							cmdsKill(cmds)
+						},
+						Reader: stdout,
+						Closer: stdout,
+					}
+
+					if server[i.GuildID].vc == nil {
+						server[i.GuildID].vc, _ = s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+					}
+
+					go deleteInteraction(s, i.Interaction, c)
+					server[i.GuildID].AddSong(el)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			}
+		},
+		"loop": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// Check if user is not in a voice channel
+			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+				if server[i.GuildID].vc == nil {
+					// Join the voice channel
+					vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+					if err != nil {
+						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						return
+					}
+					server[i.GuildID].vc = vc
+				}
+
+				play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, true)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
