@@ -1,6 +1,9 @@
 package Queue
 
-import "sync"
+import (
+	"io"
+	"sync"
+)
 
 type Element struct {
 	// ID of the song
@@ -17,6 +20,20 @@ type Element struct {
 	Thumbnail string
 	// Segments of the song to skip. Uses SponsorBlock API
 	Segments map[int]bool
+	// Reader to the song
+	Reader io.Reader
+	// Closer to the song
+	Closer io.Closer
+	// Whether we are still downloading the song
+	Downloading bool
+	// Interaction to edit
+	TextChannel string
+	// Function to call before playing the song
+	BeforePlay func()
+	// Function to call after playing the song
+	AfterPlay func()
+	// Whether to loop the song
+	Loop bool
 }
 
 type Queue struct {
@@ -27,6 +44,14 @@ type Queue struct {
 // NewQueue returns a new queue
 func NewQueue() Queue {
 	return Queue{queue: make([]Element, 0), rw: &sync.RWMutex{}}
+}
+
+// IsEmpty returns whether the queue is empty
+func (q *Queue) IsEmpty() bool {
+	q.rw.RLock()
+	defer q.rw.RUnlock()
+
+	return len(q.queue) < 1
 }
 
 // GetFirstElement returns a copy of the first element in the queue, if it exists
@@ -63,7 +88,7 @@ func (q *Queue) RemoveFirstElement() {
 // GetAllQueue returns a copy of the queue
 func (q *Queue) GetAllQueue() []Element {
 	q.rw.RLock()
-	defer q.rw.Unlock()
+	defer q.rw.RUnlock()
 
 	queueCopy := make([]Element, len(q.queue))
 
@@ -72,4 +97,22 @@ func (q *Queue) GetAllQueue() []Element {
 	}
 
 	return queueCopy
+}
+
+// Clear clears the queue
+func (q *Queue) Clear() {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+
+	q.queue = make([]Element, 0)
+}
+
+// ModifyFirstElement modifies the first element in the queue, if it exists
+func (q *Queue) ModifyFirstElement(f func(*Element)) {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+
+	if len(q.queue) > 0 {
+		f(&q.queue[0])
+	}
 }

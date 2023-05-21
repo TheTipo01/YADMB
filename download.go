@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
@@ -13,31 +14,32 @@ import (
 )
 
 // Download and plays a song from a YouTube link
-func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string, i *discordgo.Interaction, random bool) {
+func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop bool) {
 	c := make(chan int)
-	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, &c)
+	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
 
 	// Check if the song is the db, to speedup things
-	el := checkInDb(link)
-	if el.title != "" {
-		info, err := os.Stat(cachePath + el.id + audioExtension)
+	el, err := checkInDb(link)
+	if err == nil {
+		info, err := os.Stat(cachePath + el.ID + audioExtension)
 		if err == nil && info.Size() > 0 {
-			el.user = user
-			el.channel = channelID
-			el.txtChannel = i.ChannelID
+			lit.Debug("Cache hit for %s", el.ID)
+			f, _ := os.Open(cachePath + el.ID + audioExtension)
+			el.User = user
+			el.Reader = f
+			el.Closer = f
+			el.TextChannel = i.ChannelID
+			el.Loop = loop
 
-			server[guildID].queueMutex.Lock()
-			server[guildID].queue = append(server[guildID].queue, el)
-			go playSound(s, guildID, channelID, el.id+audioExtension, i, nil, &c, nil)
-			server[guildID].queueMutex.Unlock()
-
+			go deleteInteraction(s, i, c)
+			server[guildID].AddSong(el)
 			return
 		}
 	}
 
 	splittedOut, err := getInfo(link)
 	if err != nil {
-		modfyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		modifyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		return
 	}
 
@@ -48,18 +50,30 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 		splittedOut = shuffle(splittedOut)
 	}
 
+	go deleteInteraction(s, i, c)
+
+	var elements []Queue.Element
+
 	// We parse every track as individual json, because yt-dlp
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 
-		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, user, nil, ytdl.Thumbnail, 0, nil, channelID, i.ChannelID}
+		el = Queue.Element{
+			Title:       ytdl.Title,
+			Duration:    formatDuration(ytdl.Duration),
+			Link:        ytdl.WebpageURL,
+			User:        user,
+			Thumbnail:   ytdl.Thumbnail,
+			TextChannel: i.ChannelID,
+			Loop:        loop,
+		}
 
 		exist := false
 		switch ytdl.Extractor {
 		case "youtube":
-			el.id = ytdl.ID + "-" + ytdl.Extractor
+			el.ID = ytdl.ID + "-" + ytdl.Extractor
 			// SponsorBlock is supported only on YouTube
-			el.segments = getSegments(ytdl.ID)
+			el.Segments = getSegments(ytdl.ID)
 
 			// If the song is on YouTube, we also add it with its compact url, for faster parsing
 			addToDb(el, false)
@@ -68,43 +82,51 @@ func downloadAndPlay(s *discordgo.Session, guildID, channelID, link, user string
 			// YouTube shorts can have two different links: the one that redirects to a classical YouTube video
 			// and one that is played on the new UI. This is a workaround to save also the link to the new UI
 			if strings.Contains(link, "shorts") {
-				el.link = link
+				el.Link = link
 				addToDb(el, exist)
 			}
 
-			el.link = "https://youtu.be/" + ytdl.ID
+			el.Link = "https://youtu.be/" + ytdl.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
-			el.id = idGen(el.link) + "-" + ytdl.Extractor
+			el.ID = idGen(el.Link) + "-" + ytdl.Extractor
 		default:
-			el.id = ytdl.ID + "-" + ytdl.Extractor
+			el.ID = ytdl.ID + "-" + ytdl.Extractor
 		}
-
-		// Checks if video is already downloaded
-		info, err := os.Stat(cachePath + el.id + audioExtension)
 
 		// We add the song to the db, for faster parsing
 		addToDb(el, exist)
 
+		// Checks if video is already downloaded
+		info, err := os.Stat(cachePath + el.ID + audioExtension)
+
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			pipe, cmd := gen(ytdl.WebpageURL, el.id, checkAudioOnly(ytdl.RequestedFormats))
+			pipe, cmd := gen(ytdl.WebpageURL, el.ID, checkAudioOnly(ytdl.RequestedFormats))
+			el.Reader = pipe
+			el.Downloading = true
 
-			server[guildID].queueMutex.Lock()
-			server[guildID].queue = append(server[guildID].queue, el)
-			go playSoundStream(s, guildID, channelID, el.id+audioExtension, i, pipe, cmd)
-			server[guildID].queueMutex.Unlock()
+			el.BeforePlay = func() {
+				cmdsStart(cmd)
+			}
+
+			el.AfterPlay = func() {
+				cmdsWait(cmd)
+			}
 		} else {
-			server[guildID].queueMutex.Lock()
-			server[guildID].queue = append(server[guildID].queue, el)
-			go playSound(s, guildID, channelID, el.id+audioExtension, i, nil, &c, nil)
-			server[guildID].queueMutex.Unlock()
+			f, _ := os.Open(cachePath + el.ID + audioExtension)
+			el.Reader = f
+			el.Closer = f
 		}
+
+		elements = append(elements, el)
 	}
+
+	server[guildID].AddSong(elements...)
 }
 
 // Searches a song from the query on YouTube
-func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user string, i *discordgo.Interaction, random bool) {
+func searchDownloadAndPlay(s *discordgo.Session, guildID, query, user string, i *discordgo.Interaction, random, loop bool) {
 	// Gets video id
 	out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
 	if err != nil {
@@ -121,12 +143,12 @@ func searchDownloadAndPlay(s *discordgo.Session, guildID, channelID, query, user
 		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingFound).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 	} else {
 		// Calls download and play for only the first result
-		downloadAndPlay(s, guildID, channelID, "https://www.youtube.com/watch?v="+ids[0], user, i, random)
+		downloadAndPlay(s, guildID, "https://www.youtube.com/watch?v="+ids[0], user, i, random, loop)
 	}
 }
 
 // Enqueues song from a spotify playlist, searching them on YouTube
-func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID string, i *discordgo.Interaction, random bool) {
+func spotifyPlaylist(s *discordgo.Session, guildID, user, playlistID string, i *discordgo.Interaction, random, loop bool) {
 	// We get the playlist from its link
 	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
 	if err != nil {
@@ -137,52 +159,8 @@ func spotifyPlaylist(s *discordgo.Session, guildID, channelID, user, playlistID 
 
 	// We parse every single song, searching it on YouTube
 	for _, track := range playlist.Tracks.Tracks {
-		go searchDownloadAndPlay(s, guildID, channelID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, i, random)
+		go searchDownloadAndPlay(s, guildID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, i, random, loop)
 	}
-
-}
-
-// Returns song lyrics given a name
-func lyrics(song string) []string {
-	var lyrics Lyrics
-
-	// Command for downloading lyrics as a JSON file
-	cmd := exec.Command("python", "-m", "lyricsgenius", "song", "\""+song+"\"", "--save")
-
-	// We append to the environmental variables the genius token, and we run the command
-	cmd.Env = append(os.Environ(), "GENIUS_CLIENT_ACCESS_TOKEN="+genius)
-	out, err := cmd.Output()
-	if err != nil {
-		lit.Error("Can't get lyrics for a song: %s", err)
-	}
-
-	for _, line := range strings.Split(string(out), "\n") {
-		// For windows support
-		line = strings.TrimSuffix(line, "\r")
-
-		// If the line is the one with the filename
-		if strings.HasSuffix(line, ".json.") {
-			// We split the line on spaces
-			splitted := strings.Split(line, " ")
-			// And delete the last dot
-			filename := strings.TrimSuffix(splitted[len(splitted)-1], ".")
-
-			// So we open and unmarshal the json file
-			file, _ := os.Open(filename)
-
-			_ = json.NewDecoder(file).Decode(&lyrics)
-
-			// We remove the JSON
-			_ = file.Close()
-			_ = os.Remove(filename)
-
-			// And return all the lines of the song
-			return strings.Split(lyrics.Lyrics, "\n")
-
-		}
-	}
-
-	return []string{"No lyrics found"}
 
 }
 

@@ -6,27 +6,23 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	"github.com/goccy/go-json"
 	"math/rand"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 )
 
 // Finds user current voice channel
 func findUserVoiceState(session *discordgo.Session, i *discordgo.Interaction) *discordgo.VoiceState {
 	for _, guild := range session.State.Guilds {
-		if guild.ID != i.GuildID {
-			continue
-		}
-
-		for _, vs := range guild.VoiceStates {
-			if vs.UserID == i.Member.User.ID {
-				return vs
+		if guild.ID == i.GuildID {
+			for _, vs := range guild.VoiceStates {
+				if vs.UserID == i.Member.User.ID {
+					return vs
+				}
 			}
 		}
 	}
@@ -40,20 +36,6 @@ func isValidURL(toTest string) bool {
 	return err == nil
 }
 
-// Removes element from the queue
-func removeFromQueue(id string, guild string) {
-	server[guild].queueMutex.Lock()
-	defer server[guild].queueMutex.Unlock()
-	for i, q := range server[guild].queue {
-		if q.id == id {
-			copy(server[guild].queue[i:], server[guild].queue[i+1:])
-			server[guild].queue[len(server[guild].queue)-1] = Queue{"", "", "", "", "", nil, "", 0, nil, "", ""}
-			server[guild].queue = server[guild].queue[:len(server[guild].queue)-1]
-			return
-		}
-	}
-}
-
 func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) *discordgo.Message {
 	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
 	if err != nil {
@@ -64,20 +46,8 @@ func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 	return m
 }
 
-func sendAndDeleteEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string, wait time.Duration) {
-	m := sendEmbed(s, embed, txtChannel)
-	if m != nil {
-		time.Sleep(wait)
-		err := s.ChannelMessageDelete(m.ChannelID, m.ID)
-		if err != nil {
-			lit.Error("ChannelMessageDelete failed: %s", err)
-		}
-	}
-
-}
-
 // Sends embed as response to an interaction
-func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c *chan int) {
+func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- int) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
 	if err != nil {
@@ -86,7 +56,7 @@ func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 	}
 
 	if c != nil {
-		*c <- 1
+		c <- 1
 	}
 }
 
@@ -104,7 +74,7 @@ func sendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.Messag
 }
 
 // Modify an already sent interaction
-func modfyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
+func modifyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	_, err := s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
 	if err != nil {
@@ -114,8 +84,8 @@ func modfyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *di
 }
 
 // Modify an already sent interaction and deletes it after the specified wait time
-func modfyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
-	modfyInteraction(s, embed, i)
+func modifyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
+	modifyInteraction(s, embed, i)
 
 	time.Sleep(wait)
 
@@ -123,13 +93,6 @@ func modfyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmb
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
-	}
-}
-
-// Deletes an array of discordgo.Message
-func deleteMessages(s *discordgo.Session, messages []discordgo.Message) {
-	for _, m := range messages {
-		_ = s.ChannelMessageDelete(m.ChannelID, m.ID)
 	}
 }
 
@@ -193,13 +156,9 @@ func shuffle(a []string) []string {
 func quitVC(guildID string) {
 	time.Sleep(1 * time.Minute)
 
-	if len(server[guildID].queue) == 0 && server[guildID].vc != nil {
-		server[guildID].server.Lock()
-
+	if server[guildID].queue.IsEmpty() && server[guildID].vc != nil {
 		_ = server[guildID].vc.Disconnect()
 		server[guildID].vc = nil
-
-		server[guildID].server.Unlock()
 	}
 }
 
@@ -233,81 +192,15 @@ func ByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-// If server is nil, tries to initialize it
-func initializeServer(guild string) {
-	if server[guild] == nil {
-		server[guild] = &Server{server: &sync.Mutex{}, pause: &sync.Mutex{}, stream: &sync.Mutex{}, queueMutex: &sync.Mutex{}, custom: make(map[string]*CustomCommand)}
-	}
-}
-
-func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c *chan int) {
+func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c <-chan int) {
 	if c != nil {
-		<-*c
+		<-c
 	}
 	err := s.InteractionResponseDelete(i)
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
 	}
-}
-
-// Downloads a song (if it's not cached), deletes an interaction response, and return a prepared Queue element
-func downloadSong(s *discordgo.Session, i *discordgo.Interaction, url string, c *chan int, channelID string) (*Queue, error) {
-	// Check if the song is the db, to speedup things
-	el := checkInDb(url)
-
-	info, err := os.Stat(cachePath + el.id + audioExtension)
-	// Not in db, download it
-	if el.title == "" || err != nil || info.Size() <= 0 {
-		// Get info about it
-		splittedOut, err := getInfo(url)
-		if err != nil {
-			return nil, err
-		}
-
-		var ytdl YtDLP
-		_ = json.Unmarshal([]byte(splittedOut[0]), &ytdl)
-
-		cmds := download(url, checkAudioOnly(ytdl.RequestedFormats))
-
-		el = Queue{ytdl.Title, formatDuration(ytdl.Duration), "", ytdl.WebpageURL, i.Member.User.Username, nil, ytdl.Thumbnail, 0, nil, channelID, i.ChannelID}
-
-		exist := false
-		switch ytdl.Extractor {
-		case "youtube":
-			el.id = ytdl.ID + "-" + ytdl.Extractor
-			// SponsorBlock is supported only on youtube
-			el.segments = getSegments(ytdl.ID)
-
-			// If the song is on YouTube, we also add it with its compact url, for faster parsing
-			addToDb(el, false)
-			exist = true
-
-			el.link = "https://youtu.be/" + ytdl.ID
-		case "generic":
-			// The generic extractor doesn't give out something unique, so we generate one from the link
-			el.id = idGen(el.link) + "-" + ytdl.Extractor
-		default:
-			el.id = ytdl.ID + "-" + ytdl.Extractor
-		}
-
-		addToDb(el, exist)
-
-		go deleteInteraction(s, i, c)
-
-		server[i.GuildID].stream.Lock()
-		file, _ := os.OpenFile(cachePath+el.id+audioExtension, os.O_CREATE|os.O_WRONLY, 0644)
-		cmds[2].Stdout = file
-
-		cmdsStart(cmds)
-		cmdsWait(cmds)
-		_ = file.Close()
-		server[i.GuildID].stream.Unlock()
-	} else {
-		go deleteInteraction(s, i, c)
-	}
-
-	return &el, nil
 }
 
 // idGen returns the first 11 characters of the SHA1 hash for the given link
@@ -341,4 +234,25 @@ func removePlaylist(s string) string {
 	q.Del("list")
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+func initializeServer(guild string) {
+	if _, ok := server[guild]; !ok {
+		server[guild] = NewServer(guild)
+	}
+}
+
+// joinVC joins the voice channel if not already joined, returns true if joined successfully
+func joinVC(i *discordgo.Interaction, channelID string) bool {
+	if server[i.GuildID].vc == nil {
+		// Join the voice channel
+		vc, err := s.ChannelVoiceJoin(i.GuildID, channelID, false, true)
+		if err != nil {
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+				SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+			return false
+		}
+		server[i.GuildID].vc = vc
+	}
+	return true
 }

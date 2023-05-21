@@ -11,16 +11,16 @@ import (
 )
 
 // Wrapper function for playing songs
-func play(s *discordgo.Session, song string, i *discordgo.Interaction, voiceChannel, guild, username string, random bool) {
+func play(s *discordgo.Session, song string, i *discordgo.Interaction, guild, username string, random, loop bool) {
 	switch {
 	case strings.HasPrefix(song, "spotify:playlist:"):
-		spotifyPlaylist(s, guild, voiceChannel, username, song, i, random)
+		spotifyPlaylist(s, guild, username, song, i, random, loop)
 
 	case isValidURL(song):
-		downloadAndPlay(s, guild, voiceChannel, song, username, i, random)
+		downloadAndPlay(s, guild, song, username, i, random, loop)
 
 	default:
-		searchDownloadAndPlay(s, guild, voiceChannel, song, username, i, random)
+		searchDownloadAndPlay(s, guild, song, username, i, random, loop)
 	}
 }
 
