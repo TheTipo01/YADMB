@@ -80,5 +80,12 @@ func (m *Server) play() {
 func (m *Server) Clear() {
 	m.clear.Store(true)
 	m.skip <- struct{}{}
+	q := m.queue.GetAllQueue()
 	m.queue.Clear()
+	
+	for _, el := range q {
+		if el.Closer != nil {
+			_ = el.Closer.Close()
+		}
+	}
 }
