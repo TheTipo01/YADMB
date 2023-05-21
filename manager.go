@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 )
 
+// NewServer creates a new server manager
 func NewServer(guildID string) *Server {
 	return &Server{
 		queue:   Queue.NewQueue(),
@@ -23,6 +24,7 @@ func NewServer(guildID string) *Server {
 	}
 }
 
+// AddSong adds a song to the queue
 func (m *Server) AddSong(el ...Queue.Element) {
 	m.queue.AddElements(el...)
 
@@ -77,12 +79,13 @@ func (m *Server) play() {
 	go quitVC(m.guildID)
 }
 
+// Clear clears the queue
 func (m *Server) Clear() {
 	m.clear.Store(true)
 	m.skip <- struct{}{}
 	q := m.queue.GetAllQueue()
 	m.queue.Clear()
-	
+
 	for _, el := range q {
 		if el.Closer != nil {
 			_ = el.Closer.Close()

@@ -153,7 +153,6 @@ func main() {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
 					"User is in blacklist!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
-				return
 			} else {
 				if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 					h(s, i)
@@ -212,19 +211,17 @@ func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	// If the bot is moved to another channel
 	if v.UserID == s.State.User.ID && !server[v.GuildID].queue.IsEmpty() {
-		if v.ChannelID != "" {
+		if v.ChannelID == "" {
+			// If the bot has been disconnected from the voice channel, reconnect it
+			var err error
+
+			server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].voiceChannel, false, true)
+			if err != nil {
+				lit.Error("Can't join voice channel, %s", err)
+			}
+		} else {
 			// Update the voice channel
 			server[v.GuildID].voiceChannel = v.ChannelID
-		} else {
-			// If the bot has been disconnected from the voice channel, reconnect it
-			if v.ChannelID == "" {
-				var err error
-
-				server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].voiceChannel, false, true)
-				if err != nil {
-					lit.Error("Can't join voice channel, %s", err)
-				}
-			}
 		}
 	}
 }

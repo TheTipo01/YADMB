@@ -73,6 +73,5 @@ type Config struct {
 	ClientSecret string `fig:"clientsecret" validate:"required"`
 	DSN          string `fig:"datasourcename" validate:"required"`
 	Driver       string `fig:"drivername" validate:"required"`
-	Genius       string `fig:"genius" validate:"required"`
 	LogLevel     string `fig:"loglevel" validate:"required"`
 }
