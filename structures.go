@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/discordgo"
-	"sync"
 	"sync/atomic"
 )
 
@@ -21,8 +20,6 @@ type Server struct {
 	skip chan struct{}
 	// Whether the job scheduler has started
 	started atomic.Bool
-	// Mutex for synchronizing the job scheduler start/stop
-	mutex sync.RWMutex
 	// Whether to clear the queue
 	clear atomic.Bool
 	// Guild ID

@@ -208,22 +208,13 @@ var (
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				if server[i.GuildID].vc == nil {
-					// Join the voice channel
-					vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
-					if err != nil {
-						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-						return
+				if joinVC(i.Interaction, vs.ChannelID) {
+					// If the user requested a playlist, don't remove the parameter
+					if len(i.ApplicationCommandData().Options) > 1 && i.ApplicationCommandData().Options[1].BoolValue() {
+						play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
+					} else {
+						play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
 					}
-					server[i.GuildID].vc = vc
-				}
-
-				// If the user requested a playlist, don't remove the parameter
-				if len(i.ApplicationCommandData().Options) > 1 && i.ApplicationCommandData().Options[1].BoolValue() {
-					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
-				} else {
-					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
 				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
@@ -266,25 +257,22 @@ var (
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if !server[i.GuildID].queue.IsEmpty() {
 				var message string
+				el := server[i.GuildID].queue.GetAllQueue()
+
+				if el[0].Title != "" {
+					message += fmt.Sprintf("%d) [%s](%s) - %s/%s added by %s\n", 1, el[0].Title, el[0].Link,
+						formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el[0].Duration, el[0].User)
+				} else {
+					message += "Currently playing: Getting info...\n\n"
+				}
 
 				// Generate song info for message
-				for cont, el := range server[i.GuildID].queue.GetAllQueue() {
-					if cont == 0 {
-						if el.Title != "" {
-							message += fmt.Sprintf("%d) [%s](%s) - %s/%s added by %s\n", cont+1, el.Title, el.Link,
-								formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el.Duration, el.User)
-							continue
-						} else {
-							message += "Currently playing: Getting info...\n\n"
-							continue
-						}
-					}
-
+				for j := 1; j < len(el); j++ {
 					// If we don't have the title, we use some placeholder text
-					if el.Title == "" {
-						message += fmt.Sprintf("%d) Getting info...\n", cont+1)
+					if el[j].Title == "" {
+						message += fmt.Sprintf("%d) Getting info...\n", j+1)
 					} else {
-						message += fmt.Sprintf("%d) [%s](%s) - %s added by %s\n", cont+1, el.Title, el.Link, el.Duration, el.User)
+						message += fmt.Sprintf("%d) [%s](%s) - %s added by %s\n", j+1, el[j].Title, el[j].Link, el[j].Duration, el[j].User)
 					}
 				}
 
@@ -330,18 +318,9 @@ var (
 		"shuffle": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				if server[i.GuildID].vc == nil {
-					// Join the voice channel
-					vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
-					if err != nil {
-						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-						return
-					}
-					server[i.GuildID].vc = vc
+				if joinVC(i.Interaction, vs.ChannelID) {
+					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, true, false)
 				}
-
-				play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, true, false)
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -420,18 +399,9 @@ var (
 			if server[i.GuildID].custom[command] != nil {
 				// Check if user is not in a voice channel
 				if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-					if server[i.GuildID].vc == nil {
-						// Join the voice channel
-						vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
-						if err != nil {
-							sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
-								SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-							return
-						}
-						server[i.GuildID].vc = vc
+					if joinVC(i.Interaction, vs.ChannelID) {
+						play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop)
 					}
-
-					play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop)
 				} else {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -456,74 +426,67 @@ var (
 			info := i.ApplicationCommandData().Options[1].BoolValue()
 			song := i.ApplicationCommandData().Options[2].BoolValue()
 
-			if !isValidURL(url) {
+			if isValidURL(url) {
+				if el, err := checkInDb(url); err != nil {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notCached).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					if info {
+						removeFromDB(el)
+					}
+
+					if song {
+						err := os.Remove(cachePath + el.ID + audioExtension)
+						if err != nil {
+							lit.Error(err.Error())
+						}
+					}
+
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle,
+						"Requested data will be updated next time the song is played!").
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-				return
 			}
-
-			el, err := checkInDb(url)
-			if err != nil {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notCached).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-				return
-			}
-
-			if info {
-				removeFromDB(el)
-			}
-
-			if song {
-				err := os.Remove(cachePath + el.ID + audioExtension)
-				if err != nil {
-					lit.Error(err.Error())
-				}
-			}
-
-			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle,
-				"Requested data will be updated next time the song is played!").
-				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 		},
 		"blacklist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if i.Member.User.ID != owner {
+			if i.Member.User.ID == owner {
+				if id := i.ApplicationCommandData().Options[0].UserValue(nil).ID; id == i.Member.User.ID {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+						"You are really trying to add yourself to the blacklist?").
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				} else {
+					if _, ok := blacklist[id]; ok {
+						// Removing from the blacklist
+						delete(blacklist, id)
+
+						_, err := db.Exec("DELETE FROM blacklist WHERE id=?", id)
+						if err != nil {
+							lit.Error("Error while deleting from blacklist, %s", err)
+						}
+
+						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
+							"User removed from the blacklist!").
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					} else {
+						// Adding
+						blacklist[id] = true
+
+						_, err := db.Exec("INSERT INTO blacklist (`id`) VALUES(?)", id)
+						if err != nil {
+							lit.Error("Error while inserting from blacklist, %s", err)
+						}
+
+						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
+							"User added to the blacklist!").
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					}
+				}
+			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
 					"Only the owner of the bot can use this command!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
-				return
-			}
-
-			id := i.ApplicationCommandData().Options[0].UserValue(nil).ID
-
-			if id == i.Member.User.ID {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
-					"You are really trying to add yourself to the blacklist?").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
-				return
-			}
-
-			if _, ok := blacklist[id]; ok {
-				// Removing from the blacklist
-				delete(blacklist, id)
-
-				_, err := db.Exec("DELETE FROM blacklist WHERE id=?", id)
-				if err != nil {
-					lit.Error("Error while deleting from blacklist, %s", err)
-				}
-
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
-					"User removed from the blacklist!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
-			} else {
-				// Adding
-				blacklist[id] = true
-
-				_, err := db.Exec("INSERT INTO blacklist (`id`) VALUES(?)", id)
-				if err != nil {
-					lit.Error("Error while inserting from blacklist, %s", err)
-				}
-
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(blacklistTitle,
-					"User added to the blacklist!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
 			}
 		},
@@ -584,12 +547,10 @@ var (
 						Closer: stdout,
 					}
 
-					if server[i.GuildID].vc == nil {
-						server[i.GuildID].vc, _ = s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
+					if joinVC(i.Interaction, vs.ChannelID) {
+						go deleteInteraction(s, i.Interaction, c)
+						server[i.GuildID].AddSong(el)
 					}
-
-					go deleteInteraction(s, i.Interaction, c)
-					server[i.GuildID].AddSong(el)
 				} else {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -602,18 +563,9 @@ var (
 		"loop": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				if server[i.GuildID].vc == nil {
-					// Join the voice channel
-					vc, err := s.ChannelVoiceJoin(i.GuildID, vs.ChannelID, false, true)
-					if err != nil {
-						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-						return
-					}
-					server[i.GuildID].vc = vc
+				if joinVC(i.Interaction, vs.ChannelID) {
+					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, true)
 				}
-
-				play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, true)
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)

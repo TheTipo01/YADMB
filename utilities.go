@@ -18,13 +18,11 @@ import (
 // Finds user current voice channel
 func findUserVoiceState(session *discordgo.Session, i *discordgo.Interaction) *discordgo.VoiceState {
 	for _, guild := range session.State.Guilds {
-		if guild.ID != i.GuildID {
-			continue
-		}
-
-		for _, vs := range guild.VoiceStates {
-			if vs.UserID == i.Member.User.ID {
-				return vs
+		if guild.ID == i.GuildID {
+			for _, vs := range guild.VoiceStates {
+				if vs.UserID == i.Member.User.ID {
+					return vs
+				}
 			}
 		}
 	}
@@ -242,4 +240,19 @@ func initializeServer(guild string) {
 	if _, ok := server[guild]; !ok {
 		server[guild] = NewServer(guild)
 	}
+}
+
+// joinVC joins the voice channel if not already joined, returns true if joined successfully
+func joinVC(i *discordgo.Interaction, channelID string) bool {
+	if server[i.GuildID].vc == nil {
+		// Join the voice channel
+		vc, err := s.ChannelVoiceJoin(i.GuildID, channelID, false, true)
+		if err != nil {
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, cantJoinVC).
+				SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+			return false
+		}
+		server[i.GuildID].vc = vc
+	}
+	return true
 }
