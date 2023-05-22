@@ -65,7 +65,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		go deleteInteraction(s, i, c)
 	}
 
-	var elements []Queue.Element
+	var elements = make([]Queue.Element, len(splittedOut))
 
 	// We parse every track as individual json, because yt-dlp
 	for _, singleJSON := range splittedOut {
