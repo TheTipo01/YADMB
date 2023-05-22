@@ -74,8 +74,9 @@ func playSound(guildID string, el *Queue.Element) bool {
 
 			// Should not be any end of file errors
 			if err != nil {
-				lit.Error("Error streaming from dca file: %s", err)
 				cleanUp(guildID, el.Closer)
+				// Force to re-download the song
+				_ = os.Remove(cachePath + el.ID + ".dca")
 				return false
 			}
 

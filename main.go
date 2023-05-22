@@ -113,6 +113,9 @@ func init() {
 		}
 	}
 
+	// If yt-dlp is not terminated gracefully when downloading, it will leave a file called --Frag1
+	_ = os.Remove("--Frag1")
+
 	// Checks useful for knowing if every dependency
 	if isCommandNotAvailable("dca") {
 		lit.Error("Error: can't find dca!")

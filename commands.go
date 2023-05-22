@@ -30,6 +30,18 @@ var (
 					Description: "If the link is a playlist",
 					Required:    false,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "shuffle",
+					Description: "Whether to shuffle the playlist or not",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "loop",
+					Description: "Whether to loop the song or not",
+					Required:    false,
+				},
 			},
 		},
 		{
@@ -39,18 +51,6 @@ var (
 		{
 			Name:        "clear",
 			Description: "Clears the entire queue",
-		},
-		{
-			Name:        "shuffle",
-			Description: "Shuffles the songs in the playlist and adds them to the queue",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "link",
-					Description: "Link to the playlist to play",
-					Required:    true,
-				},
-			},
 		},
 		{
 			Name:        "pause",
@@ -153,18 +153,6 @@ var (
 			},
 		},
 		{
-			Name:        "loop",
-			Description: "Loops a song until skipped",
-			Options: []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "link",
-					Description: "Link to play in loop",
-					Required:    true,
-				},
-			},
-		},
-		{
 			Name:        "update",
 			Description: "Update info about a song, segments from SponsorBlock, or re-download the song",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -209,12 +197,30 @@ var (
 			// Check if user is not in a voice channel
 			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
 				if joinVC(i.Interaction, vs.ChannelID) {
-					// If the user requested a playlist, don't remove the parameter
-					if len(i.ApplicationCommandData().Options) > 1 && i.ApplicationCommandData().Options[1].BoolValue() {
-						play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
-					} else {
-						play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, false)
+					var (
+						shuffle, loop, playlist bool
+						options                 = i.ApplicationCommandData().Options
+						link                    string
+					)
+
+					for j := 1; j < len(options); j++ {
+						switch options[j].Name {
+						case "playlist":
+							playlist = options[j].Value.(bool)
+						case "shuffle":
+							shuffle = options[j].Value.(bool)
+						case "loop":
+							loop = options[j].Value.(bool)
+						}
 					}
+
+					if playlist {
+						link = options[0].Value.(string)
+					} else {
+						link = removePlaylist(options[0].Value.(string))
+					}
+
+					play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop)
 				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
@@ -315,17 +321,6 @@ var (
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
-		"shuffle": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// Check if user is not in a voice channel
-			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				if joinVC(i.Interaction, vs.ChannelID) {
-					play(s, i.ApplicationCommandData().Options[0].StringValue(), i.Interaction, vs.GuildID, i.Member.User.Username, true, false)
-				}
-			} else {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-			}
-		},
 		"disconnect": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.Interaction) != nil {
@@ -359,7 +354,8 @@ var (
 		},
 		// Creates a custom command to play a song or playlist
 		"addcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := addCommand(strings.ToLower(i.ApplicationCommandData().Options[0].StringValue()), i.ApplicationCommandData().Options[1].StringValue(), i.GuildID, i.ApplicationCommandData().Options[2].BoolValue())
+			options := i.ApplicationCommandData().Options
+			err := addCommand(strings.ToLower(options[0].Value.(string)), options[1].Value.(string), i.GuildID, options[2].Value.(bool))
 			if err != nil {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -370,7 +366,7 @@ var (
 		},
 		// Removes a custom command from the DB
 		"rmcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := removeCustom(i.ApplicationCommandData().Options[0].StringValue(), i.GuildID)
+			err := removeCustom(i.ApplicationCommandData().Options[0].Value.(string), i.GuildID)
 			if err != nil {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -394,7 +390,7 @@ var (
 		},
 		// Calls a custom command
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			command := strings.ToLower(i.ApplicationCommandData().Options[0].StringValue())
+			command := strings.ToLower(i.ApplicationCommandData().Options[0].Value.(string))
 
 			if server[i.GuildID].custom[command] != nil {
 				// Check if user is not in a voice channel
@@ -413,7 +409,7 @@ var (
 		},
 		// Stats, like latency, and the size of the local cache
 		"stats": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			files, _ := os.ReadDir("./audio_cache")
+			files, _ := os.ReadDir(cachePath)
 
 			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(statsTitle, "Called by "+i.Member.User.Username).
 				AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).
@@ -422,9 +418,12 @@ var (
 		},
 		// Refreshes things about a song
 		"update": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			url := i.ApplicationCommandData().Options[0].StringValue()
-			info := i.ApplicationCommandData().Options[1].BoolValue()
-			song := i.ApplicationCommandData().Options[2].BoolValue()
+			var (
+				options = i.ApplicationCommandData().Options
+				url     = options[0].Value.(string)
+				info    = options[1].Value.(bool)
+				song    = options[2].Value.(bool)
+			)
 
 			if isValidURL(url) {
 				if el, err := checkInDb(url); err != nil {
@@ -493,7 +492,7 @@ var (
 		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
 		"goto": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if !server[i.GuildID].queue.IsEmpty() {
-				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].StringValue())
+				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].Value.(string))
 				if err != nil {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, gotoInvalid).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -524,7 +523,7 @@ var (
 		// Streams a song from the given URL, useful for radios
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				url := i.ApplicationCommandData().Options[0].StringValue()
+				url := i.ApplicationCommandData().Options[0].Value.(string)
 				if !strings.HasPrefix(url, "file") && isValidURL(url) {
 					c := make(chan int)
 					go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c)
@@ -554,17 +553,6 @@ var (
 				} else {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-				}
-			} else {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-			}
-		},
-		"loop": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// Check if user is not in a voice channel
-			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				if joinVC(i.Interaction, vs.ChannelID) {
-					play(s, removePlaylist(i.ApplicationCommandData().Options[0].StringValue()), i.Interaction, vs.GuildID, i.Member.User.Username, false, true)
 				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).

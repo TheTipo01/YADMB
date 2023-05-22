@@ -17,15 +17,17 @@ Yet Another Discord Music Bot - A music bot written in go
 
 ## Bot commands
 
-`/play <link> <playlist>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into
-the queue
-the first result for the given queue, and if the flag `playlist` is set to false/unspecified, it will ignore playlists.
+`/play <link> <playlist> <shuffle> <loop>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it
+will insert into
+the queue the first result for the given query.
+
+- `playlist` if set to false/unspecified, it will ignore playlists.
+- `shuffle` if set to true, it will shuffle the playlist.
+- `loop` if set to true, it will loop the playlist.
 
 `/skip` - Skips the currently playing song
 
 `/clear` - Clears the entire queue
-
-`/shuffle <playlist>` - Inserts the song from the given playlist in a random order in the queue
 
 `/pause` - Pauses currently playing song
 
@@ -51,8 +53,6 @@ to true to play the song looped
 `/goto <time>` - Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
 
 `/stream <link>` - Streams a song from the given URL, useful for radios
-
-`/loop <link>` - Loops the given song until skip is called
 
 `/update <link> <info> <song>` - Next time the song `<link>` is played, the bot will (if set to true):
 
