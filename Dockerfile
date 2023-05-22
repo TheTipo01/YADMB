@@ -13,10 +13,7 @@ RUN apk add --no-cache \
   make \
   ffmpeg \
   opus \
-  python3 \
-  py3-pip \
-  && ln -sf python3 /usr/bin/python \
-  && pip3 install yt-dlp
+  yt-dlp
 
 USER yadmb
 
