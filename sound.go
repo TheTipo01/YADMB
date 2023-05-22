@@ -45,7 +45,6 @@ func playSound(guildID string, el *Queue.Element) bool {
 
 			// If this is the end of the file, just return.
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
-				lit.Debug(err.Error())
 				if el.Loop {
 					if el.Closer != nil {
 						_ = el.Closer.Close()

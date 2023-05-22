@@ -7,6 +7,7 @@ import (
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 	"github.com/zmb3/spotify"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,16 +15,18 @@ import (
 )
 
 // Download and plays a song from a YouTube link
-func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop bool) {
-	c := make(chan int)
-	go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
+func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond bool) {
+	var c chan int
+	if respond {
+		c = make(chan int)
+		go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
+	}
 
 	// Check if the song is the db, to speedup things
 	el, err := checkInDb(link)
 	if err == nil {
 		info, err := os.Stat(cachePath + el.ID + audioExtension)
 		if err == nil && info.Size() > 0 {
-			lit.Debug("Cache hit for %s", el.ID)
 			f, _ := os.Open(cachePath + el.ID + audioExtension)
 			el.User = user
 			el.Reader = f
@@ -31,7 +34,9 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			el.TextChannel = i.ChannelID
 			el.Loop = loop
 
-			go deleteInteraction(s, i, c)
+			if respond {
+				go deleteInteraction(s, i, c)
+			}
 			server[guildID].AddSong(el)
 			return
 		}
@@ -39,7 +44,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 
 	splittedOut, err := getInfo(link)
 	if err != nil {
-		modifyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		if respond {
+			modifyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		} else {
+			msg := sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i.ChannelID)
+			time.Sleep(time.Second * 5)
+			_ = s.ChannelMessageDelete(msg.ChannelID, msg.ID)
+		}
 		return
 	}
 
@@ -50,7 +61,9 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		splittedOut = shuffle(splittedOut)
 	}
 
-	go deleteInteraction(s, i, c)
+	if respond {
+		go deleteInteraction(s, i, c)
+	}
 
 	var elements []Queue.Element
 
@@ -126,42 +139,37 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 }
 
 // Searches a song from the query on YouTube
-func searchDownloadAndPlay(s *discordgo.Session, guildID, query, user string, i *discordgo.Interaction, random, loop bool) {
-	// Gets video id
+func searchDownloadAndPlay(query string) (string, error) {
 	out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
-	if err != nil {
-		splittedOut := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+	if err == nil {
+		ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-		lit.Error("Can't find song on youtube: %s", splittedOut[len(splittedOut)-1])
-		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingFound+splittedOut[len(splittedOut)-1]).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
-		return
+		if ids[0] != "" {
+			return "https://www.youtube.com/watch?v=" + ids[0], nil
+		}
 	}
-
-	ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
-
-	if ids[0] == "" {
-		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, nothingFound).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
-	} else {
-		// Calls download and play for only the first result
-		downloadAndPlay(s, guildID, "https://www.youtube.com/watch?v="+ids[0], user, i, random, loop)
-	}
+	return "", errors.New("no song found")
 }
 
 // Enqueues song from a spotify playlist, searching them on YouTube
-func spotifyPlaylist(s *discordgo.Session, guildID, user, playlistID string, i *discordgo.Interaction, random, loop bool) {
-	// We get the playlist from its link
-	playlist, err := client.GetPlaylist(spotify.ID(strings.TrimPrefix(playlistID, "spotify:playlist:")))
-	if err != nil {
+func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop bool, id spotify.ID) {
+	if playlist, err := client.GetPlaylist(id); err == nil {
+		go sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3)
+
+		if random {
+			rand.Shuffle(len(playlist.Tracks.Tracks), func(i, j int) {
+				playlist.Tracks.Tracks[i], playlist.Tracks.Tracks[j] = playlist.Tracks.Tracks[j], playlist.Tracks.Tracks[i]
+			})
+		}
+
+		for _, track := range playlist.Tracks.Tracks {
+			link, _ := searchDownloadAndPlay(track.Track.Name + " - " + track.Track.Artists[0].Name)
+			downloadAndPlay(s, guildID, link, user, i, false, loop, false)
+		}
+	} else {
 		lit.Error("Can't get info on a spotify playlist: %s", err)
 		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
-		return
 	}
-
-	// We parse every single song, searching it on YouTube
-	for _, track := range playlist.Tracks.Tracks {
-		go searchDownloadAndPlay(s, guildID, track.Track.Name+" - "+track.Track.Artists[0].Name, user, i, random, loop)
-	}
-
 }
 
 // getInfo returns info about a song, with every line of the returned array as JSON of type YtDLP
