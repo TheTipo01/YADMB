@@ -68,7 +68,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 	var elements = make([]Queue.Element, len(splittedOut))
 
 	// We parse every track as individual json, because yt-dlp
-	for _, singleJSON := range splittedOut {
+	for j, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 
 		el = Queue.Element{
@@ -132,7 +132,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			el.Closer = f
 		}
 
-		elements = append(elements, el)
+		elements[j] = el
 	}
 
 	server[guildID].AddSong(elements...)
