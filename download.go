@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
-	"github.com/zmb3/spotify"
+	"github.com/zmb3/spotify/v2"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -153,7 +153,7 @@ func searchDownloadAndPlay(query string) (string, error) {
 
 // Enqueues song from a spotify playlist, searching them on YouTube
 func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop bool, id spotify.ID) {
-	if playlist, err := client.GetPlaylist(id); err == nil {
+	if playlist, err := client.GetPlaylist(ctx, id); err == nil {
 		go sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3)
 
 		if random {

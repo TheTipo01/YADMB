@@ -7,7 +7,8 @@ import (
 	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/kkyr/fig"
-	"github.com/zmb3/spotify"
+	"github.com/zmb3/spotify/v2"
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2/clientcredentials"
 	_ "modernc.org/sqlite"
 	"os"
@@ -24,7 +25,9 @@ var (
 	// String for storing the owner of the bot
 	owner string
 	// Spotify client
-	client spotify.Client
+	client *spotify.Client
+	// Spotify context
+	ctx context.Context
 	// Discord bot token
 	token string
 	// Database connection
@@ -72,19 +75,21 @@ func init() {
 	}
 
 	// Spotify credentials
-	config := &clientcredentials.Config{
+	credentials := &clientcredentials.Config{
 		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
-		TokenURL:     spotify.TokenURL,
+		TokenURL:     spotifyauth.TokenURL,
 	}
 
+	ctx = context.Background()
+
 	// Check spotify token and create spotify client
-	token, err := config.Token(context.Background())
+	spotToken, err := credentials.Token(ctx)
 	if err != nil {
 		lit.Error("Spotify: couldn't get token: %s", err)
 	}
 
-	client = spotify.Authenticator{}.NewClient(token)
+	client = spotify.New(spotifyauth.New().Client(ctx, spotToken))
 
 	// Open database connection
 	db, err = sql.Open(cfg.Driver, cfg.DSN)
