@@ -416,12 +416,12 @@ var (
 		},
 		// Stats, like latency, and the size of the local cache
 		"stats": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			files, _ := os.ReadDir(cachePath)
+			size, files := FolderStats(cachePath)
 
 			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(statsTitle, "Called by "+i.Member.User.Username).
 				AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).
-				AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(len(files))+", "+
-				ByteCountSI(DirSize("./audio_cache"))).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
+				AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(files)+", "+
+				ByteCountSI(size)).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
 		},
 		// Refreshes things about a song
 		"update": func(s *discordgo.Session, i *discordgo.InteractionCreate) {

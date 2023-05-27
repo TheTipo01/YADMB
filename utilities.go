@@ -163,19 +163,18 @@ func quitVC(guildID string) {
 	}
 }
 
-// DirSize gets size of a directory
-func DirSize(path string) int64 {
-	var size int64
-	_ = filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
+// FolderStats gets size of a directory and the number of files in it
+func FolderStats(path string) (size int64, i int) {
+	symlink, _ := filepath.EvalSymlinks(path)
+	_ = filepath.Walk(symlink, func(_ string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
 			size += info.Size()
+			i++
 		}
 		return err
 	})
-	return size
+
+	return size, i
 }
 
 // ByteCountSI formats bytes into a readable format
