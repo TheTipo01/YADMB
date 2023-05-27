@@ -214,13 +214,20 @@ var (
 						}
 					}
 
+					var err error
 					if playlist {
 						link = options[0].Value.(string)
 					} else {
-						link = removePlaylist(options[0].Value.(string))
+						link, err = filterPlaylist(options[0].Value.(string))
 					}
 
-					play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop)
+					if err == nil {
+						play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop)
+					} else {
+						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+							"Playlist detected, but playlist parameter not enabled.").
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*10)
+					}
 				}
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
