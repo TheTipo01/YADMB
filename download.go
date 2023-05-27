@@ -153,22 +153,26 @@ func searchDownloadAndPlay(query string) (string, error) {
 
 // Enqueues song from a spotify playlist, searching them on YouTube
 func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop bool, id spotify.ID) {
-	if playlist, err := client.GetPlaylist(ctx, id); err == nil {
-		go sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3)
+	if spt != nil {
+		if playlist, err := spt.GetPlaylist(id); err == nil {
+			go sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3)
 
-		if random {
-			rand.Shuffle(len(playlist.Tracks.Tracks), func(i, j int) {
-				playlist.Tracks.Tracks[i], playlist.Tracks.Tracks[j] = playlist.Tracks.Tracks[j], playlist.Tracks.Tracks[i]
-			})
-		}
+			if random {
+				rand.Shuffle(len(playlist.Tracks.Tracks), func(i, j int) {
+					playlist.Tracks.Tracks[i], playlist.Tracks.Tracks[j] = playlist.Tracks.Tracks[j], playlist.Tracks.Tracks[i]
+				})
+			}
 
-		for _, track := range playlist.Tracks.Tracks {
-			link, _ := searchDownloadAndPlay(track.Track.Name + " - " + track.Track.Artists[0].Name)
-			downloadAndPlay(s, guildID, link, user, i, false, loop, false)
+			for _, track := range playlist.Tracks.Tracks {
+				link, _ := searchDownloadAndPlay(track.Track.Name + " - " + track.Track.Artists[0].Name)
+				downloadAndPlay(s, guildID, link, user, i, false, loop, false)
+			}
+		} else {
+			lit.Error("Can't get info on a spotify playlist: %s", err)
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 		}
 	} else {
-		lit.Error("Can't get info on a spotify playlist: %s", err)
-		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 	}
 }
 

@@ -52,13 +52,13 @@ const (
 	commandInvalid = "Not a valid custom command!\nSee /listcustom for a list of custom commands."
 
 	// Errors
-	notCached      = "Song is not cached!"
-	invalidURL     = "Invalid URL!"
-	stillPlaying   = "Can't disconnect the bot!\nStill playing in a voice channel."
-	gotoInvalid    = "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s..."
-	nothingPlaying = "No song playing!"
-	spotifyError   = "Can't get info about spotify playlist!\nError code: "
-	nothingFound   = "No song found!\n"
+	notCached           = "Song is not cached!"
+	invalidURL          = "Invalid URL!"
+	stillPlaying        = "Can't disconnect the bot!\nStill playing in a voice channel."
+	gotoInvalid         = "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s..."
+	nothingPlaying      = "No song playing!"
+	spotifyError        = "Can't get info about spotify playlist!\nError code: "
+	spotifyNotConfigure = "Spotify is not configured!\nSee the documentation for more info."
 
 	// Feedback
 	disconnected = "Bye-bye!"
