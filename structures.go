@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/TheTipo01/YADMB/Queue"
 	"github.com/bwmarrin/discordgo"
+	"sync"
 	"sync/atomic"
 )
 
@@ -34,6 +35,8 @@ type Server struct {
 	pause chan struct{}
 	// Channel for resuming
 	resume chan struct{}
+	// Wait group for waiting for spotify to finish before lowering the clear flag
+	wg *sync.WaitGroup
 }
 
 // CustomCommand holds data about a custom command

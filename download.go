@@ -155,6 +155,8 @@ func searchDownloadAndPlay(query string) (string, error) {
 func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop bool, id spotify.ID) {
 	if spt != nil {
 		if playlist, err := spt.GetPlaylist(id); err == nil {
+			server[guildID].wg.Add(1)
+
 			go sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3)
 
 			if random {
@@ -163,10 +165,13 @@ func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.In
 				})
 			}
 
-			for _, track := range playlist.Tracks.Tracks {
+			for j := 0; j < len(playlist.Tracks.Tracks) && !server[guildID].clear.Load(); j++ {
+				track := playlist.Tracks.Tracks[j]
 				link, _ := searchDownloadAndPlay(track.Track.Name + " - " + track.Track.Artists[0].Name)
 				downloadAndPlay(s, guildID, link, user, i, false, loop, false)
 			}
+
+			server[guildID].wg.Done()
 		} else {
 			lit.Error("Can't get info on a spotify playlist: %s", err)
 			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)

@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"io"
 	"os"
+	"sync"
 	"sync/atomic"
 )
 
@@ -21,6 +22,7 @@ func NewServer(guildID string) *Server {
 		started: atomic.Bool{},
 		clear:   atomic.Bool{},
 		paused:  atomic.Bool{},
+		wg:      &sync.WaitGroup{},
 	}
 }
 
@@ -36,7 +38,6 @@ func (m *Server) AddSong(el ...Queue.Element) {
 func (m *Server) play() {
 	msg := make(chan *discordgo.Message)
 
-	m.clear.Store(false)
 	m.paused.Store(false)
 
 	for el := m.queue.GetFirstElement(); el != nil && !m.clear.Load(); el = m.queue.GetFirstElement() {
@@ -83,6 +84,10 @@ func (m *Server) play() {
 func (m *Server) Clear() {
 	m.clear.Store(true)
 	m.skip <- struct{}{}
+
+	m.wg.Wait()
+	m.clear.Store(false)
+
 	q := m.queue.GetAllQueue()
 	m.queue.Clear()
 
