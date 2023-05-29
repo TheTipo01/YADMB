@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -268,30 +269,32 @@ var (
 			}
 		},
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if !server[i.GuildID].queue.IsEmpty() {
-				var message string
-				el := server[i.GuildID].queue.GetAllQueue()
+			const maxQueue = 10
 
-				if el[0].Title != "" {
-					message += fmt.Sprintf("%d) [%s](%s) - %s/%s added by %s\n", 1, el[0].Title, el[0].Link,
-						formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el[0].Duration, el[0].User)
+			if !server[i.GuildID].queue.IsEmpty() {
+				el := server[i.GuildID].queue.GetAllQueue()
+				embed := NewEmbed().SetTitle(s.State.User.Username).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
+					formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el[0].Duration, el[0].User))
+
+				var max int
+				if len(el) > maxQueue {
+					max = maxQueue
 				} else {
-					message += "Currently playing: Getting info...\n\n"
+					max = len(el)
 				}
 
 				// Generate song info for message
-				for j := 1; j < len(el); j++ {
-					// If we don't have the title, we use some placeholder text
-					if el[j].Title == "" {
-						message += fmt.Sprintf("%d) Getting info...\n", j+1)
-					} else {
-						message += fmt.Sprintf("%d) [%s](%s) - %s added by %s\n", j+1, el[j].Title, el[j].Link, el[j].Duration, el[j].User)
-					}
+				for j := 1; j < max; j++ {
+					embed = embed.AddField(strconv.Itoa(j+1), fmt.Sprintf("[%s](%s) - %s added by %s\n", el[j].Title, el[j].Link, el[j].Duration, el[j].User))
+				}
+
+				// Add the number of songs not shown if queue is longer than maxQueue
+				if max == maxQueue {
+					embed = embed.AddField("...", "And "+strconv.Itoa(len(el)-maxQueue)+" more")
 				}
 
 				// Send embed
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, message).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*20)
+				sendAndDeleteEmbedInteraction(s, embed.SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*20)
 			} else {
 				// Queue is empty
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueEmpty).
@@ -384,15 +387,15 @@ var (
 		},
 		// Lists all custom commands for the current server
 		"listcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			message := ""
+			commands := make([]string, 0, len(server[i.GuildID].custom))
 
 			for c := range server[i.GuildID].custom {
-				message += c + ", "
+				commands = append(commands, c)
 			}
+			
+			sort.Strings(commands)
 
-			message = message[:len(message)-2]
-
-			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(commandsTitle, message).
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(commandsTitle, strings.Join(commands, ", ")).
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*30)
 		},
 		// Calls a custom command
