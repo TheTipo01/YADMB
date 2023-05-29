@@ -65,10 +65,10 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		go deleteInteraction(s, i, c)
 	}
 
-	var elements = make([]Queue.Element, len(splittedOut))
+	elements := make([]Queue.Element, 0, len(splittedOut))
 
 	// We parse every track as individual json, because yt-dlp
-	for j, singleJSON := range splittedOut {
+	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 
 		el = Queue.Element{
@@ -108,7 +108,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		}
 
 		// We add the song to the db, for faster parsing
-		addToDb(el, exist)
+		go addToDb(el, exist)
 
 		// Checks if video is already downloaded
 		info, err := os.Stat(cachePath + el.ID + audioExtension)
@@ -132,7 +132,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			el.Closer = f
 		}
 
-		elements[j] = el
+		elements = append(elements, el)
 	}
 
 	server[guildID].AddSong(elements...)
