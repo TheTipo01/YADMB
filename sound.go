@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/binary"
 	"github.com/TheTipo01/YADMB/Queue"
-	"github.com/bwmarrin/lit"
 	"io"
 	"os"
 )
@@ -25,14 +24,11 @@ func playSound(guildID string, el *Queue.Element) bool {
 			select {
 			case <-server[guildID].resume:
 				el.Segments = server[guildID].queue.GetFirstElement().Segments
-				lit.Debug("Resuming")
 			case <-server[guildID].skip:
-				lit.Debug("Skipping")
 				cleanUp(guildID, el.Closer)
 				return true
 			}
 		case <-server[guildID].skip:
-			lit.Debug("Skipping")
 			cleanUp(guildID, el.Closer)
 			return true
 		default:
