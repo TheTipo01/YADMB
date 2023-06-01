@@ -236,9 +236,13 @@ var (
 	// Handler
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
-		"play": playCommand,
+		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			playCommand(s, i, false)
+		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
-		"playlist": playCommand,
+		"playlist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			playCommand(s, i, true)
+		},
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
@@ -584,14 +588,14 @@ var (
 	}
 )
 
-func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate, playlist bool) {
 	// Check if user is not in a voice channel
 	if vs := findUserVoiceState(s, i.Interaction); vs != nil {
 		if joinVC(i.Interaction, vs.ChannelID) {
 			var (
-				shuffle, loop, priority, playlist bool
-				link                              string
-				options                           = i.ApplicationCommandData().Options
+				shuffle, loop, priority bool
+				link                    string
+				options                 = i.ApplicationCommandData().Options
 			)
 
 			for j := 1; j < len(options); j++ {
@@ -602,8 +606,6 @@ func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 					loop = options[j].Value.(bool)
 				case "priority":
 					priority = options[j].Value.(bool)
-				case "playlist":
-					playlist = options[j].Value.(bool)
 				}
 			}
 
