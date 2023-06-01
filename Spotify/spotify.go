@@ -41,7 +41,7 @@ func (s *Spotify) refreshClient() error {
 
 	s.ctx = context.Background()
 
-	// Check spotify token and create spotify client
+	// Check spotify token and create a spotify client
 	token, err := credentials.Token(s.ctx)
 	if err != nil {
 		return err

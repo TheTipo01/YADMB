@@ -54,7 +54,7 @@ func (q *Queue) IsEmpty() bool {
 	return len(q.queue) < 1
 }
 
-// GetFirstElement returns a copy of the first element in the queue, if it exists
+// GetFirstElement returns a copy of the first element in the queue if it exists
 func (q *Queue) GetFirstElement() *Element {
 	q.rw.RLock()
 	defer q.rw.RUnlock()
@@ -121,7 +121,7 @@ func (q *Queue) Clear() {
 	q.queue = make([]Element, 0)
 }
 
-// ModifyFirstElement modifies the first element in the queue, if it exists
+// ModifyFirstElement modifies the first element in the queue if it exists
 func (q *Queue) ModifyFirstElement(f func(*Element)) {
 	q.rw.Lock()
 	defer q.rw.Unlock()

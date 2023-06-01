@@ -46,7 +46,7 @@ func init() {
 		return
 	}
 
-	// Check to make sure we are using one of supported drivers
+	// Check to make sure we are using one of the supported drivers
 	switch cfg.Driver {
 	case sqlite, mysql:
 	default:
@@ -174,7 +174,7 @@ func main() {
 		}
 	}
 
-	// Wait here until CTRL-C or other term signal is received.
+	// Wait here until CTRL-C or another term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)

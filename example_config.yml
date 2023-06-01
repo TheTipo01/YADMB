@@ -1,40 +1,35 @@
-#Example configuration file, remember to remove "example_" from the file after adding your tokens!
+# Example configuration file, remember to remove "example_" from the file after adding your tokens!
 
-#Discord Bot token:
-#To get your bot's token, go to https://discord.com/developers/applications click "New application",
-#click "Bot" on the left bar, click "Add bot" and confirm, then click "Copy" under "Click to reveal token"
+# Discord Bot token:
+# To get your bot's token, go to https://discord.com/developers/applications click "New application",
+# click "Bot" on the left bar, click "Add bot" and confirm, then click "Copy" under "Click to reveal token"
 token: ""
 
-#Owner id
-#Put here the id of the owner of the bot, so they can use commands like restart
+# Owner id
+# Put here the id of the owner of the bot, so they can use commands like restart
 owner: ""
 
-#Spotify Client ID and Client Secret, to support spotify playlists:
-#To get your client ID and secret you need to visit https://developer.spotify.com/dashboard/applications and log in or create a new account,
-#click "Create an app", give it a name and description, check both boxes and click "Create",
-#then you can find your your Client ID and to find your Client Secret simply click "Show Client Secret"
+# Spotify Client ID and Client Secret, to support spotify playlists:
+# To get your client ID and secret you need to visit https://developer.spotify.com/dashboard/applications and log in or create a new account,
+# click "Create an app", give it a name and description, check both boxes and click "Create",
+# then you can find your Client ID and to find your Client Secret simply click "Show Client Secret"
 clientid: ""
 clientsecret: ""
 
-#Genius API key, to make the "!lyrics" command work:
-#To get a Genius API key, open https://docs.genius.com and login or create a new account,
-#click the grey "Authorize With Genius" button on the left, after that, if you scroll down you will find a line on the left side
-# that says "Authorization: Bearer XXXXXXXXXX" but with your API key instead of XXXXXXXXXX, copy that and paste it below
-genius: ""
 
-
-#DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
-#DB Info, like username, password...
-#SQLite
+# DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
+# DB Info, like username, password...
+# SQLite
 datasourcename: ./data/yadmb.db
-#MySQL
+# MySQL
 #datasourcename: user:pass@tcp(ip:3306)/database
 
-#Driver type, aka what database to use. For now we support only "sqlite" and "mysql"
-#SQLite
+# Driver type, aka what database to use.
+# For now, we support only "sqlite" and "mysql"
+# SQLite
 drivername: sqlite
-#MySQL
+# MySQL
 #drivername: mysql
 
-#Log level. Possible value are error, warning, informational and debug
+# Log level. Possible value are error, warning, informational and debug
 loglevel: informational

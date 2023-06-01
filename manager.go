@@ -46,7 +46,7 @@ func (m *Server) play() {
 	m.paused.Store(false)
 
 	for el := m.queue.GetFirstElement(); el != nil && !m.clear.Load(); el = m.queue.GetFirstElement() {
-		// Send Now playing message
+		// Send "Now playing" message
 		go func() {
 			msg <- sendEmbed(s, NewEmbed().SetTitle(s.State.User.Username).
 				AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", el.Title,

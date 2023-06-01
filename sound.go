@@ -60,7 +60,7 @@ func playSound(guildID string, el *Queue.Element) bool {
 			InBuf := make([]byte, opuslen)
 			err = binary.Read(el.Reader, binary.LittleEndian, &InBuf)
 
-			// Keep count of the frames of the song
+			// Keep count of the frames in the song
 			server[guildID].frames++
 
 			if skip {

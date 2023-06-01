@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Checks if for every commands there's a function to handle that
+// Checks if for every command there's a function to handle that
 func TestCommands(t *testing.T) {
 	for _, c := range commands {
 		if commandHandlers[c.Name] == nil {

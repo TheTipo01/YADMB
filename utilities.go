@@ -97,7 +97,7 @@ func modifyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEm
 	}
 }
 
-// Formats a string given it's duration in seconds
+// Formats a string given its duration in seconds
 func formatDuration(duration float64) string {
 	duration2 := int(duration)
 	hours := duration2 / 3600
@@ -163,7 +163,7 @@ func quitVC(guildID string) {
 	}
 }
 
-// FolderStats gets size of a directory and the number of files in it
+// FolderStats gets the size of a directory and the number of files in it
 func FolderStats(path string) (size int64, i int) {
 	symlink, _ := filepath.EvalSymlinks(path)
 	_ = filepath.Walk(symlink, func(_ string, info os.FileInfo, err error) error {

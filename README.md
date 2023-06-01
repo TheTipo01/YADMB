@@ -7,7 +7,8 @@ Yet Another Discord Music Bot - A music bot written in go
 # Notes
 
 - We now use slash commands (from release [0.8.0](https://github.com/TheTipo01/YADMB/releases/tag/0.8.0))
-- All commands check to see if the caller is in the same voice channel as the bot (only if the skip songs, play a new
+- All commands check to see if the caller is in the same voice channel as the bot (only if they skip a song, or play a
+  new
   one)
 - Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [yt-dlp](https://github.com/yt-dlp/yt-dlp)
   , [ffmpeg](https://ffmpeg.org/download.html).
@@ -17,7 +18,8 @@ Yet Another Discord Music Bot - A music bot written in go
 
 ## Bot commands
 
-`/play <link> <playlist> <shuffle> <loop> <priority>` - Plays a song from YouTube or spotify playlist. If it's not a valid link, it
+`/play <link> <playlist> <shuffle> <loop> <priority>` - Plays a song from YouTube or spotify playlist. If it's not a
+valid link, it
 will insert into
 the queue the first result for the given query.
 
@@ -58,6 +60,6 @@ to true to play the song looped
 `/update <link> <info> <song>` - Next time the song `<link>` is played, the bot will (if set to true):
 
 - `<info>` - Update info about the song, like thumbnail, segments from SponsorBlock, title...
-- `<song>` - Redownload the entire song
+- `<song>` - Re-downloads the entire song
 
 `/blacklist <user>` - Adds or remove a person from the bot blacklist

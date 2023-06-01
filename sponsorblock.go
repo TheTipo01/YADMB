@@ -22,7 +22,7 @@ func getSegments(videoID string) map[int]bool {
 		return nil
 	}
 
-	// If we get the HTTP code 200, segments were found for the given video
+	// If we get HTTP code 200, segments were found for the given video
 	if resp.StatusCode == http.StatusOK {
 		var (
 			segments   SponsorBlock
