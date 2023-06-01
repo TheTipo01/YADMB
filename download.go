@@ -181,6 +181,21 @@ func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.In
 	}
 }
 
+// Gets info about a spotify track and plays it, searching it on YouTube
+func spotifyTrack(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, loop, priority bool, id spotify.ID) {
+	if spt != nil {
+		if track, err := spt.GetTrack(id); err == nil {
+			link, _ := searchDownloadAndPlay(track.Name + " - " + track.Artists[0].Name)
+			downloadAndPlay(s, guildID, link, user, i, false, loop, true, priority)
+		} else {
+			lit.Error("Can't get info on a spotify track: %s", err)
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		}
+	} else {
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+	}
+}
+
 // getInfo returns info about a song, with every line of the returned array as JSON of type YtDLP
 func getInfo(link string) ([]string, error) {
 	// Gets info about songs

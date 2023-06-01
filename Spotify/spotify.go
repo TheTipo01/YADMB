@@ -65,3 +65,17 @@ func (s *Spotify) GetPlaylist(id spotify.ID) (*spotify.FullPlaylist, error) {
 
 	return p, nil
 }
+
+func (s *Spotify) GetTrack(id spotify.ID) (*spotify.FullTrack, error) {
+	t, err := s.client.GetTrack(s.ctx, id)
+	if err != nil {
+		err := s.refreshClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return s.client.GetTrack(s.ctx, id)
+	}
+
+	return t, nil
+}
