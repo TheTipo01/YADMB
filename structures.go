@@ -63,9 +63,11 @@ type RequestedFormats []struct {
 
 // SponsorBlock holds data for segments of sponsors in YouTube video
 type SponsorBlock []struct {
-	Category string    `json:"category"`
-	Segment  []float64 `json:"segment"`
-	UUID     string    `json:"UUID"`
+	VideoID  string `json:"videoID"`
+	Segments []struct {
+		Category string    `json:"category"`
+		Segment  []float64 `json:"segment"`
+	} `json:"segments"`
 }
 
 // Config holds data parsed from the config.yml

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 	"net/http"
@@ -12,8 +14,7 @@ import (
 // Returns a map for skipping certain frames of a song
 func getSegments(videoID string) map[int]bool {
 	// Gets segments
-	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments?videoID="+videoID+"&categories=[\"sponsor\",\"music_offtopic\"]", nil)
-	// Sets timeout to one second, as sometime i
+	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments/"+hash(videoID)+"?categories=[\"sponsor\",\"music_offtopic\"]", nil) // Sets timeout to one second, as sometime i
 	client := http.Client{Timeout: time.Second}
 
 	resp, err := client.Do(req)
@@ -22,28 +23,30 @@ func getSegments(videoID string) map[int]bool {
 		return nil
 	}
 
-	// If we get HTTP code 200, segments were found for the given video
 	if resp.StatusCode == http.StatusOK {
 		var (
-			segments   SponsorBlock
+			videos     SponsorBlock
 			segmentMap = make(map[int]bool)
 		)
 
-		err = json.NewDecoder(resp.Body).Decode(&segments)
+		err = json.NewDecoder(resp.Body).Decode(&videos)
 		_ = resp.Body.Close()
 		if err != nil {
 			lit.Error("Can't unmarshal JSON, %s", err)
 			return nil
 		}
 
-		for _, s := range segments {
-			if len(s.Segment) == 2 {
-				segmentMap[int(s.Segment[0]*frameSeconds)] = true
-				segmentMap[int(s.Segment[1]*frameSeconds)] = true
+		for _, v := range videos {
+			if v.VideoID == videoID {
+				for _, segment := range v.Segments {
+					if len(segment.Segment) == 2 {
+						segmentMap[int(segment.Segment[0]*frameSeconds)] = true
+						segmentMap[int(segment.Segment[1]*frameSeconds)] = true
+					}
+				}
+				return segmentMap
 			}
 		}
-
-		return segmentMap
 	}
 
 	return nil
@@ -81,4 +84,12 @@ func decodeSegments(segments string) map[int]bool {
 	}
 
 	return mapSegments
+}
+
+// returns the first 4 characters of a sha256 hash
+func hash(str string) string {
+	h := sha256.New()
+	h.Write([]byte(str))
+
+	return hex.EncodeToString(h.Sum(nil))[:4]
 }
