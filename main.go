@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -196,6 +197,16 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 // Initialize Server structure
 func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
 	initializeServer(e.ID)
+
+	for _, c := range e.Channels {
+		if c.Type == discordgo.ChannelTypeGuildVoice {
+			server[e.ID].voiceChannelMembers[c.ID] = &atomic.Int32{}
+		}
+	}
+
+	for _, v := range e.VoiceStates {
+		server[e.ID].voiceChannelMembers[v.ChannelID].Add(1)
+	}
 }
 
 // Update the voice channel when the bot is moved
@@ -214,5 +225,20 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 			// Update the voice channel
 			server[v.GuildID].voiceChannel = v.ChannelID
 		}
+	}
+
+	// Update the voice channel members
+	if v.ChannelID != "" {
+		if v.BeforeUpdate != nil {
+			server[v.GuildID].voiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
+		}
+		server[v.GuildID].voiceChannelMembers[v.ChannelID].Add(1)
+	} else {
+		server[v.GuildID].voiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
+	}
+
+	// If the bot is alone in the voice channel, stop the music
+	if server[v.GuildID].voiceChannel != "" && server[v.GuildID].voiceChannelMembers[server[v.GuildID].voiceChannel].Load() == 1 {
+		go quitIfEmptyVoiceChannel(v.GuildID)
 	}
 }

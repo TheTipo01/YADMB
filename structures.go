@@ -27,8 +27,8 @@ type Server struct {
 	guildID string
 	// Voice channel where the bot is connected
 	voiceChannel string
-	// Last interaction
-	interaction *discordgo.Interaction
+	// Number of people in the voice channels of the guild
+	voiceChannelMembers map[string]*atomic.Int32
 	// Whether the bot is paused
 	paused atomic.Bool
 	// Channel for pausing

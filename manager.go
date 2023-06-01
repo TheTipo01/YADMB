@@ -13,16 +13,17 @@ import (
 // NewServer creates a new server manager
 func NewServer(guildID string) *Server {
 	return &Server{
-		queue:   Queue.NewQueue(),
-		custom:  make(map[string]*CustomCommand),
-		guildID: guildID,
-		pause:   make(chan struct{}),
-		resume:  make(chan struct{}),
-		skip:    make(chan struct{}),
-		started: atomic.Bool{},
-		clear:   atomic.Bool{},
-		paused:  atomic.Bool{},
-		wg:      &sync.WaitGroup{},
+		queue:               Queue.NewQueue(),
+		custom:              make(map[string]*CustomCommand),
+		guildID:             guildID,
+		pause:               make(chan struct{}),
+		resume:              make(chan struct{}),
+		skip:                make(chan struct{}),
+		started:             atomic.Bool{},
+		clear:               atomic.Bool{},
+		paused:              atomic.Bool{},
+		wg:                  &sync.WaitGroup{},
+		voiceChannelMembers: make(map[string]*atomic.Int32),
 	}
 }
 

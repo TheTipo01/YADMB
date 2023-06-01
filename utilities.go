@@ -263,6 +263,18 @@ func joinVC(i *discordgo.Interaction, channelID string) bool {
 			return false
 		}
 		server[i.GuildID].vc = vc
+		server[i.GuildID].voiceChannel = channelID
 	}
 	return true
+}
+
+// quitIfEmptyVoiceChannel stops the music if the bot is alone in the voice channel
+func quitIfEmptyVoiceChannel(guildID string) {
+	time.Sleep(1 * time.Minute)
+
+	if server[guildID].voiceChannel != "" && server[guildID].voiceChannelMembers[server[guildID].voiceChannel].Load() == 1 {
+		server[guildID].Clear()
+		_ = server[guildID].vc.Disconnect()
+		server[guildID].vc = nil
+	}
 }
