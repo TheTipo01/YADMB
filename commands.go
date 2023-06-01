@@ -43,6 +43,12 @@ var (
 					Description: "Whether to loop the song or not",
 					Required:    false,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "priority",
+					Description: "Does this song have priority over the other songs in the queue?",
+					Required:    false,
+				},
 			},
 		},
 		{
@@ -139,6 +145,12 @@ var (
 					Description: "Command to play",
 					Required:    true,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "priority",
+					Description: "Does this song have priority over the other songs in the queue?",
+					Required:    false,
+				},
 			},
 		},
 		{
@@ -150,6 +162,12 @@ var (
 					Name:        "url",
 					Description: "URL to play",
 					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "priority",
+					Description: "Does this stream have priority over the other songs in the queue?",
+					Required:    false,
 				},
 			},
 		},
@@ -199,9 +217,9 @@ var (
 			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
 				if joinVC(i.Interaction, vs.ChannelID) {
 					var (
-						shuffle, loop, playlist bool
-						options                 = i.ApplicationCommandData().Options
-						link                    string
+						shuffle, loop, playlist, priority bool
+						options                           = i.ApplicationCommandData().Options
+						link                              string
 					)
 
 					for j := 1; j < len(options); j++ {
@@ -212,6 +230,8 @@ var (
 							shuffle = options[j].Value.(bool)
 						case "loop":
 							loop = options[j].Value.(bool)
+						case "priority":
+							priority = options[j].Value.(bool)
 						}
 					}
 
@@ -223,7 +243,7 @@ var (
 					}
 
 					if err == nil {
-						play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop)
+						play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop, priority)
 					} else {
 						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
 							"Playlist detected, but playlist parameter not enabled.").
@@ -392,7 +412,7 @@ var (
 			for c := range server[i.GuildID].custom {
 				commands = append(commands, c)
 			}
-			
+
 			sort.Strings(commands)
 
 			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(commandsTitle, strings.Join(commands, ", ")).
@@ -406,7 +426,11 @@ var (
 				// Check if user is not in a voice channel
 				if vs := findUserVoiceState(s, i.Interaction); vs != nil {
 					if joinVC(i.Interaction, vs.ChannelID) {
-						play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop)
+						if len(i.ApplicationCommandData().Options) > 1 {
+							play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop, i.ApplicationCommandData().Options[1].Value.(bool))
+						} else {
+							play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop, false)
+						}
 					}
 				} else {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
@@ -558,7 +582,11 @@ var (
 
 					if joinVC(i.Interaction, vs.ChannelID) {
 						go deleteInteraction(s, i.Interaction, c)
-						server[i.GuildID].AddSong(el)
+						if len(i.ApplicationCommandData().Options) > 1 {
+							server[i.GuildID].AddSong(i.ApplicationCommandData().Options[1].Value.(bool), el)
+						} else {
+							server[i.GuildID].AddSong(false, el)
+						}
 					}
 				} else {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, invalidURL).

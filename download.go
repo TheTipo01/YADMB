@@ -15,7 +15,7 @@ import (
 )
 
 // Download and plays a song from a YouTube link
-func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond bool) {
+func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
 	var c chan int
 	if respond {
 		c = make(chan int)
@@ -37,7 +37,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			if respond {
 				go deleteInteraction(s, i, c)
 			}
-			server[guildID].AddSong(el)
+			server[guildID].AddSong(priority, el)
 			return
 		}
 	}
@@ -135,7 +135,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		elements = append(elements, el)
 	}
 
-	server[guildID].AddSong(elements...)
+	server[guildID].AddSong(priority, elements...)
 }
 
 // Searches a song from the query on YouTube
@@ -152,7 +152,7 @@ func searchDownloadAndPlay(query string) (string, error) {
 }
 
 // Enqueues song from a spotify playlist, searching them on YouTube
-func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop bool, id spotify.ID) {
+func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop, priority bool, id spotify.ID) {
 	if spt != nil {
 		if playlist, err := spt.GetPlaylist(id); err == nil {
 			server[guildID].wg.Add(1)
@@ -168,7 +168,7 @@ func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.In
 			for j := 0; j < len(playlist.Tracks.Tracks) && !server[guildID].clear.Load(); j++ {
 				track := playlist.Tracks.Tracks[j]
 				link, _ := searchDownloadAndPlay(track.Track.Name + " - " + track.Track.Artists[0].Name)
-				downloadAndPlay(s, guildID, link, user, i, false, loop, false)
+				downloadAndPlay(s, guildID, link, user, i, false, loop, false, priority)
 			}
 
 			server[guildID].wg.Done()

@@ -27,8 +27,12 @@ func NewServer(guildID string) *Server {
 }
 
 // AddSong adds a song to the queue
-func (m *Server) AddSong(el ...Queue.Element) {
-	m.queue.AddElements(el...)
+func (m *Server) AddSong(priority bool, el ...Queue.Element) {
+	if priority {
+		m.queue.AddElementsPriority(el...)
+	} else {
+		m.queue.AddElements(el...)
+	}
 
 	if m.started.CompareAndSwap(false, true) {
 		go m.play()

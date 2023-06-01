@@ -75,6 +75,20 @@ func (q *Queue) AddElements(el ...Element) {
 	q.queue = append(q.queue, el...)
 }
 
+// AddElementsPriority adds elements to the queue from the second position
+// This is useful for adding songs to the top of the queue
+// If the queue is empty, it will add the elements to the end of the queue
+func (q *Queue) AddElementsPriority(el ...Element) {
+	q.rw.Lock()
+	defer q.rw.Unlock()
+
+	if len(q.queue) < 1 {
+		q.queue = append(q.queue, el...)
+	} else {
+		q.queue = append(q.queue[:1], append(el, q.queue[1:]...)...)
+	}
+}
+
 // RemoveFirstElement removes the first element in the queue, if it exists
 func (q *Queue) RemoveFirstElement() {
 	q.rw.Lock()
