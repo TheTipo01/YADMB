@@ -17,7 +17,7 @@ var (
 	commands = []*discordgo.ApplicationCommand{
 		{
 			Name:        "play",
-			Description: "Plays a song from youtube or spotify playlist (or search the query on youtube)",
+			Description: "Plays a song from youtube or spotify playlist (or searches the query on youtube)",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
@@ -27,9 +27,33 @@ var (
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionBoolean,
-					Name:        "playlist",
-					Description: "If the link is a playlist",
+					Name:        "shuffle",
+					Description: "Whether to shuffle the playlist or not",
 					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "loop",
+					Description: "Whether to loop the song or not",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionBoolean,
+					Name:        "priority",
+					Description: "Does this song have priority over the other songs in the queue?",
+					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "playlist",
+			Description: "Plays a playlist from youtube or spotify (or searches the query on youtube)",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "link",
+					Description: "Link or query to play",
+					Required:    true,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionBoolean,
@@ -212,49 +236,9 @@ var (
 	// Handler
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
-		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// Check if user is not in a voice channel
-			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
-				if joinVC(i.Interaction, vs.ChannelID) {
-					var (
-						shuffle, loop, playlist, priority bool
-						options                           = i.ApplicationCommandData().Options
-						link                              string
-					)
-
-					for j := 1; j < len(options); j++ {
-						switch options[j].Name {
-						case "playlist":
-							playlist = options[j].Value.(bool)
-						case "shuffle":
-							shuffle = options[j].Value.(bool)
-						case "loop":
-							loop = options[j].Value.(bool)
-						case "priority":
-							priority = options[j].Value.(bool)
-						}
-					}
-
-					var err error
-					if playlist {
-						link = options[0].Value.(string)
-					} else {
-						link, err = filterPlaylist(options[0].Value.(string))
-					}
-
-					if err == nil {
-						play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop, priority)
-					} else {
-						sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
-							"Playlist detected, but playlist parameter not enabled.").
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*10)
-					}
-				}
-			} else {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
-			}
-		},
+		"play": playCommand,
+		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
+		"playlist": playCommand,
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
@@ -303,12 +287,12 @@ var (
 					max = len(el)
 				}
 
-				// Generate song info for message
+				// Generate song info for the message
 				for j := 1; j < max; j++ {
 					embed = embed.AddField(strconv.Itoa(j+1), fmt.Sprintf("[%s](%s) - %s added by %s\n", el[j].Title, el[j].Link, el[j].Duration, el[j].User))
 				}
 
-				// Add the number of songs not shown if queue is longer than maxQueue
+				// Add the number of songs not shown if the queue is longer than maxQueue
 				if max == maxQueue {
 					embed = embed.AddField("...", "And "+strconv.Itoa(len(el)-maxQueue)+" more")
 				}
@@ -599,3 +583,47 @@ var (
 		},
 	}
 )
+
+func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	// Check if user is not in a voice channel
+	if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+		if joinVC(i.Interaction, vs.ChannelID) {
+			var (
+				shuffle, loop, priority, playlist bool
+				link                              string
+				options                           = i.ApplicationCommandData().Options
+			)
+
+			for j := 1; j < len(options); j++ {
+				switch options[j].Name {
+				case "shuffle":
+					shuffle = options[j].Value.(bool)
+				case "loop":
+					loop = options[j].Value.(bool)
+				case "priority":
+					priority = options[j].Value.(bool)
+				case "playlist":
+					playlist = options[j].Value.(bool)
+				}
+			}
+
+			var err error
+			if playlist {
+				link = options[0].Value.(string)
+			} else {
+				link, err = filterPlaylist(options[0].Value.(string))
+			}
+
+			if err == nil {
+				play(s, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop, priority)
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"Playlist detected, but playlist command not used.").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*10)
+			}
+		}
+	} else {
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
+			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+	}
+}
