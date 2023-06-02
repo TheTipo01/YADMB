@@ -17,7 +17,7 @@ const (
 	enqueuedTitle     = "Enqueued"
 	errorTitle        = "Error"
 	skipTitle         = "Skipped"
-	queueTitle        = "queue"
+	queueTitle        = "Queue"
 	pauseTitle        = "Pause"
 	disconnectedTitle = "Disconnected"
 	gotoTitle         = "Goto"
