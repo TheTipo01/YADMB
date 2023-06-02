@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/TheTipo01/YADMB/Queue"
+	"github.com/TheTipo01/YADMB/database"
+	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"os"
@@ -364,7 +365,7 @@ var (
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*1)
 
 				_ = s.Close()
-				_ = db.Close()
+				db.Close()
 				os.Exit(0)
 			} else {
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, "I'm sorry "+i.Member.User.Username+", I'm afraid I can't do that").SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -373,23 +374,43 @@ var (
 		// Creates a custom command to play a song or playlist
 		"addcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			options := i.ApplicationCommandData().Options
-			err := addCommand(strings.ToLower(options[0].Value.(string)), options[1].Value.(string), i.GuildID, options[2].Value.(bool))
-			if err != nil {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			var (
+				command = strings.ToLower(options[0].Value.(string))
+				song    = options[1].Value.(string)
+				loop    = options[2].Value.(bool)
+			)
+
+			if server[i.GuildID].custom[command] == nil {
+				err := db.AddCommand(command, song, i.GuildID, loop)
+				server[i.GuildID].custom[command] = &database.CustomCommand{Link: song, Loop: loop}
+
+				if err != nil {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle, commandAdded).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
 			} else {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle, commandAdded).
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, commandExists).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
 		// Removes a custom command from the DB
 		"rmcustom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			err := removeCustom(i.ApplicationCommandData().Options[0].Value.(string), i.GuildID)
-			if err != nil {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			if command := i.ApplicationCommandData().Options[0].Value.(string); server[i.GuildID].custom[command] != nil {
+				err := db.RemoveCustom(i.ApplicationCommandData().Options[0].Value.(string), i.GuildID)
+				delete(server[i.GuildID].custom, command)
+
+				if err != nil {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle, commandRemoved).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
 			} else {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(successfulTitle, commandRemoved).
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, commandNotExists).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
@@ -415,9 +436,9 @@ var (
 				if vs := findUserVoiceState(s, i.Interaction); vs != nil {
 					if joinVC(i.Interaction, vs.ChannelID) {
 						if len(i.ApplicationCommandData().Options) > 1 {
-							play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop, i.ApplicationCommandData().Options[1].Value.(bool))
+							play(s, server[i.GuildID].custom[command].Link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].Loop, i.ApplicationCommandData().Options[1].Value.(bool))
 						} else {
-							play(s, server[i.GuildID].custom[command].link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].loop, false)
+							play(s, server[i.GuildID].custom[command].Link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].Loop, false)
 						}
 					}
 				} else {
@@ -448,12 +469,12 @@ var (
 			)
 
 			if isValidURL(url) {
-				if el, err := checkInDb(url); err != nil {
+				if el, err := db.CheckInDb(url); err != nil {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notCached).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				} else {
 					if info {
-						removeFromDB(el)
+						db.RemoveFromDB(el)
 					}
 
 					if song {
@@ -483,7 +504,7 @@ var (
 						// Removing from the blacklist
 						delete(blacklist, id)
 
-						_, err := db.Exec("DELETE FROM blacklist WHERE id=?", id)
+						err := db.RemoveFromBlacklist(id)
 						if err != nil {
 							lit.Error("Error while deleting from blacklist, %s", err)
 						}
@@ -495,7 +516,7 @@ var (
 						// Adding
 						blacklist[id] = true
 
-						_, err := db.Exec("INSERT INTO blacklist (`id`) VALUES(?)", id)
+						err := db.AddToBlacklist(id)
 						if err != nil {
 							lit.Error("Error while inserting from blacklist, %s", err)
 						}
@@ -519,7 +540,7 @@ var (
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, gotoInvalid).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				} else {
-					server[i.GuildID].queue.ModifyFirstElement(func(e *Queue.Element) {
+					server[i.GuildID].queue.ModifyFirstElement(func(e *queue.Element) {
 						if e.Segments == nil {
 							e.Segments = make(map[int]bool)
 						}
@@ -551,7 +572,7 @@ var (
 					go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c)
 
 					stdout, cmds := stream(url)
-					el := Queue.Element{
+					el := queue.Element{
 						ID:          url,
 						Title:       "Stream",
 						Duration:    "NaN",

@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/binary"
-	"github.com/TheTipo01/YADMB/Queue"
+	"github.com/TheTipo01/YADMB/queue"
 	"io"
 	"os"
 )
 
 // Plays a song in DCA format
-func playSound(guildID string, el *Queue.Element) bool {
+func playSound(guildID string, el *queue.Element) bool {
 	var (
 		opuslen int16
 		skip    bool

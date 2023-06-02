@@ -237,13 +237,12 @@ func filterPlaylist(link string) (string, error) {
 		if q.Has("v") || be {
 			u.RawQuery = q.Encode()
 			return u.String(), nil
-		} else {
-			return "", errors.New("no video ID found")
 		}
-	} else {
-		return link, nil
+
+		return "", errors.New("no video ID found")
 	}
 
+	return link, nil
 }
 
 func initializeServer(guild string) {

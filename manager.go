@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/TheTipo01/YADMB/Queue"
+	"github.com/TheTipo01/YADMB/database"
+	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/discordgo"
 	"io"
 	"os"
@@ -13,8 +14,8 @@ import (
 // NewServer creates a new server manager
 func NewServer(guildID string) *Server {
 	return &Server{
-		queue:               Queue.NewQueue(),
-		custom:              make(map[string]*CustomCommand),
+		queue:               queue.NewQueue(),
+		custom:              make(map[string]*database.CustomCommand),
 		guildID:             guildID,
 		pause:               make(chan struct{}),
 		resume:              make(chan struct{}),
@@ -28,7 +29,7 @@ func NewServer(guildID string) *Server {
 }
 
 // AddSong adds a song to the queue
-func (m *Server) AddSong(priority bool, el ...Queue.Element) {
+func (m *Server) AddSong(priority bool, el ...queue.Element) {
 	if priority {
 		m.queue.AddElementsPriority(el...)
 	} else {

@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/TheTipo01/YADMB/Queue"
+	"github.com/TheTipo01/YADMB/database"
+	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/discordgo"
 	"sync"
 	"sync/atomic"
@@ -10,11 +11,11 @@ import (
 // Server holds all info about a single server
 type Server struct {
 	// The queue
-	queue Queue.Queue
+	queue queue.Queue
 	// Voice connection
 	vc *discordgo.VoiceConnection
 	// Custom commands, maps a command to a song
-	custom map[string]*CustomCommand
+	custom map[string]*database.CustomCommand
 	// Frames
 	frames int
 	// Quit channel
@@ -37,12 +38,6 @@ type Server struct {
 	resume chan struct{}
 	// Wait group for waiting for spotify to finish before lowering the clear flag
 	wg *sync.WaitGroup
-}
-
-// CustomCommand holds data about a custom command
-type CustomCommand struct {
-	link string
-	loop bool
 }
 
 // YtDLP structure for holding yt-dlp data

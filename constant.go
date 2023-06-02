@@ -17,7 +17,7 @@ const (
 	enqueuedTitle     = "Enqueued"
 	errorTitle        = "Error"
 	skipTitle         = "Skipped"
-	queueTitle        = "Queue"
+	queueTitle        = "queue"
 	pauseTitle        = "Pause"
 	disconnectedTitle = "Disconnected"
 	gotoTitle         = "Goto"
@@ -59,12 +59,9 @@ const (
 	nothingPlaying      = "No song playing!"
 	spotifyError        = "Can't get info about spotify playlist!\nError code: "
 	spotifyNotConfigure = "Spotify is not configured!\nSee the documentation for more info."
+	commandExists       = "Command already exists!"
+	commandNotExists    = "Command doesn't exist!"
 
 	// Feedback
 	disconnected = "Bye-bye!"
-)
-
-const (
-	sqlite = "sqlite"
-	mysql  = "mysql"
 )

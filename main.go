@@ -1,13 +1,13 @@
 package main
 
 import (
-	"database/sql"
-	"github.com/TheTipo01/YADMB/Spotify"
+	"github.com/TheTipo01/YADMB/database"
+	"github.com/TheTipo01/YADMB/database/mysql"
+	"github.com/TheTipo01/YADMB/database/sqlite"
+	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/kkyr/fig"
-	_ "modernc.org/sqlite"
 	"os"
 	"os/signal"
 	"strconv"
@@ -22,14 +22,12 @@ var (
 	server = make(map[string]*Server)
 	// String for storing the owner of the bot
 	owner string
-	// Spotify client
-	spt *Spotify.Spotify
+	// spotify client
+	spt *spotify.Spotify
 	// Discord bot token
 	token string
-	// Database connection
-	db *sql.DB
-	// SQLite and MySQL have different syntax to ignore errors on insert
-	ignoreType string
+	// database connection
+	db *database.Database
 	// Cache for the blacklist
 	blacklist = make(map[string]bool)
 	// Discord bot session
@@ -43,14 +41,6 @@ func init() {
 	err := fig.Load(&cfg, fig.File("config.yml"), fig.Dirs(".", "./data"))
 	if err != nil {
 		lit.Error(err.Error())
-		return
-	}
-
-	// Check to make sure we are using one of the supported drivers
-	switch cfg.Driver {
-	case sqlite, mysql:
-	default:
-		lit.Error("Wrong db driver! Valid drivers are %s and %s", sqlite, mysql)
 		return
 	}
 
@@ -70,30 +60,28 @@ func init() {
 		lit.LogLevel = lit.LogDebug
 	}
 
-	spt, err = Spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
+	spt, err = spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
 	if err != nil {
-		lit.Error("Spotify: couldn't get token: %s", err)
+		lit.Error("spotify: couldn't get token: %s", err)
 	}
 
-	// Open database connection
-	db, err = sql.Open(cfg.Driver, cfg.DSN)
-	if err != nil {
-		lit.Error("Error opening db connection, %s", err)
-		return
-	}
-
-	// Create tables used by the bots
+	// Initialize the database
 	switch cfg.Driver {
-	case sqlite:
-		execQuery(tblSong, tblLinkLite, tblCommands, tblBlacklist)
-		ignoreType = "OR"
-	case mysql:
-		execQuery(tblSong, tblLinkMy, tblCommands, tblBlacklist)
-		ignoreType = ""
+	case "sqlite", "sqlite3":
+		db = sqlite.NewDatabase(cfg.DSN)
+	case "mysql":
+		db = mysql.NewDatabase(cfg.DSN)
 	}
 
 	// And load custom commands from the db
-	loadCustomCommands()
+	commands, _ := db.GetCustomCommands()
+	for k := range commands {
+		if server[k] == nil {
+			initializeServer(k)
+		}
+
+		server[k].custom = commands[k]
+	}
 
 	// Create folders used by the bot
 	if _, err = os.Stat(cachePath); err != nil {
@@ -183,7 +171,7 @@ func main() {
 	// Cleanly close down the Discord session.
 	_ = dg.Close()
 	// And the DB connection
-	_ = db.Close()
+	db.Close()
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {

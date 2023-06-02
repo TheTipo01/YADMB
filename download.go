@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"github.com/TheTipo01/YADMB/Queue"
+	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
@@ -23,7 +23,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 	}
 
 	// Check if the song is the db, to speedup things
-	el, err := checkInDb(link)
+	el, err := db.CheckInDb(link)
 	if err == nil {
 		info, err := os.Stat(cachePath + el.ID + audioExtension)
 		if err == nil && info.Size() > 0 {
@@ -65,13 +65,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		go deleteInteraction(s, i, c)
 	}
 
-	elements := make([]Queue.Element, 0, len(splittedOut))
+	elements := make([]queue.Element, 0, len(splittedOut))
 
 	// We parse every track as individual json, because yt-dlp
 	for _, singleJSON := range splittedOut {
 		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
 
-		el = Queue.Element{
+		el = queue.Element{
 			Title:       ytdl.Title,
 			Duration:    formatDuration(ytdl.Duration),
 			Link:        ytdl.WebpageURL,
@@ -89,14 +89,14 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			el.Segments = getSegments(ytdl.ID)
 
 			// If the song is on YouTube, we also add it with its compact url, for faster parsing
-			addToDb(el, false)
+			db.AddToDb(el, false)
 			exist = true
 
 			// YouTube shorts can have two different links: the one that redirects to a classical YouTube video
 			// and one that is played on the new UI. This is a workaround to save also the link to the new UI
 			if strings.Contains(link, "shorts") {
 				el.Link = link
-				addToDb(el, exist)
+				db.AddToDb(el, exist)
 			}
 
 			el.Link = "https://youtu.be/" + ytdl.ID
@@ -108,7 +108,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		}
 
 		// We add the song to the db, for faster parsing
-		go addToDb(el, exist)
+		go db.AddToDb(el, exist)
 
 		// Checks if video is already downloaded
 		info, err := os.Stat(cachePath + el.ID + audioExtension)

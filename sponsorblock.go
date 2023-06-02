@@ -6,8 +6,6 @@ import (
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -50,40 +48,6 @@ func getSegments(videoID string) map[int]bool {
 	}
 
 	return nil
-}
-
-// From a map of segments returns an encoded string
-func encodeSegments(segments map[int]bool) string {
-	if segments == nil {
-		return ""
-	}
-
-	var out string
-
-	for k := range segments {
-		out += strconv.Itoa(k) + ","
-	}
-
-	return strings.TrimSuffix(out, ",")
-}
-
-// Decodes segments into a map
-func decodeSegments(segments string) map[int]bool {
-	if segments == "" {
-		return nil
-	}
-
-	mapSegments := make(map[int]bool)
-	splitted := strings.Split(segments, ",")
-
-	for _, s := range splitted {
-		frame, err := strconv.Atoi(s)
-		if err == nil {
-			mapSegments[frame] = true
-		}
-	}
-
-	return mapSegments
 }
 
 // returns the first 4 characters of a sha256 hash
