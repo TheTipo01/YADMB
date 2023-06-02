@@ -247,7 +247,7 @@ var (
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
-			if findUserVoiceState(s, i.Interaction) != nil && !server[i.GuildID].queue.IsEmpty() {
+			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil && !server[i.GuildID].queue.IsEmpty() {
 				el := server[i.GuildID].queue.GetFirstElement()
 				server[i.GuildID].skip <- struct{}{}
 				server[i.GuildID].paused.Store(false)
@@ -263,7 +263,7 @@ var (
 		// Clears the entire queue
 		"clear": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
-			if findUserVoiceState(s, i.Interaction) != nil {
+			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
 				if !server[i.GuildID].queue.IsEmpty() {
 					go server[i.GuildID].Clear()
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueCleared).
@@ -311,7 +311,7 @@ var (
 			}
 		},
 		"pause": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if findUserVoiceState(s, i.Interaction) != nil {
+			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
 				if server[i.GuildID].paused.CompareAndSwap(false, true) {
 					server[i.GuildID].pause <- struct{}{}
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(pauseTitle, paused).
@@ -326,7 +326,7 @@ var (
 			}
 		},
 		"resume": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if findUserVoiceState(s, i.Interaction) != nil {
+			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
 				if server[i.GuildID].paused.CompareAndSwap(true, false) {
 					server[i.GuildID].resume <- struct{}{}
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(resumeTitle, resumed).
@@ -342,7 +342,7 @@ var (
 		},
 		"disconnect": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
-			if findUserVoiceState(s, i.Interaction) != nil {
+			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
 				if server[i.GuildID].queue.IsEmpty() {
 					_ = server[i.GuildID].vc.Disconnect()
 					server[i.GuildID].vc = nil
@@ -433,7 +433,7 @@ var (
 
 			if server[i.GuildID].custom[command] != nil {
 				// Check if user is not in a voice channel
-				if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+				if vs := findUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 					if joinVC(i.Interaction, vs.ChannelID) {
 						if len(i.ApplicationCommandData().Options) > 1 {
 							play(s, server[i.GuildID].custom[command].Link, i.Interaction, vs.GuildID, i.Member.User.Username, false, server[i.GuildID].custom[command].Loop, i.ApplicationCommandData().Options[1].Value.(bool))
@@ -565,7 +565,7 @@ var (
 		},
 		// Streams a song from the given URL, useful for radios
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+			if vs := findUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 				url := i.ApplicationCommandData().Options[0].Value.(string)
 				if !strings.HasPrefix(url, "file") && isValidURL(url) {
 					c := make(chan int)
@@ -611,7 +611,7 @@ var (
 
 func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate, playlist bool) {
 	// Check if user is not in a voice channel
-	if vs := findUserVoiceState(s, i.Interaction); vs != nil {
+	if vs := findUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 		if joinVC(i.Interaction, vs.ChannelID) {
 			var (
 				shuffle, loop, priority bool

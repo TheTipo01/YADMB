@@ -17,13 +17,12 @@ import (
 )
 
 // Finds user current voice channel
-func findUserVoiceState(session *discordgo.Session, i *discordgo.Interaction) *discordgo.VoiceState {
-	for _, guild := range session.State.Guilds {
-		if guild.ID == i.GuildID {
-			for _, vs := range guild.VoiceStates {
-				if vs.UserID == i.Member.User.ID {
-					return vs
-				}
+func findUserVoiceState(s *discordgo.Session, guildID, userID string) *discordgo.VoiceState {
+	g, err := s.State.Guild(guildID)
+	if err == nil {
+		for _, vs := range g.VoiceStates {
+			if vs.UserID == userID {
+				return vs
 			}
 		}
 	}
