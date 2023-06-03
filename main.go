@@ -211,8 +211,7 @@ func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 }
 
 func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
-	// Delete the server from the map
-	delete(server, e.ID)
+	clearAndExit(e.ID)
 
 	// Update the status
 	ready(s, nil)

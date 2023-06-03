@@ -271,7 +271,14 @@ func quitIfEmptyVoiceChannel(guildID string) {
 	time.Sleep(1 * time.Minute)
 
 	if server[guildID].voiceChannel != "" && server[guildID].voiceChannelMembers[server[guildID].voiceChannel].Load() == 1 {
-		server[guildID].Clear()
+		clearAndExit(guildID)
+	}
+}
+
+func clearAndExit(guildID string) {
+	server[guildID].Clear()
+
+	if server[guildID].vc != nil {
 		_ = server[guildID].vc.Disconnect()
 		server[guildID].vc = nil
 	}
