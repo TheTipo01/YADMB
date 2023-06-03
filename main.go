@@ -211,7 +211,7 @@ func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 }
 
 func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
-	if !server[e.ID].IsPlaying() {
+	if server[e.ID].IsPlaying() {
 		clearAndExit(e.ID)
 	}
 
