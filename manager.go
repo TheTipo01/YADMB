@@ -86,20 +86,27 @@ func (m *Server) play() {
 	go quitVC(m.guildID)
 }
 
+// IsPlaying returns whether the bot is playing
+func (m *Server) IsPlaying() bool {
+	return m.started.Load() && !m.queue.IsEmpty()
+}
+
 // Clear clears the queue
 func (m *Server) Clear() {
-	m.clear.Store(true)
-	m.skip <- struct{}{}
+	if m.IsPlaying() {
+		m.clear.Store(true)
+		m.skip <- struct{}{}
 
-	m.wg.Wait()
-	m.clear.Store(false)
+		m.wg.Wait()
+		m.clear.Store(false)
 
-	q := m.queue.GetAllQueue()
-	m.queue.Clear()
+		q := m.queue.GetAllQueue()
+		m.queue.Clear()
 
-	for _, el := range q {
-		if el.Closer != nil {
-			_ = el.Closer.Close()
+		for _, el := range q {
+			if el.Closer != nil {
+				_ = el.Closer.Close()
+			}
 		}
 	}
 }

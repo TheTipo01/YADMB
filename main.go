@@ -211,7 +211,7 @@ func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 }
 
 func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
-	if !server[e.ID].queue.IsEmpty() {
+	if !server[e.ID].IsPlaying() {
 		clearAndExit(e.ID)
 	}
 
@@ -222,7 +222,7 @@ func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
 // Update the voice channel when the bot is moved
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	// If the bot is moved to another channel
-	if v.UserID == s.State.User.ID && !server[v.GuildID].queue.IsEmpty() {
+	if v.UserID == s.State.User.ID && server[v.GuildID].IsPlaying() {
 		if v.ChannelID == "" {
 			// If the bot has been disconnected from the voice channel, reconnect it
 			var err error

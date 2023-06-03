@@ -247,7 +247,7 @@ var (
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
-			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil && !server[i.GuildID].queue.IsEmpty() {
+			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil && server[i.GuildID].IsPlaying() {
 				el := server[i.GuildID].queue.GetFirstElement()
 				server[i.GuildID].skip <- struct{}{}
 				server[i.GuildID].paused.Store(false)
@@ -264,7 +264,7 @@ var (
 		"clear": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
-				if !server[i.GuildID].queue.IsEmpty() {
+				if server[i.GuildID].IsPlaying() {
 					go server[i.GuildID].Clear()
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(queueTitle, queueCleared).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -280,7 +280,7 @@ var (
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			const maxQueue = 10
 
-			if !server[i.GuildID].queue.IsEmpty() {
+			if server[i.GuildID].IsPlaying() {
 				el := server[i.GuildID].queue.GetAllQueue()
 				embed := NewEmbed().SetTitle(s.State.User.Username).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
 					formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el[0].Duration, el[0].User))
@@ -343,7 +343,7 @@ var (
 		"disconnect": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
-				if server[i.GuildID].queue.IsEmpty() {
+				if !server[i.GuildID].IsPlaying() {
 					_ = server[i.GuildID].vc.Disconnect()
 					server[i.GuildID].vc = nil
 					server[i.GuildID].voiceChannel = ""
@@ -535,7 +535,7 @@ var (
 		},
 		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
 		"goto": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if !server[i.GuildID].queue.IsEmpty() {
+			if server[i.GuildID].IsPlaying() {
 				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].Value.(string))
 				if err != nil {
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, gotoInvalid).
