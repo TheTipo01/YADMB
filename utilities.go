@@ -47,7 +47,7 @@ func sendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 }
 
 // Sends embed as response to an interaction
-func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- int) {
+func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}) {
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
 	if err != nil {
@@ -56,7 +56,7 @@ func sendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 	}
 
 	if c != nil {
-		c <- 1
+		c <- struct{}{}
 	}
 }
 
@@ -191,7 +191,7 @@ func ByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c <-chan int) {
+func deleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c <-chan struct{}) {
 	if c != nil {
 		<-c
 	}

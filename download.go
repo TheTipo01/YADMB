@@ -16,9 +16,9 @@ import (
 
 // Download and plays a song from a YouTube link
 func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
-	var c chan int
+	var c chan struct{}
 	if respond {
-		c = make(chan int)
+		c = make(chan struct{})
 		go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
 	}
 

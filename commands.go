@@ -568,7 +568,7 @@ var (
 			if vs := findUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 				url := i.ApplicationCommandData().Options[0].Value.(string)
 				if !strings.HasPrefix(url, "file") && isValidURL(url) {
-					c := make(chan int)
+					c := make(chan struct{})
 					go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c)
 
 					stdout, cmds := stream(url)
