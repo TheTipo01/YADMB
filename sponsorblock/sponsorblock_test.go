@@ -1,4 +1,4 @@
-package main
+package sponsorblock
 
 import "testing"
 
@@ -10,7 +10,7 @@ func TestHash(t *testing.T) {
 }
 
 func TestGetSegments(t *testing.T) {
-	result := getSegments("kJQP7kiw5Fk")
+	result := GetSegments("kJQP7kiw5Fk")
 	if result == nil || len(result) == 0 {
 		t.Error("Getting segments failed. Expected map, got nil")
 	}

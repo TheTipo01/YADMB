@@ -1,4 +1,4 @@
-package main
+package sponsorblock
 
 import (
 	"crypto/sha256"
@@ -9,8 +9,13 @@ import (
 	"time"
 )
 
-// Returns a map for skipping certain frames of a song
-func getSegments(videoID string) map[int]bool {
+const (
+	// How many DCA frames are needed for a second. It's not perfect, but good enough.
+	frameSeconds = 50.00067787
+)
+
+// GetSegments returns a map for skipping certain frames of a song
+func GetSegments(videoID string) map[int]bool {
 	// Gets segments
 	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments/"+hash(videoID)+"?categories=[\"sponsor\",\"music_offtopic\"]", nil) // Sets timeout to one second, as sometime i
 	client := http.Client{Timeout: time.Second}

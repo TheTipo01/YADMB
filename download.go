@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/TheTipo01/YADMB/sponsorblock"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
@@ -86,7 +87,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		case "youtube":
 			el.ID = ytdl.ID + "-" + ytdl.Extractor
 			// SponsorBlock is supported only on YouTube
-			el.Segments = getSegments(ytdl.ID)
+			el.Segments = sponsorblock.GetSegments(ytdl.ID)
 
 			// If the song is on YouTube, we also add it with its compact url, for faster parsing
 			db.AddToDb(el, false)

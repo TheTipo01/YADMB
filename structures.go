@@ -56,15 +56,6 @@ type RequestedFormats []struct {
 	Resolution string `json:"resolution"`
 }
 
-// SponsorBlock holds data for segments of sponsors in YouTube video
-type SponsorBlock []struct {
-	VideoID  string `json:"videoID"`
-	Segments []struct {
-		Category string    `json:"category"`
-		Segment  []float64 `json:"segment"`
-	} `json:"segments"`
-}
-
 // Config holds data parsed from the config.yml
 type Config struct {
 	Token        string `fig:"token" validate:"required"`
