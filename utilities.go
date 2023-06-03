@@ -159,6 +159,7 @@ func quitVC(guildID string) {
 	if server[guildID].queue.IsEmpty() && server[guildID].vc != nil {
 		_ = server[guildID].vc.Disconnect()
 		server[guildID].vc = nil
+		server[guildID].voiceChannel = ""
 	}
 }
 
@@ -281,5 +282,6 @@ func clearAndExit(guildID string) {
 	if server[guildID].vc != nil {
 		_ = server[guildID].vc.Disconnect()
 		server[guildID].vc = nil
+		server[guildID].voiceChannel = ""
 	}
 }

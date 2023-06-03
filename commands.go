@@ -346,6 +346,7 @@ var (
 				if server[i.GuildID].queue.IsEmpty() {
 					_ = server[i.GuildID].vc.Disconnect()
 					server[i.GuildID].vc = nil
+					server[i.GuildID].voiceChannel = ""
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(disconnectedTitle, disconnected).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				} else {

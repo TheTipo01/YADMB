@@ -211,7 +211,9 @@ func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 }
 
 func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
-	clearAndExit(e.ID)
+	if !server[e.ID].queue.IsEmpty() {
+		clearAndExit(e.ID)
+	}
 
 	// Update the status
 	ready(s, nil)
