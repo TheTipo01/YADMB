@@ -5,6 +5,7 @@ import (
 	"github.com/TheTipo01/YADMB/database/mysql"
 	"github.com/TheTipo01/YADMB/database/sqlite"
 	"github.com/TheTipo01/YADMB/spotify"
+	"github.com/TheTipo01/YADMB/status"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/kkyr/fig"
@@ -32,6 +33,8 @@ var (
 	blacklist = make(map[string]bool)
 	// Discord bot session
 	s *discordgo.Session
+	// Holds the number of servers the bot is in
+	stat status.Status
 )
 
 func init() {
@@ -105,6 +108,9 @@ func init() {
 	if isCommandNotAvailable("yt-dlp") {
 		lit.Error("Error: can't find yt-dlp!")
 	}
+
+	// Initialize the status
+	stat = status.NewStatus()
 }
 
 func main() {
@@ -123,6 +129,7 @@ func main() {
 	// Add events handler
 	dg.AddHandler(ready)
 	dg.AddHandler(guildCreate)
+	dg.AddHandler(guildDelete)
 	dg.AddHandler(voiceStateUpdate)
 
 	// Add commands handler
@@ -175,26 +182,40 @@ func main() {
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
-	// Set the playing status.
-	err := s.UpdateGameStatus(0, "Serving "+strconv.Itoa(len(s.State.Guilds))+" guilds!")
-	if err != nil {
-		lit.Error("Can't set status, %s", err)
+	if ok, guilds := stat.CompareAndUpdate(len(s.State.Guilds)); ok {
+		// Set the playing status.
+		err := s.UpdateGameStatus(0, "Serving "+strconv.Itoa(guilds)+" guilds!")
+		if err != nil {
+			lit.Error("Can't set status, %s", err)
+		}
 	}
 }
 
 // Initialize Server structure
-func guildCreate(_ *discordgo.Session, e *discordgo.GuildCreate) {
+func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 	initializeServer(e.ID)
 
+	// Populate the voiceChannelMembers map
 	for _, c := range e.Channels {
 		if c.Type == discordgo.ChannelTypeGuildVoice {
 			server[e.ID].voiceChannelMembers[c.ID] = &atomic.Int32{}
 		}
 	}
 
+	// And count the members in each voice channel
 	for _, v := range e.VoiceStates {
 		server[e.ID].voiceChannelMembers[v.ChannelID].Add(1)
 	}
+
+	ready(s, nil)
+}
+
+func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
+	// Delete the server from the map
+	delete(server, e.ID)
+
+	// Update the status
+	ready(s, nil)
 }
 
 // Update the voice channel when the bot is moved
