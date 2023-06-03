@@ -74,8 +74,9 @@ func (m *Server) play() {
 
 		// Delete it after it has been played
 		go func() {
-			message := <-msg
-			_ = s.ChannelMessageDelete(message.ChannelID, message.ID)
+			if message := <-msg; message != nil {
+				_ = s.ChannelMessageDelete(message.ChannelID, message.ID)
+			}
 		}()
 
 		m.queue.RemoveFirstElement()
