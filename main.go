@@ -132,7 +132,6 @@ func main() {
 	dg.AddHandler(guildDelete)
 	dg.AddHandler(voiceStateUpdate)
 	dg.AddHandler(channelCreate)
-	dg.AddHandler(channelDelete)
 
 	// Add commands handler
 	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -258,11 +257,5 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 func channelCreate(_ *discordgo.Session, c *discordgo.ChannelCreate) {
 	if c.Type == discordgo.ChannelTypeGuildVoice && server[c.GuildID].voiceChannelMembers[c.ID] == nil {
 		server[c.GuildID].voiceChannelMembers[c.ID] = &atomic.Int32{}
-	}
-}
-
-func channelDelete(_ *discordgo.Session, c *discordgo.ChannelDelete) {
-	if c.Type == discordgo.ChannelTypeGuildVoice && server[c.GuildID].voiceChannelMembers[c.ID] != nil {
-		delete(server[c.GuildID].voiceChannelMembers, c.ID)
 	}
 }
