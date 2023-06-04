@@ -282,7 +282,7 @@ var (
 
 			if server[i.GuildID].IsPlaying() {
 				el := server[i.GuildID].queue.GetAllQueue()
-				embed := NewEmbed().SetTitle(s.State.User.Username).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
+				embed := NewEmbed().SetTitle(s.State.User.Username).SetDescription(queueTitle).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
 					formatDuration(float64(server[i.GuildID].frames)/frameSeconds), el[0].Duration, el[0].User))
 
 				var max int
