@@ -16,6 +16,14 @@ owner: ""
 clientid: ""
 clientsecret: ""
 
+# YouTube API key, to parse YouTube information faster.
+# It's not required, but it's recommended.
+# You can get your API key by:
+# - creating a new project at https://console.developers.google.com/apis/dashboard
+# - clicking "Enable APIs and Services", searching for "YouTube Data API v3", clicking "Enable",
+# - clicking "Credentials" on the left bar, then "Create Credentials", then "API key"
+youtubeapikey: ""
+
 
 # DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
 # DB Info, like username, password...

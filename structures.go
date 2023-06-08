@@ -65,4 +65,5 @@ type Config struct {
 	DSN          string `fig:"datasourcename" validate:"required"`
 	Driver       string `fig:"drivername" validate:"required"`
 	LogLevel     string `fig:"loglevel" validate:"required"`
+	YouTubeAPI   string `fig:"youtubeapikey" validate:"required"`
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/TheTipo01/YADMB/database/sqlite"
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/status"
+	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/kkyr/fig"
@@ -35,6 +36,8 @@ var (
 	s *discordgo.Session
 	// Holds the number of servers the bot is in
 	stat status.Status
+	// YouTube client
+	yt *youtube.YouTube
 )
 
 func init() {
@@ -111,6 +114,11 @@ func init() {
 
 	// Initialize the status
 	stat = status.NewStatus()
+
+	yt, err = youtube.NewYoutube(cfg.YouTubeAPI)
+	if err != nil {
+		lit.Error("youtube: couldn't get client: %s", err)
+	}
 }
 
 func main() {
