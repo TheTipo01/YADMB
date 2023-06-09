@@ -39,8 +39,8 @@ func (y *YouTube) GetVideo(id string) *Video {
 
 	return &Video{
 		Title:     response.Items[0].Snippet.Title,
-		Thumbnail: response.Items[0].Snippet.Thumbnails.High.Url,
-		URL:       "",
+		Thumbnail: response.Items[0].Snippet.Thumbnails.Maxres.Url,
+		ID:        id,
 		Duration:  duration.Seconds(),
 	}
 }
@@ -61,7 +61,7 @@ func (y *YouTube) GetPlaylist(id string) []Video {
 	ids := make([]string, 0, len(response.Items))
 	for _, item := range response.Items {
 		result = append(result, Video{
-			URL:       "https://www.youtube.com/watch?v=" + item.Snippet.ResourceId.VideoId,
+			ID:        item.Snippet.ResourceId.VideoId,
 			Title:     item.Snippet.Title,
 			Thumbnail: item.Snippet.Thumbnails.High.Url,
 			Duration:  0,
@@ -110,7 +110,7 @@ func (y *YouTube) Search(query string, maxResults int64) []Video {
 	ids := make([]string, 0, len(response.Items))
 	for _, item := range response.Items {
 		result = append(result, Video{
-			URL:       "https://www.youtube.com/watch?v=" + item.Id.VideoId,
+			ID:        item.Id.VideoId,
 			Title:     item.Snippet.Title,
 			Thumbnail: item.Snippet.Thumbnails.High.Url,
 			Duration:  0,

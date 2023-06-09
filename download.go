@@ -4,19 +4,29 @@ import (
 	"errors"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/sponsorblock"
+	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 	"github.com/zmb3/spotify/v2"
 	"math/rand"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 )
 
+const youtubeBase = "https://www.youtube.com/watch?v="
+
 // Download and plays a song from a YouTube link
 func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
+	// If we have a valid youtube client, and the link is a youtube link, use the youtube api
+	if yt != nil && (strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be")) {
+		downloadAndPlayYouTubeAPI(s, guildID, link, user, i, random, loop, respond, priority)
+		return
+	}
+
 	var c chan struct{}
 	if respond {
 		c = make(chan struct{})
@@ -139,16 +149,144 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 	server[guildID].AddSong(priority, elements...)
 }
 
-// Searches a song from the query on YouTube
-func searchDownloadAndPlay(query string) (string, error) {
-	out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
-	if err == nil {
-		ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+// TODO: refactor this function to not duplicate code
+// Download and plays a song from a YouTube link, parsing the link with the YouTube API
+func downloadAndPlayYouTubeAPI(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
+	var c chan struct{}
+	if respond {
+		c = make(chan struct{})
+		go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
+	}
 
-		if ids[0] != "" {
-			return "https://www.youtube.com/watch?v=" + ids[0], nil
+	// Check if the song is the db, to speedup things
+	el, err := db.CheckInDb(link)
+	if err == nil {
+		info, err := os.Stat(cachePath + el.ID + audioExtension)
+		if err == nil && info.Size() > 0 {
+			f, _ := os.Open(cachePath + el.ID + audioExtension)
+			el.User = user
+			el.Reader = f
+			el.Closer = f
+			el.TextChannel = i.ChannelID
+			el.Loop = loop
+
+			if respond {
+				go deleteInteraction(s, i, c)
+			}
+			server[guildID].AddSong(priority, el)
+			return
 		}
 	}
+
+	if respond {
+		go deleteInteraction(s, i, c)
+	}
+
+	var result []youtube.Video
+
+	// Check if we have a youtube playlist, and get it's parameter
+	u, _ := url.Parse(link)
+	q := u.Query()
+	if id := q.Get("list"); id != "" {
+		result = yt.GetPlaylist(id)
+	} else {
+		if strings.Contains(link, "youtube.com") {
+			id = q.Get("v")
+		} else {
+			id = strings.TrimPrefix(link, "https://youtu.be/")
+		}
+
+		if video := yt.GetVideo(id); video != nil {
+			result = append(result, *video)
+		}
+	}
+
+	elements := make([]queue.Element, 0, len(result))
+
+	for _, r := range result {
+		el = queue.Element{
+			Title:       r.Title,
+			Duration:    formatDuration(r.Duration),
+			Link:        youtubeBase + r.ID,
+			User:        user,
+			Thumbnail:   r.Thumbnail,
+			TextChannel: i.ChannelID,
+			Loop:        loop,
+		}
+
+		exist := false
+		el.ID = r.ID + "-youtube"
+		// SponsorBlock is supported only on YouTube
+		el.Segments = sponsorblock.GetSegments(r.ID)
+
+		// If the song is on YouTube, we also add it with its compact url, for faster parsing
+		db.AddToDb(el, false)
+		exist = true
+
+		// YouTube shorts can have two different links: the one that redirects to a classical YouTube video
+		// and one that is played on the new UI. This is a workaround to save also the link to the new UI
+		if strings.Contains(link, "shorts") {
+			el.Link = link
+			db.AddToDb(el, exist)
+		}
+
+		el.Link = "https://youtu.be/" + r.ID
+
+		// We add the song to the db, for faster parsing
+		go db.AddToDb(el, exist)
+
+		// Checks if video is already downloaded
+		info, err := os.Stat(cachePath + el.ID + audioExtension)
+
+		// If not, we download and convert it
+		if err != nil || info.Size() <= 0 {
+			pipe, cmd := gen(el.Link, el.ID, true)
+			el.Reader = pipe
+			el.Downloading = true
+
+			el.BeforePlay = func() {
+				cmdsStart(cmd)
+			}
+
+			el.AfterPlay = func() {
+				cmdsWait(cmd)
+			}
+		} else {
+			f, _ := os.Open(cachePath + el.ID + audioExtension)
+			el.Reader = f
+			el.Closer = f
+		}
+
+		elements = append(elements, el)
+	}
+
+	if random {
+		rand.Shuffle(len(elements), func(i, j int) {
+			elements[i], elements[j] = elements[j], elements[i]
+		})
+	}
+
+	server[guildID].AddSong(priority, elements...)
+}
+
+// Searches a song from the query on YouTube
+func searchDownloadAndPlay(query string) (string, error) {
+	if yt != nil {
+		result := yt.Search(query, 1)
+		if len(result) > 0 {
+			return youtubeBase + result[0].ID, nil
+		}
+	} else {
+		out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
+		if err == nil {
+			ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+
+			if ids[0] != "" {
+				return youtubeBase + ids[0], nil
+			}
+		}
+	}
+
 	return "", errors.New("no song found")
 }
 
