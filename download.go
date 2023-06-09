@@ -49,7 +49,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 
 	// If we have a valid YouTube client, and the link is a YouTube link, use the YouTube api
 	if yt != nil && (strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be")) {
-		err = downloadAndPlayYouTubeAPI(guildID, link, user, i, random, loop, priority)
+		err = downloadAndPlayYouTubeAPI(s, guildID, link, user, i, random, loop, respond, priority, c)
 		// If we have an error, we fall back to yt-dlp
 		if err == nil {
 			return
@@ -153,7 +153,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 }
 
 // Download and plays a song from a YouTube link, parsing the link with the YouTube API
-func downloadAndPlayYouTubeAPI(guildID, link, user string, i *discordgo.Interaction, random, loop, priority bool) error {
+func downloadAndPlayYouTubeAPI(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool, c chan struct{}) error {
 	var (
 		result []youtube.Video
 		el     queue.Element
@@ -178,6 +178,10 @@ func downloadAndPlayYouTubeAPI(guildID, link, user string, i *discordgo.Interact
 
 	if len(result) == 0 {
 		return errors.New("no video found")
+	}
+
+	if respond {
+		go deleteInteraction(s, i, c)
 	}
 
 	elements := make([]queue.Element, 0, len(result))
