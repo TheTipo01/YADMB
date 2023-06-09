@@ -21,12 +21,6 @@ const youtubeBase = "https://www.youtube.com/watch?v="
 
 // Download and plays a song from a YouTube link
 func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
-	// If we have a valid youtube client, and the link is a youtube link, use the youtube api
-	if yt != nil && (strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be")) {
-		downloadAndPlayYouTubeAPI(s, guildID, link, user, i, random, loop, respond, priority)
-		return
-	}
-
 	var c chan struct{}
 	if respond {
 		c = make(chan struct{})
@@ -53,7 +47,16 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		}
 	}
 
-	splittedOut, err := getInfo(link)
+	// If we have a valid YouTube client, and the link is a YouTube link, use the YouTube api
+	if yt != nil && (strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be")) {
+		err = downloadAndPlayYouTubeAPI(guildID, link, user, i, random, loop, priority)
+		// If we have an error, we fall back to yt-dlp
+		if err == nil {
+			return
+		}
+	}
+
+	infoJSON, err := getInfo(link)
 	if err != nil {
 		if respond {
 			modifyInteractionAndDelete(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
@@ -65,39 +68,39 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		return
 	}
 
-	var ytdl YtDLP
+	var yt YtDLP
 
 	// If we want to play the song in a random order, we just shuffle the slice
 	if random {
-		splittedOut = shuffle(splittedOut)
+		infoJSON = shuffle(infoJSON)
 	}
 
 	if respond {
 		go deleteInteraction(s, i, c)
 	}
 
-	elements := make([]queue.Element, 0, len(splittedOut))
+	elements := make([]queue.Element, 0, len(infoJSON))
 
 	// We parse every track as individual json, because yt-dlp
-	for _, singleJSON := range splittedOut {
-		_ = json.Unmarshal([]byte(singleJSON), &ytdl)
+	for _, singleJSON := range infoJSON {
+		_ = json.Unmarshal([]byte(singleJSON), &yt)
 
 		el = queue.Element{
-			Title:       ytdl.Title,
-			Duration:    formatDuration(ytdl.Duration),
-			Link:        ytdl.WebpageURL,
+			Title:       yt.Title,
+			Duration:    formatDuration(yt.Duration),
+			Link:        yt.WebpageURL,
 			User:        user,
-			Thumbnail:   ytdl.Thumbnail,
+			Thumbnail:   yt.Thumbnail,
 			TextChannel: i.ChannelID,
 			Loop:        loop,
 		}
 
 		exist := false
-		switch ytdl.Extractor {
+		switch yt.Extractor {
 		case "youtube":
-			el.ID = ytdl.ID + "-" + ytdl.Extractor
+			el.ID = yt.ID + "-" + yt.Extractor
 			// SponsorBlock is supported only on YouTube
-			el.Segments = sponsorblock.GetSegments(ytdl.ID)
+			el.Segments = sponsorblock.GetSegments(yt.ID)
 
 			// If the song is on YouTube, we also add it with its compact url, for faster parsing
 			db.AddToDb(el, false)
@@ -110,12 +113,12 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 				db.AddToDb(el, exist)
 			}
 
-			el.Link = "https://youtu.be/" + ytdl.ID
+			el.Link = "https://youtu.be/" + yt.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
-			el.ID = idGen(el.Link) + "-" + ytdl.Extractor
+			el.ID = idGen(el.Link) + "-" + yt.Extractor
 		default:
-			el.ID = ytdl.ID + "-" + ytdl.Extractor
+			el.ID = yt.ID + "-" + yt.Extractor
 		}
 
 		// We add the song to the db, for faster parsing
@@ -126,7 +129,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			pipe, cmd := gen(ytdl.WebpageURL, el.ID, checkAudioOnly(ytdl.RequestedFormats))
+			pipe, cmd := gen(yt.WebpageURL, el.ID, checkAudioOnly(yt.RequestedFormats))
 			el.Reader = pipe
 			el.Downloading = true
 
@@ -149,42 +152,14 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 	server[guildID].AddSong(priority, elements...)
 }
 
-// TODO: refactor this function to not duplicate code
 // Download and plays a song from a YouTube link, parsing the link with the YouTube API
-func downloadAndPlayYouTubeAPI(s *discordgo.Session, guildID, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
-	var c chan struct{}
-	if respond {
-		c = make(chan struct{})
-		go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
-	}
+func downloadAndPlayYouTubeAPI(guildID, link, user string, i *discordgo.Interaction, random, loop, priority bool) error {
+	var (
+		result []youtube.Video
+		el     queue.Element
+	)
 
-	// Check if the song is the db, to speedup things
-	el, err := db.CheckInDb(link)
-	if err == nil {
-		info, err := os.Stat(cachePath + el.ID + audioExtension)
-		if err == nil && info.Size() > 0 {
-			f, _ := os.Open(cachePath + el.ID + audioExtension)
-			el.User = user
-			el.Reader = f
-			el.Closer = f
-			el.TextChannel = i.ChannelID
-			el.Loop = loop
-
-			if respond {
-				go deleteInteraction(s, i, c)
-			}
-			server[guildID].AddSong(priority, el)
-			return
-		}
-	}
-
-	if respond {
-		go deleteInteraction(s, i, c)
-	}
-
-	var result []youtube.Video
-
-	// Check if we have a youtube playlist, and get it's parameter
+	// Check if we have a YouTube playlist, and get its parameter
 	u, _ := url.Parse(link)
 	q := u.Query()
 	if id := q.Get("list"); id != "" {
@@ -199,6 +174,10 @@ func downloadAndPlayYouTubeAPI(s *discordgo.Session, guildID, link, user string,
 		if video := yt.GetVideo(id); video != nil {
 			result = append(result, *video)
 		}
+	}
+
+	if len(result) == 0 {
+		return errors.New("no video found")
 	}
 
 	elements := make([]queue.Element, 0, len(result))
@@ -267,6 +246,7 @@ func downloadAndPlayYouTubeAPI(s *discordgo.Session, guildID, link, user string,
 	}
 
 	server[guildID].AddSong(priority, elements...)
+	return nil
 }
 
 // Searches a song from the query on YouTube

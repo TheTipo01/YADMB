@@ -107,7 +107,6 @@ func (y *YouTube) Search(query string, maxResults int64) []Video {
 	}
 
 	result := make([]Video, 0, len(response.Items))
-	ids := make([]string, 0, len(response.Items))
 	for _, item := range response.Items {
 		result = append(result, Video{
 			ID:        item.Id.VideoId,
@@ -115,13 +114,6 @@ func (y *YouTube) Search(query string, maxResults int64) []Video {
 			Thumbnail: getBestThumbnail(item.Snippet.Thumbnails),
 			Duration:  0,
 		})
-
-		ids = append(ids, item.Id.VideoId)
-	}
-
-	durations := y.getVideosDurations(ids...)
-	for i := range result {
-		result[i].Duration = durations[i]
 	}
 
 	return result
