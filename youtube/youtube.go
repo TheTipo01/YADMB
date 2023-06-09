@@ -39,7 +39,7 @@ func (y *YouTube) GetVideo(id string) *Video {
 
 	return &Video{
 		Title:     response.Items[0].Snippet.Title,
-		Thumbnail: response.Items[0].Snippet.Thumbnails.Maxres.Url,
+		Thumbnail: getBestThumbnail(response.Items[0].Snippet.Thumbnails),
 		ID:        id,
 		Duration:  duration.Seconds(),
 	}
@@ -63,7 +63,7 @@ func (y *YouTube) GetPlaylist(id string) []Video {
 		result = append(result, Video{
 			ID:        item.Snippet.ResourceId.VideoId,
 			Title:     item.Snippet.Title,
-			Thumbnail: item.Snippet.Thumbnails.High.Url,
+			Thumbnail: getBestThumbnail(item.Snippet.Thumbnails),
 			Duration:  0,
 		})
 
@@ -112,7 +112,7 @@ func (y *YouTube) Search(query string, maxResults int64) []Video {
 		result = append(result, Video{
 			ID:        item.Id.VideoId,
 			Title:     item.Snippet.Title,
-			Thumbnail: item.Snippet.Thumbnails.High.Url,
+			Thumbnail: getBestThumbnail(item.Snippet.Thumbnails),
 			Duration:  0,
 		})
 
@@ -125,4 +125,28 @@ func (y *YouTube) Search(query string, maxResults int64) []Video {
 	}
 
 	return result
+}
+
+func getBestThumbnail(thumbnails *youtube.ThumbnailDetails) string {
+	if thumbnails.Maxres != nil {
+		return thumbnails.Maxres.Url
+	}
+
+	if thumbnails.Standard != nil {
+		return thumbnails.Standard.Url
+	}
+
+	if thumbnails.High != nil {
+		return thumbnails.High.Url
+	}
+
+	if thumbnails.Medium != nil {
+		return thumbnails.Medium.Url
+	}
+
+	if thumbnails.Default != nil {
+		return thumbnails.Default.Url
+	}
+
+	return ""
 }
