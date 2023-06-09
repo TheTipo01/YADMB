@@ -298,7 +298,7 @@ var (
 				}
 
 				// Add the number of songs not shown if the queue is longer than maxQueue
-				if max == maxQueue {
+				if len(el) > maxQueue {
 					embed = embed.AddField("...", "And "+strconv.Itoa(len(el)-maxQueue)+" more")
 				}
 
