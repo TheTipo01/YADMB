@@ -95,6 +95,21 @@ func init() {
 		lit.Error("Error loading blacklist: %s", err)
 	}
 
+	// Load the DJ settings
+	dj, err := db.GetDJ()
+	if err != nil {
+		lit.Error("Error loading DJ settings: %s", err)
+	}
+
+	for k := range dj {
+		if server[k] == nil {
+			initializeServer(k)
+		}
+
+		server[k].djMode = dj[k].Enabled
+		server[k].djRole = dj[k].Role
+	}
+
 	// Create folders used by the bot
 	if _, err = os.Stat(cachePath); err != nil {
 		if err = os.Mkdir(cachePath, 0755); err != nil {

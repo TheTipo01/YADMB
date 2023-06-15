@@ -232,6 +232,34 @@ var (
 				},
 			},
 		},
+		{
+			Name:        "dj",
+			Description: "Toggles DJ mode, which allows only users with the DJ role to control the bot.",
+		},
+		{
+			Name:        "djrole",
+			Description: "Adds or removes a role from the DJ role list.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionRole,
+					Name:        "role",
+					Description: "Role to remove or add to the DJ role list",
+					Required:    true,
+				},
+			},
+		},
+		{
+			Name:        "djroletoggle",
+			Description: "Adds or removes the DJ role from the specified user",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionUser,
+					Name:        "user",
+					Description: "User to add or remove the DJ role from",
+					Required:    true,
+				},
+			},
+		},
 	}
 
 	// Handler
@@ -430,6 +458,10 @@ var (
 		},
 		// Calls a custom command
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if djModeCheck(s, i) {
+				return
+			}
+
 			command := strings.ToLower(i.ApplicationCommandData().Options[0].Value.(string))
 
 			if server[i.GuildID].custom[command] != nil {
@@ -566,6 +598,10 @@ var (
 		},
 		// Streams a song from the given URL, useful for radios
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if djModeCheck(s, i) {
+				return
+			}
+
 			if vs := findUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 				url := i.ApplicationCommandData().Options[0].Value.(string)
 				if !strings.HasPrefix(url, "file") && isValidURL(url) {
@@ -607,10 +643,95 @@ var (
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
+		// Enables or disables DJ mode
+		"dj": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Member.User.ID == owner {
+				if server[i.GuildID].djMode {
+					server[i.GuildID].djMode = false
+					err := db.SetDJSettings(i.GuildID, false)
+					if err != nil {
+						lit.Error("Error while disabling DJ mode, %s", err)
+					}
+
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(djTitle, djDisabled).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					server[i.GuildID].djMode = true
+					err := db.SetDJSettings(i.GuildID, true)
+					if err != nil {
+						lit.Error("Error while enabling DJ mode, %s", err)
+					}
+
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(djTitle, djEnabled).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"Only the owner of the bot can use this command!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
+		},
+		// Sets the DJ role
+		"djrole": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Member.User.ID == owner {
+				role := i.ApplicationCommandData().Options[0].RoleValue(nil, "")
+				if role.ID != server[i.GuildID].djRole {
+					server[i.GuildID].djRole = role.ID
+					err := db.UpdateDJRole(i.GuildID, role.ID)
+					if err != nil {
+						lit.Error("Error updating DJ role", err)
+					}
+
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(djTitle, djRoleChanged).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(djTitle, djRoleEqual).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"Only the owner of the bot can use this command!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
+		},
+		// Adds or removes the DJ role from a user
+		"djroletoggle": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if i.Member.User.ID == owner {
+				var err error
+				var action string
+
+				user, _ := s.GuildMember(i.GuildID, i.ApplicationCommandData().Options[0].UserValue(nil).ID)
+				if !hasRole(user.Roles, server[i.GuildID].djRole) {
+					err = s.GuildMemberRoleAdd(i.GuildID, user.User.ID, server[i.GuildID].djRole)
+					action = "added!"
+				} else {
+					err = s.GuildMemberRoleRemove(i.GuildID, user.User.ID, server[i.GuildID].djRole)
+					action = "removed!"
+				}
+
+				if err != nil {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+						"The bot doesn't have the necessary permission!").
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+				} else {
+					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(djTitle,
+						"The role has been succefully "+action).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
+			} else {
+				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+					"Only the owner of the bot can use this command!").
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
+		},
 	}
 )
 
 func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate, playlist bool) {
+	if djModeCheck(s, i) {
+		return
+	}
+
 	// Check if user is not in a voice channel
 	if vs := findUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 		if joinVC(i.Interaction, vs.ChannelID) {
@@ -650,4 +771,13 @@ func playCommand(s *discordgo.Session, i *discordgo.InteractionCreate, playlist 
 		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, notInVC).
 			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 	}
+}
+
+func djModeCheck(s *discordgo.Session, i *discordgo.InteractionCreate) bool {
+	if server[i.GuildID].djMode && i.Member.User.ID != owner && !hasRole(i.Member.Roles, server[i.GuildID].djRole) {
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, djNot).
+			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+		return true
+	}
+	return false
 }

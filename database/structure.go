@@ -12,11 +12,19 @@ type Database struct {
 	AddToBlacklist      func(id string) error
 	RemoveFromBlacklist func(id string) error
 	Close               func()
+	UpdateDJRole        func(guild string, role string) error
+	GetDJ               func() (map[string]DJ, error)
 	GetBlacklist        func() (map[string]bool, error)
+	SetDJSettings       func(guild string, enabled bool) error
 }
 
 // CustomCommand holds data about a custom command
 type CustomCommand struct {
 	Link string
 	Loop bool
+}
+
+type DJ struct {
+	Enabled bool
+	Role    string
 }

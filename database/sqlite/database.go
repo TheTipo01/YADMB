@@ -13,7 +13,8 @@ const (
 	tblSong      = "CREATE TABLE IF NOT EXISTS `song` (`id` varchar(200) NOT NULL, `title` varchar(200) NOT NULL, `duration` varchar(20) NOT NULL, `thumbnail` varchar(500) NOT NULL, `segments` varchar(1000) NOT NULL, PRIMARY KEY (`id`));"
 	tblCommands  = "CREATE TABLE IF NOT EXISTS `customCommands` (`guild` varchar(18) NOT NULL, `command` varchar(100) NOT NULL, `song` varchar(100) NOT NULL, `loop` tinyint(1) NOT NULL DEFAULT 0,  PRIMARY KEY (`guild`,`command`));"
 	tblBlacklist = "CREATE TABLE IF NOT EXISTS `blacklist`(`id` VARCHAR(20) NOT NULL, PRIMARY KEY (`id`));"
-	tblLink      = "create table if not exists link ( songID varchar(200) not null references song, link varchar(500) not null constraint link_pk primary key );"
+	tblLink      = "create table IF NOT EXISTS link ( songID varchar(200) not null references song, link varchar(500) not null constraint link_pk primary key );"
+	tblDJ        = "CREATE TABLE IF NOT EXISTS `dj` ( `guild` VARCHAR(20) NOT NULL, `role` VARCHAR(20) NULL, `enabled` TINYINT(1) NOT NULL DEFAULT '0', PRIMARY KEY (`guild`) );"
 )
 
 var db *sql.DB
@@ -30,7 +31,7 @@ func NewDatabase(dsn string) *database.Database {
 	}
 
 	// Create tables if they don't exist
-	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink)
+	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ)
 
 	c := common.NewCommon(db)
 
@@ -44,7 +45,10 @@ func NewDatabase(dsn string) *database.Database {
 		Close:               c.Close,
 		AddToBlacklist:      c.AddToBlacklist,
 		RemoveFromBlacklist: c.RemoveFromBlacklist,
+		GetDJ:               c.GetDJ,
+		UpdateDJRole:        updateDJRole,
 		GetBlacklist:        c.GetBlacklist,
+		SetDJSettings:       setDJSettings,
 	}
 }
 
@@ -65,4 +69,14 @@ func addToDb(el queue.Element, exist bool) {
 			lit.Error("Error inserting into link, %s", err)
 		}
 	}
+}
+
+func setDJSettings(guild string, enabled bool) error {
+	_, err := db.Exec("INSERT INTO dj (guild, enabled) VALUES (?, ?) ON CONFLICT(guild) DO UPDATE SET enabled = ?", guild, enabled, enabled)
+	return err
+}
+
+func updateDJRole(guild string, role string) error {
+	_, err := db.Exec("INSERT INTO dj (guild, role) VALUES (?, ?) ON CONFLICT(guild) DO UPDATE SET role = ?", guild, role, role)
+	return err
 }

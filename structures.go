@@ -38,6 +38,10 @@ type Server struct {
 	resume chan struct{}
 	// Wait group for waiting for spotify to finish before lowering the clear flag
 	wg *sync.WaitGroup
+	// Role ID for the DJ role
+	djRole string
+	// Whether the DJ mode is enabled
+	djMode bool
 }
 
 // YtDLP structure for holding yt-dlp data

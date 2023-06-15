@@ -27,6 +27,7 @@ const (
 	commandsTitle     = "Commands"
 	blacklistTitle    = "Blacklist"
 	resumeTitle       = "Resume"
+	djTitle           = "DJ"
 )
 
 // Messages for embeds
@@ -64,4 +65,11 @@ const (
 
 	// Feedback
 	disconnected = "Bye-bye!"
+
+	// DJ
+	djEnabled     = "DJ mode enabled!"
+	djDisabled    = "DJ mode disabled!"
+	djNot         = "User is not a DJ, and DJ mode is enabled!"
+	djRoleChanged = "DJ role changed!"
+	djRoleEqual   = "DJ role is already that role!"
 )

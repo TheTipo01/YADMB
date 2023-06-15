@@ -36,11 +36,7 @@ func (c Common) CheckInDb(link string) (queue.Element, error) {
 func (c Common) AddCommand(command string, song string, guild string, loop bool) error {
 	// Else, we add it to the database
 	_, err := c.db.Exec("INSERT INTO customCommands (`guild`, `command`, `song`, `loop`) VALUES(?, ?, ?, ?)", guild, command, song, loop)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // RemoveCustom removes a custom command from the DB and from the command map
@@ -98,20 +94,38 @@ func (c Common) RemoveFromDB(el queue.Element) {
 
 func (c Common) AddToBlacklist(id string) error {
 	_, err := c.db.Exec("INSERT INTO blacklist (id) VALUES(?)", id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (c Common) RemoveFromBlacklist(id string) error {
 	_, err := c.db.Exec("DELETE FROM blacklist WHERE id=?", id)
+	return err
+}
+
+func (c Common) GetDJ() (map[string]database.DJ, error) {
+	roles := make(map[string]database.DJ)
+
+	rows, err := c.db.Query("SELECT guild, role, enabled FROM dj")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	for rows.Next() {
+		var role, guild string
+		var enabled bool
+
+		err = rows.Scan(&guild, &role, &enabled)
+		if err != nil {
+			lit.Error("Error scanning rows from query, %s", err)
+			continue
+		}
+
+		roles[guild] = database.DJ{Role: role, Enabled: enabled}
+	}
+
+	return roles, nil
+}
+
 func (c Common) GetBlacklist() (map[string]bool, error) {
 	ids := make(map[string]bool)
 
