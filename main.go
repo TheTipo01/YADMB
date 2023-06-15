@@ -31,7 +31,7 @@ var (
 	// database connection
 	db *database.Database
 	// Cache for the blacklist
-	blacklist = make(map[string]bool)
+	blacklist map[string]bool
 	// Discord bot session
 	s *discordgo.Session
 	// Holds the number of servers the bot is in
@@ -87,6 +87,12 @@ func init() {
 		}
 
 		server[k].custom = commands[k]
+	}
+
+	// Load the blacklist
+	blacklist, err = db.GetBlacklist()
+	if err != nil {
+		lit.Error("Error loading blacklist: %s", err)
 	}
 
 	// Create folders used by the bot

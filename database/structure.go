@@ -12,6 +12,7 @@ type Database struct {
 	AddToBlacklist      func(id string) error
 	RemoveFromBlacklist func(id string) error
 	Close               func()
+	GetBlacklist        func() (map[string]bool, error)
 }
 
 // CustomCommand holds data about a custom command

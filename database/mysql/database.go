@@ -44,6 +44,7 @@ func NewDatabase(dsn string) *database.Database {
 		Close:               c.Close,
 		AddToBlacklist:      c.AddToBlacklist,
 		RemoveFromBlacklist: c.RemoveFromBlacklist,
+		GetBlacklist:        c.GetBlacklist,
 	}
 }
 

@@ -112,6 +112,26 @@ func (c Common) RemoveFromBlacklist(id string) error {
 	}
 
 	return nil
+func (c Common) GetBlacklist() (map[string]bool, error) {
+	ids := make(map[string]bool)
+
+	rows, err := c.db.Query("SELECT id FROM blacklist")
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var id string
+		err = rows.Scan(&id)
+		if err != nil {
+			lit.Error("Error scanning rows from query, %s", err)
+			continue
+		}
+
+		ids[id] = true
+	}
+
+	return ids, nil
 }
 
 func (c Common) Close() {
