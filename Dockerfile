@@ -1,11 +1,9 @@
-FROM golang:1.20.4-alpine
+FROM golang:1.20.5-alpine
 
 RUN addgroup -S -g 1000 yadmb \
   && adduser -S -G yadmb -u 999 yadmb \
   && mkdir /app \
   && chown yadmb:yadmb /app
-
-ENV PYTHONUNBUFFERED=1
 
 RUN apk add --no-cache \
   git \
