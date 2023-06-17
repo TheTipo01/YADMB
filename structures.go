@@ -64,10 +64,10 @@ type RequestedFormats []struct {
 type Config struct {
 	Token        string `fig:"token" validate:"required"`
 	Owner        string `fig:"owner" validate:"required"`
-	ClientID     string `fig:"clientid" validate:"required"`
-	ClientSecret string `fig:"clientsecret" validate:"required"`
+	ClientID     string `fig:"clientid"`
+	ClientSecret string `fig:"clientsecret"`
 	DSN          string `fig:"datasourcename" validate:"required"`
 	Driver       string `fig:"drivername" validate:"required"`
 	LogLevel     string `fig:"loglevel" validate:"required"`
-	YouTubeAPI   string `fig:"youtubeapikey" validate:"required"`
+	YouTubeAPI   string `fig:"youtubeapikey"`
 }

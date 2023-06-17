@@ -66,9 +66,11 @@ func init() {
 		lit.LogLevel = lit.LogDebug
 	}
 
-	spt, err = spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
-	if err != nil {
-		lit.Error("spotify: couldn't get token: %s", err)
+	if cfg.ClientID != "" && cfg.ClientSecret != "" {
+		spt, err = spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
+		if err != nil {
+			lit.Error("spotify: couldn't get token: %s", err)
+		}
 	}
 
 	// Initialize the database
@@ -136,9 +138,11 @@ func init() {
 	// Initialize the status
 	stat = status.NewStatus()
 
-	yt, err = youtube.NewYoutube(cfg.YouTubeAPI)
-	if err != nil {
-		lit.Error("youtube: couldn't get client: %s", err)
+	if cfg.YouTubeAPI != "" {
+		yt, err = youtube.NewYoutube(cfg.YouTubeAPI)
+		if err != nil {
+			lit.Error("youtube: couldn't get client: %s", err)
+		}
 	}
 }
 
