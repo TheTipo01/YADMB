@@ -4,19 +4,25 @@
 
 Yet Another Discord Music Bot - A music bot written in go
 
-# Notes
+# Features
+- Supports what [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports, plus spotify playlists (if you configure the required tokens!)
+- Uses slash commands (see [Commands](#commands) for a list of commands)
+- Save your favorite songs and playlists with custom commands
+- Automatically skips sponsors or moments when there's no music, thanks to the [SponsorBlock API](https://sponsor.ajay.app/)
+- Caches songs locally, so the bot doesn't have to download them every time
+- Stream songs from the internet, useful for radios
+- Blacklist users from using the bot
+- Allow only certain users to use the bot, with the DJ role
 
-- We now use slash commands (from release [0.8.0](https://github.com/TheTipo01/YADMB/releases/tag/0.8.0))
-- All commands check to see if the caller is in the same voice channel as the bot (only if they skip a song, or play a
-  new
-  one)
-- Dependencies: [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca), [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-  , [ffmpeg](https://ffmpeg.org/download.html).
-- For tutorials on how to install the bot, see the wiki.
-- Uses [SponsorBlock API](https://sponsor.ajay.app/) to automatically skip sponsors or moments when there's no music
-- Normalizes songs
+# Requirements
 
-## Bot commands
+- [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [ffmpeg](https://ffmpeg.org/download.html)
+
+For tutorials on how to install the bot, see the wiki.
+
+# Commands
 
 `/play <link> <shuffle> <loop> <priority>` - Plays a song from YouTube or spotify playlist.
 If it's not a valid link, it will insert into the queue the first result for the given query.
@@ -62,3 +68,9 @@ to true to play the song looped
 - `<song>` - Re-downloads the entire song
 
 `/blacklist <user>` - Adds or remove a person from the bot blacklist
+
+`/dj` - Enables or disable DJ mode for the current server, only users with the DJ role can use the bot
+
+`/djrole <role>` - Sets the DJ role for the current server
+
+`/djroletoggle <user>` - Adds or removes the DJ role from the given user
