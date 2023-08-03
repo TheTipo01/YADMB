@@ -60,14 +60,19 @@ func (y *YouTube) GetPlaylist(id string) []Video {
 	result := make([]Video, 0, len(response.Items))
 	ids := make([]string, 0, len(response.Items))
 	for _, item := range response.Items {
-		result = append(result, Video{
-			ID:        item.Snippet.ResourceId.VideoId,
-			Title:     item.Snippet.Title,
-			Thumbnail: getBestThumbnail(item.Snippet.Thumbnails),
-			Duration:  0,
-		})
+		thumbnail := getBestThumbnail(item.Snippet.Thumbnails)
+		
+		// Check if the video is available and not deleted
+		if thumbnail != "" && item.Snippet.Description != "This video is unavailable." && item.Snippet.Title != "Deleted video" {
+			result = append(result, Video{
+				ID:        item.Snippet.ResourceId.VideoId,
+				Title:     item.Snippet.Title,
+				Thumbnail: thumbnail,
+				Duration:  0,
+			})
 
-		ids = append(ids, item.Snippet.ResourceId.VideoId)
+			ids = append(ids, item.Snippet.ResourceId.VideoId)
+		}
 	}
 
 	durations := y.getVideosDurations(ids...)
