@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: always
     volumes:
       - ./audio_cache:/app/audio_cache
       - ./data:/app/data
