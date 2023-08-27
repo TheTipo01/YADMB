@@ -3,7 +3,6 @@ module github.com/TheTipo01/YADMB
 go 1.14
 
 require (
-	github.com/bwmarrin/dca/cmd/dca v0.0.0-20221003192631-e7cc179f7b56
 	github.com/bwmarrin/discordgo v0.27.2-0.20230816134654-ff9176adccb6
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/go-sql-driver/mysql v1.7.1
