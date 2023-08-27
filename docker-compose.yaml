@@ -1,9 +1,9 @@
 version: '3.9'
 services:
   bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: thetipo01/yadmb
+# Uncomment the following line to build the image locally
+#    build: .
     restart: always
     volumes:
       - ./audio_cache:/audio_cache
