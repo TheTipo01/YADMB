@@ -6,5 +6,5 @@ services:
       dockerfile: Dockerfile
     restart: always
     volumes:
-      - ./audio_cache:/app/audio_cache
-      - ./data:/app/data
+      - ./audio_cache:/audio_cache
+      - ./data:/data
