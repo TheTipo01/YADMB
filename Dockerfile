@@ -21,4 +21,4 @@ RUN apk add --no-cache \
 COPY --from=build /src/yadmb /usr/bin/
 COPY --from=build /go/bin/dca /usr/bin/
 
-CMD ["sh", "-c", "cd / && yadmb"]
+CMD ["yadmb"]
