@@ -3,23 +3,22 @@ FROM golang:alpine AS build
 RUN apk add --no-cache \
   g++ \
   git \
-  make
+  make \
+  opus
 
 RUN git clone https://github.com/TheTipo01/YADMB /src
 WORKDIR /src
-RUN go mod download
-RUN go build -trimpath github.com/bwmarrin/dca/cmd/dca
-RUN strip dca
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o yadmb
+RUN go build -trimpath -ldflags "-s -w" -o yadmb
+RUN go install github.com/bwmarrin/dca/cmd/dca@latest
+RUN strip /go/bin/dca
 
 FROM alpine
 
 RUN apk add --no-cache \
   ffmpeg \
-  opus \
   yt-dlp
 
 COPY --from=build /src/yadmb /usr/bin/
-COPY --from=build /src/dca /usr/bin/
+COPY --from=build /go/bin/dca /usr/bin/
 
-CMD ["yadmb"]
+CMD ["sh", "-c", "cd / && yadmb"]
