@@ -4,7 +4,8 @@ RUN apk add --no-cache \
   g++ \
   git \
   make \
-  opus
+  opus \
+  pkgconfig
 
 RUN git clone https://github.com/TheTipo01/YADMB /src
 WORKDIR /src
