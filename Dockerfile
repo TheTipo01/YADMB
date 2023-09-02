@@ -12,10 +12,12 @@ ARG PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opus"
 
 RUN git clone https://github.com/TheTipo01/YADMB /yadmb
 WORKDIR /yadmb
+RUN go mod download
 RUN go build -trimpath -ldflags "-s -w" -o yadmb
 
 RUN git clone https://github.com/bwmarrin/dca /dca
 WORKDIR /dca/cmd/dca
+RUN go mod download
 RUN go build -trimpath -ldflags "-s -w" -o dca
 RUN strip /dca/cmd/dca/dca
 
