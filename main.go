@@ -196,12 +196,7 @@ func main() {
 	s = dg
 
 	// Register commands
-	for _, v := range commands {
-		_, err = dg.ApplicationCommandCreate(dg.State.User.ID, "", v)
-		if err != nil {
-			lit.Error("Can't register command %s: %s", v.Name, err.Error())
-		}
-	}
+	registerAndDeleteCommands(commands)
 
 	// Wait here until CTRL-C or another term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")

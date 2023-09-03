@@ -294,3 +294,23 @@ func hasRole(roles []string, role string) bool {
 	}
 	return false
 }
+
+// registerAndDeleteCommands registers the commands and deletes the old ones
+func registerAndDeleteCommands(commands []*discordgo.ApplicationCommand) {
+	createdCommands, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "", commands)
+	if err != nil {
+		lit.Error("Can't register commands, %s", err)
+	}
+
+	for _, cc := range createdCommands {
+		for _, c := range commands {
+			if cc.Name != c.Name {
+				err = s.ApplicationCommandDelete(s.State.User.ID, "", cc.ID)
+				if err != nil {
+					lit.Error("Can't delete command, %s", err)
+				}
+				lit.Info("Deleted old command %s", cc.Name)
+			}
+		}
+	}
+}

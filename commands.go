@@ -679,7 +679,7 @@ var (
 					server[i.GuildID].djRole = role.ID
 					err := db.UpdateDJRole(i.GuildID, role.ID)
 					if err != nil {
-						lit.Error("Error updating DJ role", err)
+						lit.Error("Error updating DJ role: %s", err.Error())
 					}
 
 					sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(djTitle, djRoleChanged).
