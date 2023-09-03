@@ -1,27 +1,15 @@
-FROM golang:bookworm AS build
+FROM --platform=$BUILDPLATFORM golang:alpine AS build
 
-RUN apt update && apt install git build-essential libopus-dev autoconf libtool pkg-config -y
-
-RUN git clone https://github.com/xiph/opus /opus
-WORKDIR /opus
-RUN git checkout 1.1.2
-RUN ./autogen.sh
-RUN ./configure
-RUN make
-ARG PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opus"
+RUN apk add --no-cache git
 
 RUN git clone https://github.com/TheTipo01/YADMB /yadmb
 WORKDIR /yadmb
-RUN go mod download
-RUN go build -trimpath -ldflags "-s -w" -o yadmb
+ARG TARGETOS
+ARG TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go mod download
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o yadmb
 
-RUN git clone https://github.com/bwmarrin/dca /dca
-WORKDIR /dca/cmd/dca
-RUN go mod download
-RUN go build -trimpath -ldflags "-s -w" -o dca
-RUN strip /dca/cmd/dca/dca
-
-FROM alpine
+FROM thetipo01/dca
 
 RUN apk add --no-cache \
   ffmpeg \
@@ -29,6 +17,5 @@ RUN apk add --no-cache \
   gcompat
 
 COPY --from=build /yadmb/yadmb /usr/bin/
-COPY --from=build /dca/cmd/dca/dca /usr/bin/
 
 CMD ["yadmb"]
