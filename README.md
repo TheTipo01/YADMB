@@ -20,7 +20,21 @@ Yet Another Discord Music Bot - A music bot written in go
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg](https://ffmpeg.org/download.html)
 
-For tutorials on how to install the bot, see the wiki.
+# Installation
+
+## Natively
+See the [wiki](https://github.com/TheTipo01/YADMB/wiki/Tutorial:-install-YADMB-on-Debian-based-distro-(Raspbian,-Ubuntu...))
+
+## Docker
+- Clone the repo
+- Modify the `example_config.yml`, by adding your discord bot token (see [here](https://github.com/TheTipo01/YADMB/wiki/Creating-and-adding-the-bot-to-your-server) if you don't know how to it)
+- Rename it in `config.yml` and move it in the `data` directory
+- Run `docker-compose up -d`
+- Enjoy your YADMB instance!
+
+
+Note: the docker image is available on [Docker hub](https://hub.docker.com/r/thetipo01/yadmb), [Quay.io](https://quay.io/repository/thetipo01/yadmb) and [Github packages](https://github.com/TheTipo01/YADMB/pkgs/container/yadmb).
+
 
 # Commands
 
