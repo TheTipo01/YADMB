@@ -19,7 +19,7 @@ func NewServer(guildID string) *Server {
 		guildID:             guildID,
 		pause:               make(chan struct{}),
 		resume:              make(chan struct{}),
-		skip:                make(chan struct{}),
+		skip:                make(chan SkipReason),
 		started:             atomic.Bool{},
 		clear:               atomic.Bool{},
 		paused:              atomic.Bool{},
@@ -59,10 +59,10 @@ func (m *Server) play() {
 			el.BeforePlay()
 		}
 
-		skipped := playSound(m.guildID, el)
+		skipReason, _ := playSound(m.guildID, el)
 
 		// If we are still downloading the song, we need to finish writing it to disk
-		if el.Downloading && (m.clear.Load() || skipped) {
+		if el.Downloading && skipReason > Finished {
 			devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0755)
 			_, _ = io.Copy(devnull, el.Reader)
 			_ = devnull.Close()
@@ -79,7 +79,9 @@ func (m *Server) play() {
 			}
 		}()
 
-		m.queue.RemoveFirstElement()
+		if skipReason != Clear {
+			m.queue.RemoveFirstElement()
+		}
 	}
 
 	m.started.Store(false)
@@ -96,7 +98,7 @@ func (m *Server) IsPlaying() bool {
 func (m *Server) Clear() {
 	if m.IsPlaying() {
 		m.clear.Store(true)
-		m.skip <- struct{}{}
+		m.skip <- Clear
 
 		m.wg.Wait()
 		m.clear.Store(false)

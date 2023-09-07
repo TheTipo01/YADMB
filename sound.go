@@ -2,17 +2,19 @@ package main
 
 import (
 	"encoding/binary"
+	"errors"
 	"github.com/TheTipo01/YADMB/queue"
 	"io"
 	"os"
 )
 
 // Plays a song in DCA format
-func playSound(guildID string, el *queue.Element) bool {
+func playSound(guildID string, el *queue.Element) (SkipReason, error) {
 	var (
-		opuslen int16
-		skip    bool
-		err     error
+		opuslen    int16
+		skip       bool
+		skipReason SkipReason
+		err        error
 	)
 
 	// Start speaking.
@@ -24,13 +26,13 @@ func playSound(guildID string, el *queue.Element) bool {
 			select {
 			case <-server[guildID].resume:
 				el.Segments = server[guildID].queue.GetFirstElement().Segments
-			case <-server[guildID].skip:
+			case skipReason = <-server[guildID].skip:
 				cleanUp(guildID, el.Closer)
-				return true
+				return skipReason, nil
 			}
-		case <-server[guildID].skip:
+		case skipReason = <-server[guildID].skip:
 			cleanUp(guildID, el.Closer)
-			return true
+			return skipReason, nil
 		default:
 			if el.Segments[server[guildID].frames] {
 				skip = !skip
@@ -40,7 +42,7 @@ func playSound(guildID string, el *queue.Element) bool {
 			err = binary.Read(el.Reader, binary.LittleEndian, &opuslen)
 
 			// If this is the end of the file, just return.
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
+			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 				if el.Loop {
 					if el.Closer != nil {
 						_ = el.Closer.Close()
@@ -52,7 +54,7 @@ func playSound(guildID string, el *queue.Element) bool {
 					continue
 				} else {
 					cleanUp(guildID, el.Closer)
-					return false
+					return Finished, nil
 				}
 			}
 
@@ -72,7 +74,7 @@ func playSound(guildID string, el *queue.Element) bool {
 				cleanUp(guildID, el.Closer)
 				// Force to re-download the song
 				_ = os.Remove(cachePath + el.ID + ".dca")
-				return false
+				return Error, err
 			}
 
 			server[guildID].vc.OpusSend <- InBuf

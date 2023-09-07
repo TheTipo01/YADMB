@@ -19,7 +19,7 @@ type Server struct {
 	// Frames
 	frames int
 	// Quit channel
-	skip chan struct{}
+	skip chan SkipReason
 	// Whether the job scheduler has started
 	started atomic.Bool
 	// Whether to clear the queue
@@ -71,3 +71,13 @@ type Config struct {
 	LogLevel     string `fig:"loglevel" validate:"required"`
 	YouTubeAPI   string `fig:"youtubeapikey"`
 }
+
+// SkipReason is used to determine why playSound returned
+type SkipReason int
+
+const (
+	Error = iota
+	Finished
+	Skip
+	Clear
+)

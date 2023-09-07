@@ -277,7 +277,7 @@ var (
 			// Check if user is not in a voice channel
 			if findUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil && server[i.GuildID].IsPlaying() {
 				el := server[i.GuildID].queue.GetFirstElement()
-				server[i.GuildID].skip <- struct{}{}
+				server[i.GuildID].skip <- Skip
 				server[i.GuildID].paused.Store(false)
 				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(skipTitle,
 					el.Title+" - "+el.Duration+" added by "+el.User).
