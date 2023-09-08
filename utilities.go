@@ -294,3 +294,16 @@ func hasRole(roles []string, role string) bool {
 	}
 	return false
 }
+
+// cleanURL removes tracking and other unnecessary parameters from a URL
+func cleanURL(link string) string {
+	u, _ := url.Parse(link)
+	q := u.Query()
+
+	q.Del("utm_source")
+	q.Del("feature")
+
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}

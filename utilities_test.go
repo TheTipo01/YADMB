@@ -43,3 +43,9 @@ func TestFormatLongMessage(t *testing.T) {
 		t.Error("Generated string is different then formatted one!")
 	}
 }
+
+func TestCleanURL(t *testing.T) {
+	if link := cleanURL("https://youtu.be/dQw4w9WgXcQ?feature=shared"); link != "https://youtu.be/dQw4w9WgXcQ" {
+		t.Error("CleanURL failed. Got", link)
+	}
+}

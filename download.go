@@ -27,6 +27,8 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		go sendEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
 	}
 
+	link = cleanURL(link)
+
 	// Check if the song is the db, to speedup things
 	el, err := db.CheckInDb(link)
 	if err == nil {
@@ -110,7 +112,7 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			// and one that is played on the new UI. This is a workaround to save also the link to the new UI
 			if strings.Contains(link, "shorts") {
 				el.Link = link
-				db.AddToDb(el, exist)
+				go db.AddToDb(el, exist)
 			}
 
 			el.Link = "https://youtu.be/" + yt.ID
