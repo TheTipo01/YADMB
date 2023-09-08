@@ -61,7 +61,7 @@ func (y *YouTube) GetPlaylist(id string) []Video {
 	ids := make([]string, 0, len(response.Items))
 	for _, item := range response.Items {
 		thumbnail := getBestThumbnail(item.Snippet.Thumbnails)
-		
+
 		// Check if the video is available and not deleted
 		if thumbnail != "" && item.Snippet.Description != "This video is unavailable." && item.Snippet.Title != "Deleted video" {
 			result = append(result, Video{

@@ -5,10 +5,13 @@
 Yet Another Discord Music Bot - A music bot written in go
 
 # Features
-- Supports what [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports, plus spotify playlists (if you configure the required tokens!)
+
+- Supports what [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports, plus spotify playlists (if you configure the
+  required tokens!)
 - Uses slash commands (see [Commands](#commands) for a list of commands)
 - Save your favorite songs and playlists with custom commands
-- Automatically skips sponsors or moments when there's no music, thanks to the [SponsorBlock API](https://sponsor.ajay.app/)
+- Automatically skips sponsors or moments when there's no music, thanks to
+  the [SponsorBlock API](https://sponsor.ajay.app/)
 - Caches songs locally, so the bot doesn't have to download them every time
 - Stream songs from the internet, useful for radios
 - Blacklist users from using the bot
@@ -23,18 +26,23 @@ Yet Another Discord Music Bot - A music bot written in go
 # Installation
 
 ## Natively
-See the [wiki](https://github.com/TheTipo01/YADMB/wiki/Tutorial:-install-YADMB-on-Debian-based-distro-(Raspbian,-Ubuntu...))
+
+See
+the [wiki](https://github.com/TheTipo01/YADMB/wiki/Tutorial:-install-YADMB-on-Debian-based-distro-(Raspbian,-Ubuntu...))
 
 ## Docker
+
 - Clone the repo
-- Modify the `example_config.yml`, by adding your discord bot token (see [here](https://github.com/TheTipo01/YADMB/wiki/Creating-and-adding-the-bot-to-your-server) if you don't know how to it)
+- Modify the `example_config.yml`, by adding your discord bot token (
+  see [here](https://github.com/TheTipo01/YADMB/wiki/Creating-and-adding-the-bot-to-your-server) if you don't know how
+  to it)
 - Rename it in `config.yml` and move it in the `data` directory
 - Run `docker-compose up -d`
 - Enjoy your YADMB instance!
 
-
-Note: the docker image is available on [Docker hub](https://hub.docker.com/r/thetipo01/yadmb), [Quay.io](https://quay.io/repository/thetipo01/yadmb) and [Github packages](https://github.com/TheTipo01/YADMB/pkgs/container/yadmb).
-
+Note: the docker image is available
+on [Docker hub](https://hub.docker.com/r/thetipo01/yadmb), [Quay.io](https://quay.io/repository/thetipo01/yadmb)
+and [Github packages](https://github.com/TheTipo01/YADMB/pkgs/container/yadmb).
 
 # Commands
 
