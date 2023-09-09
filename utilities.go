@@ -234,6 +234,7 @@ func filterPlaylist(link string) (string, error) {
 		u, _ := url.Parse(link)
 		q := u.Query()
 		q.Del("list")
+		q.Del("index")
 		if q.Has("v") || be {
 			u.RawQuery = q.Encode()
 			return u.String(), nil
