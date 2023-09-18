@@ -108,13 +108,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 			db.AddToDb(el, false)
 			exist = true
 
-			// YouTube shorts can have two different links: the one that redirects to a classical YouTube video
-			// and one that is played on the new UI. This is a workaround to save also the link to the new UI
-			if strings.Contains(link, "shorts") {
-				el.Link = link
-				go db.AddToDb(el, exist)
-			}
-
 			el.Link = "https://youtu.be/" + yt.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
@@ -124,7 +117,13 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 		}
 
 		// We add the song to the db, for faster parsing
-		go db.AddToDb(el, exist)
+		db.AddToDb(el, exist)
+
+		// If we didn't encounter a playlist, and the link is not the same as the one we got from yt-dlp, add it to the db
+		if len(infoJSON) == 1 && el.Link != link {
+			lit.Error("foof")
+			go db.AddLinkDB(el.ID, link)
+		}
 
 		// Checks if video is already downloaded
 		info, err := os.Stat(cachePath + el.ID + audioExtension)

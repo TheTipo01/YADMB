@@ -49,6 +49,7 @@ func NewDatabase(dsn string) *database.Database {
 		UpdateDJRole:        updateDJRole,
 		GetBlacklist:        c.GetBlacklist,
 		SetDJSettings:       setDJSettings,
+		AddLinkDB:           addLinkDB,
 	}
 }
 
@@ -64,11 +65,16 @@ func addToDb(el queue.Element, exist bool) {
 			}
 		}
 
-		_, err := db.Exec("INSERT OR IGNORE INTO link (songID, link) VALUES (?, ?)", el.ID, el.Link)
+		err := addLinkDB(el.ID, el.Link)
 		if err != nil {
-			lit.Error("Error inserting into link, %s", err)
+			lit.Error("Error inserting into link, %s", err.Error())
 		}
 	}
+}
+
+func addLinkDB(id, link string) error {
+	_, err := db.Exec("INSERT OR IGNORE INTO link (songID, link) VALUES (?, ?)", id, link)
+	return err
 }
 
 func setDJSettings(guild string, enabled bool) error {

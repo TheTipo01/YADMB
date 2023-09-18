@@ -16,6 +16,7 @@ type Database struct {
 	GetDJ               func() (map[string]DJ, error)
 	GetBlacklist        func() (map[string]bool, error)
 	SetDJSettings       func(guild string, enabled bool) error
+	AddLinkDB           func(id, link string) error
 }
 
 // CustomCommand holds data about a custom command
