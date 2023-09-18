@@ -240,7 +240,10 @@ func filterPlaylist(link string) (string, error) {
 			return u.String(), nil
 		}
 
-		return "", errors.New("no video ID found")
+		// Shorts link don't have a parameter for the video ID
+		if !strings.Contains(link, "shorts") {
+			return "", errors.New("no video ID found")
+		}
 	}
 
 	return link, nil
