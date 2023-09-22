@@ -121,7 +121,6 @@ func downloadAndPlay(s *discordgo.Session, guildID, link, user string, i *discor
 
 		// If we didn't encounter a playlist, and the link is not the same as the one we got from yt-dlp, add it to the db
 		if len(infoJSON) == 1 && el.Link != link {
-			lit.Error("foof")
 			go db.AddLinkDB(el.ID, link)
 		}
 
