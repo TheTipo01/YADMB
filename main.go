@@ -5,7 +5,6 @@ import (
 	"github.com/TheTipo01/YADMB/database/mysql"
 	"github.com/TheTipo01/YADMB/database/sqlite"
 	"github.com/TheTipo01/YADMB/spotify"
-	"github.com/TheTipo01/YADMB/status"
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
@@ -34,8 +33,6 @@ var (
 	blacklist map[string]bool
 	// Discord bot session
 	s *discordgo.Session
-	// Holds the number of servers the bot is in
-	stat status.Status
 	// YouTube client
 	yt *youtube.YouTube
 )
@@ -135,9 +132,6 @@ func init() {
 		lit.Error("Error: can't find yt-dlp!")
 	}
 
-	// Initialize the status
-	stat = status.NewStatus()
-
 	if cfg.YouTubeAPI != "" {
 		yt, err = youtube.NewYoutube(cfg.YouTubeAPI)
 		if err != nil {
@@ -214,12 +208,10 @@ func main() {
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
-	if ok, guilds := stat.CompareAndUpdate(len(s.State.Guilds)); ok {
-		// Set the playing status.
-		err := s.UpdateGameStatus(0, "Serving "+strconv.Itoa(guilds)+" guilds!")
-		if err != nil {
-			lit.Error("Can't set status, %s", err)
-		}
+	// Set the playing status.
+	err := s.UpdateGameStatus(0, "Serving "+strconv.Itoa(len(s.State.Guilds))+" guilds!")
+	if err != nil {
+		lit.Error("Can't set status, %s", err)
 	}
 }
 
