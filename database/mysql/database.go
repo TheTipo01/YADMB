@@ -7,6 +7,7 @@ import (
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
+	"time"
 )
 
 const (
@@ -32,6 +33,8 @@ func NewDatabase(dsn string) *database.Database {
 
 	// Create tables if they don't exist
 	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ)
+
+	db.SetConnMaxLifetime(time.Minute * 3)
 
 	c := common.NewCommon(db)
 
