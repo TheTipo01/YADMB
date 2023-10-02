@@ -7,7 +7,6 @@ require (
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/goccy/go-json v0.10.2
-	github.com/googleapis/enterprise-certificate-proxy v0.3.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/kkyr/fig v0.3.2
 	github.com/mattn/go-isatty v0.0.19 // indirect
@@ -16,13 +15,12 @@ require (
 	github.com/zmb3/spotify/v2 v2.4.0
 	golang.org/x/oauth2 v0.12.0
 	golang.org/x/tools v0.13.0 // indirect
-	google.golang.org/api v0.142.0
+	google.golang.org/api v0.143.0
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/grpc v1.58.2 // indirect
 	lukechampine.com/uint128 v1.3.0 // indirect
 	modernc.org/ccgo/v3 v3.16.15 // indirect
-	modernc.org/memory v1.7.1 // indirect
-	modernc.org/sqlite v1.25.0
+	modernc.org/memory v1.7.2 // indirect
+	modernc.org/sqlite v1.26.0
 	modernc.org/strutil v1.2.0 // indirect
 )
