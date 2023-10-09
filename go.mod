@@ -13,11 +13,11 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/zmb3/spotify/v2 v2.4.0
-	golang.org/x/oauth2 v0.12.0
-	golang.org/x/tools v0.13.0 // indirect
-	google.golang.org/api v0.143.0
+	golang.org/x/oauth2 v0.13.0
+	golang.org/x/tools v0.14.0 // indirect
+	google.golang.org/api v0.145.0
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/grpc v1.58.2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97 // indirect
 	lukechampine.com/uint128 v1.3.0 // indirect
 	modernc.org/ccgo/v3 v3.16.15 // indirect
 	modernc.org/memory v1.7.2 // indirect
