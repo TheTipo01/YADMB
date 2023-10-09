@@ -304,6 +304,35 @@ func spotifyPlaylist(s *discordgo.Session, guildID, user string, i *discordgo.In
 	}
 }
 
+func spotifyAlbum(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, random, loop, priority bool, id spotify.ID) {
+	if spt != nil {
+		if album, err := spt.GetAlbum(id); err == nil {
+			server[guildID].wg.Add(1)
+
+			go sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(enqueuedTitle, "https://open.spotify.com/album/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3)
+
+			if random {
+				rand.Shuffle(len(album.Tracks.Tracks), func(i, j int) {
+					album.Tracks.Tracks[i], album.Tracks.Tracks[j] = album.Tracks.Tracks[j], album.Tracks.Tracks[i]
+				})
+			}
+
+			for j := 0; j < len(album.Tracks.Tracks) && !server[guildID].clear.Load(); j++ {
+				track := album.Tracks.Tracks[j]
+				link, _ := searchDownloadAndPlay(track.Name + " - " + track.Artists[0].Name)
+				downloadAndPlay(s, guildID, link, user, i, false, loop, false, priority)
+			}
+
+			server[guildID].wg.Done()
+		} else {
+			lit.Error("Can't get info on a spotify album: %s", err)
+			sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+		}
+	} else {
+		sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle, spotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+	}
+}
+
 // Gets info about a spotify track and plays it, searching it on YouTube
 func spotifyTrack(s *discordgo.Session, guildID, user string, i *discordgo.Interaction, loop, priority bool, id spotify.ID) {
 	if spt != nil {

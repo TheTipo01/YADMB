@@ -55,7 +55,7 @@ func (s *Spotify) refreshClient() error {
 func (s *Spotify) GetPlaylist(id spotify.ID) (*spotify.FullPlaylist, error) {
 	p, err := s.client.GetPlaylist(s.ctx, id)
 	if err != nil {
-		err := s.refreshClient()
+		err = s.refreshClient()
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func (s *Spotify) GetPlaylist(id spotify.ID) (*spotify.FullPlaylist, error) {
 func (s *Spotify) GetTrack(id spotify.ID) (*spotify.FullTrack, error) {
 	t, err := s.client.GetTrack(s.ctx, id)
 	if err != nil {
-		err := s.refreshClient()
+		err = s.refreshClient()
 		if err != nil {
 			return nil, err
 		}
@@ -78,4 +78,18 @@ func (s *Spotify) GetTrack(id spotify.ID) (*spotify.FullTrack, error) {
 	}
 
 	return t, nil
+}
+
+func (s *Spotify) GetAlbum(id spotify.ID) (*spotify.FullAlbum, error) {
+	a, err := s.client.GetAlbum(s.ctx, id)
+	if err != nil {
+		err = s.refreshClient()
+		if err != nil {
+			return nil, err
+		}
+
+		return s.client.GetAlbum(s.ctx, id)
+	}
+
+	return a, nil
 }

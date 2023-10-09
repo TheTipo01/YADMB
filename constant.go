@@ -58,7 +58,7 @@ const (
 	stillPlaying        = "Can't disconnect the bot!\nStill playing in a voice channel."
 	gotoInvalid         = "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s..."
 	nothingPlaying      = "No song playing!"
-	spotifyError        = "Can't get info about spotify playlist!\nError code: "
+	spotifyError        = "Can't get info about spotify link!\nError code: "
 	spotifyNotConfigure = "Spotify is not configured!\nSee the documentation for more info."
 	commandExists       = "Command already exists!"
 	commandNotExists    = "Command doesn't exist!"

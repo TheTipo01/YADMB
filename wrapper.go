@@ -18,6 +18,10 @@ func play(s *discordgo.Session, song string, i *discordgo.Interaction, guild, us
 		spotifyTrack(s, guild, username, i, loop, priority, spotify.ID(strings.TrimPrefix(song, "spotify:track:")))
 	case strings.Contains(song, "spotify.com/track/"):
 		spotifyTrack(s, guild, username, i, loop, priority, spotify.ID(strings.Split(strings.TrimPrefix(song, "https://open.spotify.com/track/"), "?")[0]))
+	case strings.HasPrefix(song, "spotify:album:"):
+		spotifyAlbum(s, guild, username, i, random, loop, priority, spotify.ID(strings.TrimPrefix(song, "spotify:album:")))
+	case strings.Contains(song, "spotify.com/album/"):
+		spotifyAlbum(s, guild, username, i, random, loop, priority, spotify.ID(strings.Split(strings.TrimPrefix(song, "https://open.spotify.com/album/"), "?")[0]))
 	case isValidURL(song):
 		downloadAndPlay(s, guild, song, username, i, random, loop, true, priority)
 	default:
