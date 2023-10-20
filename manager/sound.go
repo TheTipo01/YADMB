@@ -1,15 +1,16 @@
-package main
+package manager
 
 import (
 	"encoding/binary"
 	"errors"
+	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
 	"io"
 	"os"
 )
 
 // Plays a song in DCA format
-func playSound(guildID string, el *queue.Element) (SkipReason, error) {
+func playSound(el *queue.Element, server *Server) (SkipReason, error) {
 	var (
 		opuslen    int16
 		skip       bool
@@ -18,23 +19,23 @@ func playSound(guildID string, el *queue.Element) (SkipReason, error) {
 	)
 
 	// Start speaking.
-	_ = server[guildID].vc.Speaking(true)
+	_ = server.VC.Speaking(true)
 
 	for {
 		select {
-		case <-server[guildID].pause:
+		case <-server.Pause:
 			select {
-			case <-server[guildID].resume:
-				el.Segments = server[guildID].queue.GetFirstElement().Segments
-			case skipReason = <-server[guildID].skip:
-				cleanUp(guildID, el.Closer)
+			case <-server.Resume:
+				el.Segments = server.Queue.GetFirstElement().Segments
+			case skipReason = <-server.Skip:
+				cleanUp(server, el.Closer)
 				return skipReason, nil
 			}
-		case skipReason = <-server[guildID].skip:
-			cleanUp(guildID, el.Closer)
+		case skipReason = <-server.Skip:
+			cleanUp(server, el.Closer)
 			return skipReason, nil
 		default:
-			if el.Segments[server[guildID].frames] {
+			if el.Segments[server.Frames] {
 				skip = !skip
 			}
 
@@ -48,12 +49,12 @@ func playSound(guildID string, el *queue.Element) (SkipReason, error) {
 						_ = el.Closer.Close()
 					}
 
-					f, _ := os.Open(cachePath + el.ID + ".dca")
+					f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
 					el.Reader = f
 					el.Closer = f
 					continue
 				} else {
-					cleanUp(guildID, el.Closer)
+					cleanUp(server, el.Closer)
 					return Finished, nil
 				}
 			}
@@ -63,7 +64,7 @@ func playSound(guildID string, el *queue.Element) (SkipReason, error) {
 			err = binary.Read(el.Reader, binary.LittleEndian, &InBuf)
 
 			// Keep count of the frames in the song
-			server[guildID].frames++
+			el.Frames++
 
 			if skip {
 				continue
@@ -71,20 +72,20 @@ func playSound(guildID string, el *queue.Element) (SkipReason, error) {
 
 			// Should not be any end of file errors
 			if err != nil {
-				cleanUp(guildID, el.Closer)
+				cleanUp(server, el.Closer)
 				// Force to re-download the song
-				_ = os.Remove(cachePath + el.ID + ".dca")
+				_ = os.Remove(constants.CachePath + el.ID + ".dca")
 				return Error, err
 			}
 
-			server[guildID].vc.OpusSend <- InBuf
+			server.VC.OpusSend <- InBuf
 		}
 	}
 }
 
-func cleanUp(guildID string, closer io.Closer) {
-	_ = server[guildID].vc.Speaking(false)
-	server[guildID].frames = 0
+func cleanUp(server *Server, closer io.Closer) {
+	_ = server.VC.Speaking(false)
+	server.Frames = 0
 
 	if closer != nil {
 		_ = closer.Close()

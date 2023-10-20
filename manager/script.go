@@ -1,6 +1,7 @@
-package main
+package manager
 
 import (
+	"github.com/TheTipo01/YADMB/constants"
 	"github.com/bwmarrin/lit"
 	"io"
 	"os/exec"
@@ -8,7 +9,7 @@ import (
 )
 
 // cmdsStart starts all the exec.Cmd inside the slice
-func cmdsStart(cmds []*exec.Cmd) {
+func CmdsStart(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Start()
 		if err != nil {
@@ -18,7 +19,7 @@ func cmdsStart(cmds []*exec.Cmd) {
 }
 
 // cmdsWait waits for all the exec.Cmd inside the slice to finish processing, to free up resources
-func cmdsWait(cmds []*exec.Cmd) {
+func CmdsWait(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Wait()
 		if err != nil {
@@ -28,7 +29,7 @@ func cmdsWait(cmds []*exec.Cmd) {
 }
 
 // cmdsKill kills all the exec.Cmd inside the slice
-func cmdsKill(cmds []*exec.Cmd) {
+func CmdsKill(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Process.Kill()
 		if err != nil {
@@ -38,7 +39,7 @@ func cmdsKill(cmds []*exec.Cmd) {
 }
 
 // download downloads the song and gives back a pipe with DCA audio
-func download(link string, audioOnly bool) []*exec.Cmd {
+func Download(link string, audioOnly bool) []*exec.Cmd {
 	var format string
 
 	// If the flag audioOnly is raised, we use an audio only format to save bandwidth
@@ -67,12 +68,12 @@ func download(link string, audioOnly bool) []*exec.Cmd {
 }
 
 // gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
-func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
-	cmds := download(link, audioOnly)
+func Gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
+	cmds := Download(link, audioOnly)
 	dcaOut, _ := cmds[2].StdoutPipe()
 
 	// tee saves the output from dca to file and also gives it back to us
-	tee := exec.Command("tee", cachePath+filename+audioExtension)
+	tee := exec.Command("tee", constants.CachePath+filename+constants.AudioExtension)
 	tee.Stdin = dcaOut
 	teeOut, _ := tee.StdoutPipe()
 
@@ -81,7 +82,7 @@ func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.C
 }
 
 // stream substitutes the old scripts for streaming directly to discord from a given source
-func stream(link string) (io.ReadCloser, []*exec.Cmd) {
+func Stream(link string) (io.ReadCloser, []*exec.Cmd) {
 	ffmpeg := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", link, "-f", "s16le",
 		"-ar", "48000", "-ac", "2", "pipe:1", "-af", "loudnorm=I=-16:LRA=11:TP=-1.5")
 	ffmpegOut, _ := ffmpeg.StdoutPipe()

@@ -1,6 +1,8 @@
-package main
+package embed
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
 // Embed ...
 type Embed struct {

@@ -1,9 +1,12 @@
 package main
 
 import (
-	"github.com/TheTipo01/YADMB/database"
+	"github.com/TheTipo01/YADMB/api"
+	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database/mysql"
 	"github.com/TheTipo01/YADMB/database/sqlite"
+	"github.com/TheTipo01/YADMB/embed"
+	"github.com/TheTipo01/YADMB/manager"
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
@@ -20,21 +23,17 @@ import (
 
 var (
 	// Holds all the info about a server
-	server = make(map[string]*Server)
+	server = make(map[string]*manager.Server)
 	// String for storing the owner of the bot
 	owner string
-	// spotify client
-	spt *spotify.Spotify
 	// Discord bot token
 	token string
-	// database connection
-	db *database.Database
 	// Cache for the blacklist
 	blacklist map[string]bool
-	// Discord bot session
-	s *discordgo.Session
-	// YouTube client
-	yt *youtube.YouTube
+	// Clients
+	clients manager.Clients
+	// API
+	webApi api.Api
 )
 
 func init() {
@@ -64,7 +63,7 @@ func init() {
 	}
 
 	if cfg.ClientID != "" && cfg.ClientSecret != "" {
-		spt, err = spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
+		clients.Spotify, err = spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
 		if err != nil {
 			lit.Error("spotify: couldn't get token: %s", err)
 		}
@@ -73,46 +72,46 @@ func init() {
 	// Initialize the database
 	switch cfg.Driver {
 	case "sqlite", "sqlite3":
-		db = sqlite.NewDatabase(cfg.DSN)
+		clients.Database = sqlite.NewDatabase(cfg.DSN)
 	case "mysql":
-		db = mysql.NewDatabase(cfg.DSN)
+		clients.Database = mysql.NewDatabase(cfg.DSN)
 	}
 
 	// And load custom commands from the db
-	commands, _ := db.GetCustomCommands()
+	commands, _ := clients.Database.GetCustomCommands()
 	for k := range commands {
 		if server[k] == nil {
-			initializeServer(k)
+			InitializeServer(k)
 		}
 
-		server[k].custom = commands[k]
+		server[k].Custom = commands[k]
 	}
 
 	// Load the blacklist
-	blacklist, err = db.GetBlacklist()
+	blacklist, err = clients.Database.GetBlacklist()
 	if err != nil {
 		lit.Error("Error loading blacklist: %s", err)
 	}
 
 	// Load the DJ settings
-	dj, err := db.GetDJ()
+	dj, err := clients.Database.GetDJ()
 	if err != nil {
 		lit.Error("Error loading DJ settings: %s", err)
 	}
 
 	for k := range dj {
 		if server[k] == nil {
-			initializeServer(k)
+			InitializeServer(k)
 		}
 
-		server[k].djMode = dj[k].Enabled
-		server[k].djRole = dj[k].Role
+		server[k].DjMode = dj[k].Enabled
+		server[k].DjRole = dj[k].Role
 	}
 
 	// Create folders used by the bot
-	if _, err = os.Stat(cachePath); err != nil {
-		if err = os.Mkdir(cachePath, 0755); err != nil {
-			lit.Error("Cannot create %s, %s", cachePath, err)
+	if _, err = os.Stat(constants.CachePath); err != nil {
+		if err = os.Mkdir(constants.CachePath, 0755); err != nil {
+			lit.Error("Cannot create %s, %s", constants.CachePath, err)
 		}
 	}
 
@@ -120,20 +119,20 @@ func init() {
 	_ = os.Remove("--Frag1")
 
 	// Checks useful for knowing if every dependency
-	if isCommandNotAvailable("dca") {
+	if manager.IsCommandNotAvailable("dca") {
 		lit.Error("Error: can't find dca!")
 	}
 
-	if isCommandNotAvailable("ffmpeg") {
+	if manager.IsCommandNotAvailable("ffmpeg") {
 		lit.Error("Error: can't find ffmpeg!")
 	}
 
-	if isCommandNotAvailable("yt-dlp") {
+	if manager.IsCommandNotAvailable("yt-dlp") {
 		lit.Error("Error: can't find yt-dlp!")
 	}
 
 	if cfg.YouTubeAPI != "" {
-		yt, err = youtube.NewYoutube(cfg.YouTubeAPI)
+		clients.Youtube, err = youtube.NewYoutube(cfg.YouTubeAPI)
 		if err != nil {
 			lit.Error("youtube: couldn't get client: %s", err)
 		}
@@ -166,7 +165,7 @@ func main() {
 		// Ignores commands from DM
 		if i.User == nil {
 			if _, ok := blacklist[i.Member.User.ID]; ok {
-				sendAndDeleteEmbedInteraction(s, NewEmbed().SetTitle(s.State.User.Username).AddField(errorTitle,
+				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					"User is in blacklist!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
 			} else {
@@ -188,13 +187,16 @@ func main() {
 	}
 
 	// Save the session
-	s = dg
+	clients.Discord = dg
 
 	// Register commands
-	_, err = s.ApplicationCommandBulkOverwrite(s.State.User.ID, "", commands)
+	_, err = dg.ApplicationCommandBulkOverwrite(dg.State.User.ID, "", commands)
 	if err != nil {
 		lit.Error("Can't register commands, %s", err)
 	}
+
+	// Start the API
+	webApi = api.NewApi(server, ":8080")
 
 	// Wait here until CTRL-C or another term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
@@ -205,7 +207,7 @@ func main() {
 	// Cleanly close down the Discord session.
 	_ = dg.Close()
 	// And the DB connection
-	db.Close()
+	clients.Database.Close()
 }
 
 func ready(s *discordgo.Session, _ *discordgo.Ready) {
@@ -218,18 +220,18 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 // Initialize Server structure
 func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
-	initializeServer(e.ID)
+	InitializeServer(e.ID)
 
 	// Populate the voiceChannelMembers map
 	for _, c := range e.Channels {
 		if c.Type == discordgo.ChannelTypeGuildVoice {
-			server[e.ID].voiceChannelMembers[c.ID] = &atomic.Int32{}
+			server[e.ID].VoiceChannelMembers[c.ID] = &atomic.Int32{}
 		}
 	}
 
 	// And count the members in each voice channel
 	for _, v := range e.VoiceStates {
-		server[e.ID].voiceChannelMembers[v.ChannelID].Add(1)
+		server[e.ID].VoiceChannelMembers[v.ChannelID].Add(1)
 	}
 
 	ready(s, nil)
@@ -237,7 +239,7 @@ func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 
 func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
 	if server[e.ID].IsPlaying() {
-		clearAndExit(e.ID)
+		manager.ClearAndExit(server[e.ID])
 	}
 
 	// Update the status
@@ -252,41 +254,41 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 			// If the bot has been disconnected from the voice channel, reconnect it
 			var err error
 
-			server[v.GuildID].vc, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].voiceChannel, false, true)
+			server[v.GuildID].VC, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].VoiceChannel, false, true)
 			if err != nil {
 				lit.Error("Can't join voice channel, %s", err)
 			}
 		} else {
 			// Update the voice channel
-			server[v.GuildID].voiceChannel = v.ChannelID
+			server[v.GuildID].VoiceChannel = v.ChannelID
 		}
 	}
 
 	// Update the voice channel members
 	if v.ChannelID != "" {
 		if v.BeforeUpdate != nil {
-			server[v.GuildID].voiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
+			server[v.GuildID].VoiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
 		}
-		server[v.GuildID].voiceChannelMembers[v.ChannelID].Add(1)
+		server[v.GuildID].VoiceChannelMembers[v.ChannelID].Add(1)
 	} else {
-		server[v.GuildID].voiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
+		server[v.GuildID].VoiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
 	}
 
 	// If the bot is alone in the voice channel, stop the music
-	if server[v.GuildID].voiceChannel != "" && server[v.GuildID].voiceChannelMembers[server[v.GuildID].voiceChannel].Load() == 1 {
-		go quitIfEmptyVoiceChannel(v.GuildID)
+	if server[v.GuildID].VoiceChannel != "" && server[v.GuildID].VoiceChannelMembers[server[v.GuildID].VoiceChannel].Load() == 1 {
+		go manager.QuitIfEmptyVoiceChannel(server[v.GuildID])
 	}
 }
 
 func channelCreate(_ *discordgo.Session, c *discordgo.ChannelCreate) {
-	if c.Type == discordgo.ChannelTypeGuildVoice && server[c.GuildID].voiceChannelMembers[c.ID] == nil {
-		server[c.GuildID].voiceChannelMembers[c.ID] = &atomic.Int32{}
+	if c.Type == discordgo.ChannelTypeGuildVoice && server[c.GuildID].VoiceChannelMembers[c.ID] == nil {
+		server[c.GuildID].VoiceChannelMembers[c.ID] = &atomic.Int32{}
 	}
 }
 
 func guildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
 	if m.User.ID == s.State.User.ID && m.CommunicationDisabledUntil != nil && server[m.GuildID].IsPlaying() {
-		clearAndExit(m.GuildID)
+		manager.ClearAndExit(server[m.GuildID])
 	}
 }

@@ -7,43 +7,45 @@ import (
 
 type Element struct {
 	// ID of the song
-	ID string
+	ID string `json:"id"`
 	// Title of the song
-	Title string
+	Title string `json:"title"`
 	// Duration of the song
-	Duration string
+	Duration string `json:"duration"`
 	// Link of the song
-	Link string
+	Link string `json:"link"`
 	// User who requested the song
-	User string
+	User string `json:"user"`
 	// Link to the thumbnail of the video
-	Thumbnail string
+	Thumbnail string `json:"thumbnail"`
 	// Segments of the song to skip. Uses SponsorBlock API
-	Segments map[int]bool
+	Segments map[int]bool `json:"segments"`
 	// Reader to the song
-	Reader io.Reader
+	Reader io.Reader `json:"-"`
 	// Closer to the song
-	Closer io.Closer
+	Closer io.Closer `json:"-"`
 	// Whether we are still downloading the song
-	Downloading bool
+	Downloading bool `json:"-"`
 	// Interaction to edit
-	TextChannel string
+	TextChannel string `json:"-"`
 	// Function to call before playing the song
-	BeforePlay func()
+	BeforePlay func() `json:"-"`
 	// Function to call after playing the song
-	AfterPlay func()
+	AfterPlay func() `json:"-"`
 	// Whether to loop the song
-	Loop bool
+	Loop bool `json:"loop"`
+	// How many frames have been played
+	Frames int `json:"frames"`
 }
 
 type Queue struct {
-	queue []Element
+	Queue []Element
 	rw    *sync.RWMutex
 }
 
 // NewQueue returns a new queue
 func NewQueue() Queue {
-	return Queue{queue: make([]Element, 0), rw: &sync.RWMutex{}}
+	return Queue{Queue: make([]Element, 0), rw: &sync.RWMutex{}}
 }
 
 // IsEmpty returns whether the queue is empty
@@ -51,7 +53,7 @@ func (q *Queue) IsEmpty() bool {
 	q.rw.RLock()
 	defer q.rw.RUnlock()
 
-	return len(q.queue) < 1
+	return len(q.Queue) < 1
 }
 
 // GetFirstElement returns a copy of the first element in the queue if it exists
@@ -59,11 +61,11 @@ func (q *Queue) GetFirstElement() *Element {
 	q.rw.RLock()
 	defer q.rw.RUnlock()
 
-	if len(q.queue) < 1 {
+	if len(q.Queue) < 1 {
 		return nil
 	}
 
-	top := q.queue[0]
+	top := q.Queue[0]
 	return &top
 }
 
@@ -72,7 +74,7 @@ func (q *Queue) AddElements(el ...Element) {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 
-	q.queue = append(q.queue, el...)
+	q.Queue = append(q.Queue, el...)
 }
 
 // AddElementsPriority adds elements to the queue from the second position
@@ -82,10 +84,10 @@ func (q *Queue) AddElementsPriority(el ...Element) {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 
-	if len(q.queue) < 1 {
-		q.queue = append(q.queue, el...)
+	if len(q.Queue) < 1 {
+		q.Queue = append(q.Queue, el...)
 	} else {
-		q.queue = append(q.queue[:1], append(el, q.queue[1:]...)...)
+		q.Queue = append(q.Queue[:1], append(el, q.Queue[1:]...)...)
 	}
 }
 
@@ -94,8 +96,8 @@ func (q *Queue) RemoveFirstElement() {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 
-	if len(q.queue) > 0 {
-		q.queue = q.queue[1:]
+	if len(q.Queue) > 0 {
+		q.Queue = q.Queue[1:]
 	}
 }
 
@@ -104,9 +106,9 @@ func (q *Queue) GetAllQueue() []Element {
 	q.rw.RLock()
 	defer q.rw.RUnlock()
 
-	queueCopy := make([]Element, len(q.queue))
+	queueCopy := make([]Element, len(q.Queue))
 
-	for i, el := range q.queue {
+	for i, el := range q.Queue {
 		queueCopy[i] = el
 	}
 
@@ -118,7 +120,7 @@ func (q *Queue) Clear() {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 
-	q.queue = make([]Element, 0)
+	q.Queue = make([]Element, 0)
 }
 
 // ModifyFirstElement modifies the first element in the queue if it exists
@@ -126,7 +128,7 @@ func (q *Queue) ModifyFirstElement(f func(*Element)) {
 	q.rw.Lock()
 	defer q.rw.Unlock()
 
-	if len(q.queue) > 0 {
-		f(&q.queue[0])
+	if len(q.Queue) > 0 {
+		f(&q.Queue[0])
 	}
 }
