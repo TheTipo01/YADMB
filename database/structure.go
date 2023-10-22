@@ -1,6 +1,8 @@
 package database
 
-import "github.com/TheTipo01/YADMB/queue"
+import (
+	"github.com/TheTipo01/YADMB/queue"
+)
 
 type Database struct {
 	AddToDb             func(el queue.Element, exist bool)
@@ -17,6 +19,9 @@ type Database struct {
 	GetBlacklist        func() (map[string]bool, error)
 	SetDJSettings       func(guild string, enabled bool) error
 	AddLinkDB           func(id, link string) error
+	GetFavorites        func(userID string) []Favorite
+	AddFavorite         func(userID string, favorite Favorite) error
+	RemoveFavorite      func(userID, name string) error
 }
 
 // CustomCommand holds data about a custom command
@@ -28,4 +33,10 @@ type CustomCommand struct {
 type DJ struct {
 	Enabled bool
 	Role    string
+}
+
+type Favorite struct {
+	Name   string `json:"name"`
+	Link   string `json:"link"`
+	Folder string `json:"folder"`
 }

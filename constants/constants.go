@@ -21,6 +21,7 @@ const (
 	BlacklistTitle    = "Blacklist"
 	ResumeTitle       = "Resume"
 	DjTitle           = "DJ"
+	WebUITitle        = "Web UI"
 )
 
 // Messages for embeds

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/TheTipo01/YADMB/api"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
@@ -262,6 +263,10 @@ var (
 					Required:    true,
 				},
 			},
+		},
+		{
+			Name:        "webui",
+			Description: "Generates a link to the web UI, which allows you to control the bot from a web browser.",
 		},
 	}
 
@@ -725,6 +730,25 @@ var (
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			}
+		},
+		// Generates a link to the web UI
+		"webui": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			if vs := manager.FindUserVoiceState(clients.Discord, i.GuildID, i.Member.User.ID); vs != nil {
+				token := webApi.AddUser(i.Member.User, api.UserInfo{Guild: i.GuildID, TextChannel: i.ChannelID})
+				embed := embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.WebUITitle, token).SetColor(0x7289DA).MessageEmbed
+
+				// Send the response as ephemeral
+				_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Flags:  discordgo.MessageFlagsEphemeral,
+						Embeds: []*discordgo.MessageEmbed{embed},
+					},
+				})
+			} else {
+				embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 			}
 		},
 	}

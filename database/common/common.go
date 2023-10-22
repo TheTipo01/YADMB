@@ -148,6 +148,41 @@ func (c Common) GetBlacklist() (map[string]bool, error) {
 	return ids, nil
 }
 
+func (c Common) GetFavorites(userID string) []database.Favorite {
+	var (
+		name, link, folder string
+		favorites          = make([]database.Favorite, 0)
+	)
+
+	rows, err := c.db.Query("SELECT name, link, folder FROM favorites WHERE userID=?", userID)
+	if err != nil {
+		lit.Error("Error querying database, %s", err)
+		return nil
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&name, &link, &folder)
+		if err != nil {
+			lit.Error("Error scanning rows from query, %s", err)
+			continue
+		}
+
+		favorites = append(favorites, database.Favorite{Name: name, Link: link, Folder: folder})
+	}
+
+	return favorites
+}
+
+func (c Common) AddFavorite(userID string, favorite database.Favorite) error {
+	_, err := c.db.Exec("INSERT INTO favorites (userID, name, link, folder) VALUES (?, ?, ?, ?)", userID, favorite.Name, favorite.Link, favorite.Folder)
+	return err
+}
+
+func (c Common) RemoveFavorite(userID, name string) error {
+	_, err := c.db.Exec("DELETE FROM favorites WHERE userID=? AND name=?", userID, name)
+	return err
+}
+
 func (c Common) Close() {
 	_ = c.db.Close()
 }

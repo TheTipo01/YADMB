@@ -15,6 +15,7 @@ const (
 	tblBlacklist = "CREATE TABLE IF NOT EXISTS `blacklist`(`id` VARCHAR(20) NOT NULL, PRIMARY KEY (`id`));"
 	tblLink      = "create table IF NOT EXISTS link ( songID varchar(200) not null references song, link varchar(500) not null constraint link_pk primary key );"
 	tblDJ        = "CREATE TABLE IF NOT EXISTS `dj` ( `guild` VARCHAR(20) NOT NULL, `role` VARCHAR(20) NULL, `enabled` TINYINT(1) NOT NULL DEFAULT '0', PRIMARY KEY (`guild`) );"
+	tblFavorites = "CREATE TABLE IF NOT EXISTS `favorites`( `userID` VARCHAR(20) NOT NULL, `name` VARCHAR(100) NOT NULL, `link` VARCHAR(200) NOT NULL, `folder` VARCHAR(100) NULL DEFAULT NULL, PRIMARY KEY (`userID`, `name`));"
 )
 
 var db *sql.DB
@@ -31,7 +32,7 @@ func NewDatabase(dsn string) *database.Database {
 	}
 
 	// Create tables if they don't exist
-	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ)
+	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ, tblFavorites)
 
 	c := common.NewCommon(db)
 
@@ -50,6 +51,9 @@ func NewDatabase(dsn string) *database.Database {
 		GetBlacklist:        c.GetBlacklist,
 		SetDJSettings:       setDJSettings,
 		AddLinkDB:           addLinkDB,
+		GetFavorites:        c.GetFavorites,
+		AddFavorite:         c.AddFavorite,
+		RemoveFavorite:      c.RemoveFavorite,
 	}
 }
 

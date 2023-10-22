@@ -10,4 +10,5 @@ type Config struct {
 	Driver       string `fig:"drivername" validate:"required"`
 	LogLevel     string `fig:"loglevel" validate:"required"`
 	YouTubeAPI   string `fig:"youtubeapikey"`
+	Address      string `fig:"address"`
 }

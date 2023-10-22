@@ -19,6 +19,11 @@ func SendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 
 // SendEmbedInteraction sends an embed as response to an interaction
 func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}) {
+	// Silently return if the interaction is not valid
+	if i.ID == "" {
+		return
+	}
+
 	sliceEmbed := []*discordgo.MessageEmbed{embed}
 	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
 	if err != nil {

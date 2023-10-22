@@ -11,6 +11,7 @@ import (
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/gin-gonic/gin"
 	"github.com/kkyr/fig"
 	"os"
 	"os/signal"
@@ -28,6 +29,8 @@ var (
 	owner string
 	// Discord bot token
 	token string
+	// Addresses for the web api
+	address string
 	// Cache for the blacklist
 	blacklist map[string]bool
 	// Clients
@@ -38,6 +41,7 @@ var (
 
 func init() {
 	lit.LogLevel = lit.LogError
+	gin.SetMode(gin.ReleaseMode)
 
 	var cfg Config
 	err := fig.Load(&cfg, fig.File("config.yml"), fig.Dirs(".", "./data"))
@@ -49,6 +53,7 @@ func init() {
 	// Config file found
 	token = cfg.Token
 	owner = cfg.Owner
+	address = cfg.Address
 
 	// Set lit.LogLevel to the given value
 	switch strings.ToLower(cfg.LogLevel) {
@@ -81,7 +86,7 @@ func init() {
 	commands, _ := clients.Database.GetCustomCommands()
 	for k := range commands {
 		if server[k] == nil {
-			InitializeServer(k)
+			initializeServer(k)
 		}
 
 		server[k].Custom = commands[k]
@@ -101,7 +106,7 @@ func init() {
 
 	for k := range dj {
 		if server[k] == nil {
-			InitializeServer(k)
+			initializeServer(k)
 		}
 
 		server[k].DjMode = dj[k].Enabled
@@ -195,8 +200,10 @@ func main() {
 		lit.Error("Can't register commands, %s", err)
 	}
 
-	// Start the API
-	webApi = api.NewApi(server, ":8080")
+	// Start the API, if enabled
+	if address != "" {
+		webApi = api.NewApi(server, address, owner, &clients)
+	}
 
 	// Wait here until CTRL-C or another term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
@@ -220,7 +227,7 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 // Initialize Server structure
 func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
-	InitializeServer(e.ID)
+	initializeServer(e.ID)
 
 	// Populate the voiceChannelMembers map
 	for _, c := range e.Channels {

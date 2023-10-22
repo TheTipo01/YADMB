@@ -41,3 +41,6 @@ drivername: sqlite
 
 # Log level. Possible value are error, warning, informational and debug
 loglevel: informational
+
+# Web server address, to access the web interface
+address: :8080
