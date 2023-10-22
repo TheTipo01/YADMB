@@ -19,7 +19,7 @@ type Element struct {
 	// Link to the thumbnail of the video
 	Thumbnail string `json:"thumbnail"`
 	// Segments of the song to skip. Uses SponsorBlock API
-	Segments map[int]bool `json:"segments"`
+	Segments map[int]bool `json:"segments,omitempty"`
 	// Reader to the song
 	Reader io.Reader `json:"-"`
 	// Closer to the song
@@ -34,8 +34,8 @@ type Element struct {
 	AfterPlay func() `json:"-"`
 	// Whether to loop the song
 	Loop bool `json:"loop"`
-	// How many frames have been played
-	Frames int `json:"frames"`
+	// How many frames have been played. Valid only for the first element in the queue
+	Frames int `json:"frames,omitempty"`
 }
 
 type Queue struct {

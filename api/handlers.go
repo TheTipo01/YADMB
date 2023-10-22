@@ -16,7 +16,12 @@ func (a *Api) getQueue(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, a.servers[guild].Queue.GetAllQueue())
+	queue := a.servers[guild].Queue.GetAllQueue()
+	if len(queue) > 0 {
+		queue[0].Frames = a.servers[guild].Frames
+	}
+
+	c.JSON(http.StatusOK, queue)
 }
 
 func (a *Api) addToQueue(c *gin.Context) {

@@ -10,7 +10,7 @@ import (
 )
 
 // Plays a song in DCA format
-func playSound(el *queue.Element, server *Server) (SkipReason, error) {
+func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	var (
 		opuslen    int16
 		skip       bool
@@ -64,7 +64,7 @@ func playSound(el *queue.Element, server *Server) (SkipReason, error) {
 			err = binary.Read(el.Reader, binary.LittleEndian, &InBuf)
 
 			// Keep count of the frames in the song
-			el.Frames++
+			server.Frames++
 
 			if skip {
 				continue

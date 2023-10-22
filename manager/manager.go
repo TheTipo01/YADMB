@@ -61,7 +61,7 @@ func (server *Server) play() {
 			el.BeforePlay()
 		}
 
-		skipReason, _ := playSound(el, server)
+		skipReason, _ := server.playSound(el)
 
 		// If we are still downloading the song, we need to finish writing it to disk
 		if el.Downloading && skipReason > Finished {
