@@ -55,7 +55,7 @@ type Server struct {
 	// Whether the DJ mode is enabled
 	DjMode bool
 	// Clients used for interacting with the various APIs
-	Clients Clients
+	Clients *Clients
 }
 
 // YtDLP structure for holding yt-dlp data

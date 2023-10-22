@@ -6,6 +6,6 @@ import (
 
 func initializeServer(guild string) {
 	if _, ok := server[guild]; !ok {
-		server[guild] = manager.NewServer(guild, clients)
+		server[guild] = manager.NewServer(guild, &clients)
 	}
 }

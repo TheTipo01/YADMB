@@ -13,7 +13,7 @@ import (
 )
 
 // NewServer creates a new server manager
-func NewServer(guildID string, clients Clients) *Server {
+func NewServer(guildID string, clients *Clients) *Server {
 	return &Server{
 		Queue:               queue.NewQueue(),
 		Custom:              make(map[string]*database.CustomCommand),
