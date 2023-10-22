@@ -1,8 +1,10 @@
 site_name: YADMB
+site_description: Yet Another Discord Music Bot - A music bot written in go
+
 theme:
   name: material
-
-site_description: Yet Another Discord Music Bot - A music bot written in go
+plugins:
+  - render_swagger
 
 # Repository
 repo_name: TheTipo01/YADMB

@@ -8,7 +8,7 @@ Yet Another Discord Music Bot - A music bot written in go
 
 - Supports what [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports, plus spotify playlists (if you configure the
   required tokens!)
-- Uses slash commands (see [Commands](commands) for a list of commands)
+- Uses slash commands (see [Commands](commands.md) for a list of commands)
 - Save your favorite songs and playlists with custom commands
 - Automatically skips sponsors or moments when there's no music, thanks to
   the [SponsorBlock API](https://sponsor.ajay.app/)
