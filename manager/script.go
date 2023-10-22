@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// cmdsStart starts all the exec.Cmd inside the slice
+// CmdsStart starts all the exec.Cmd inside the slice
 func CmdsStart(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Start()
@@ -18,7 +18,7 @@ func CmdsStart(cmds []*exec.Cmd) {
 	}
 }
 
-// cmdsWait waits for all the exec.Cmd inside the slice to finish processing, to free up resources
+// CmdsWait waits for all the exec.Cmd inside the slice to finish processing, to free up resources
 func CmdsWait(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Wait()
@@ -28,7 +28,7 @@ func CmdsWait(cmds []*exec.Cmd) {
 	}
 }
 
-// cmdsKill kills all the exec.Cmd inside the slice
+// CmdsKill kills all the exec.Cmd inside the slice
 func CmdsKill(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Process.Kill()
@@ -39,7 +39,7 @@ func CmdsKill(cmds []*exec.Cmd) {
 }
 
 // download downloads the song and gives back a pipe with DCA audio
-func Download(link string, audioOnly bool) []*exec.Cmd {
+func download(link string, audioOnly bool) []*exec.Cmd {
 	var format string
 
 	// If the flag audioOnly is raised, we use an audio only format to save bandwidth
@@ -68,8 +68,8 @@ func Download(link string, audioOnly bool) []*exec.Cmd {
 }
 
 // gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
-func Gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
-	cmds := Download(link, audioOnly)
+func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
+	cmds := download(link, audioOnly)
 	dcaOut, _ := cmds[2].StdoutPipe()
 
 	// tee saves the output from dca to file and also gives it back to us
@@ -81,7 +81,7 @@ func Gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.C
 	return teeOut, append(cmds, tee)
 }
 
-// stream substitutes the old scripts for streaming directly to discord from a given source
+// Stream substitutes the old scripts for streaming directly to discord from a given source
 func Stream(link string) (io.ReadCloser, []*exec.Cmd) {
 	ffmpeg := exec.Command("ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", link, "-f", "s16le",
 		"-ar", "48000", "-ac", "2", "pipe:1", "-af", "loudnorm=I=-16:LRA=11:TP=-1.5")

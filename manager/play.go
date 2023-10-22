@@ -36,7 +36,7 @@ func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCrea
 			if playlist {
 				link = options[0].Value.(string)
 			} else {
-				link, err = FilterPlaylist(options[0].Value.(string))
+				link, err = filterPlaylist(options[0].Value.(string))
 			}
 
 			if err == nil {

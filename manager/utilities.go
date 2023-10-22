@@ -15,9 +15,9 @@ import (
 	"strings"
 )
 
-// FilterPlaylist checks if the link is from YouTube: if yes, it removes the playlist parameter.
+// filterPlaylist checks if the link is from YouTube: if yes, it removes the playlist parameter.
 // And if it doesn't contain an ID for the video, it returns an error.
-func FilterPlaylist(link string) (string, error) {
+func filterPlaylist(link string) (string, error) {
 	if com, be := strings.Contains(link, "youtube.com"), strings.Contains(link, "youtu.be"); com || be {
 		u, _ := url.Parse(link)
 		q := u.Query()
@@ -37,13 +37,13 @@ func FilterPlaylist(link string) (string, error) {
 	return link, nil
 }
 
-// Checks if a string is a valid URL
+// IsValidURL Checks if a string is a valid URL
 func IsValidURL(toTest string) bool {
 	_, err := url.ParseRequestURI(toTest)
 	return err == nil
 }
 
-// Formats a string given its duration in seconds
+// FormatDuration Formats a string given its duration in seconds
 func FormatDuration(duration float64) string {
 	duration2 := int(duration)
 	hours := duration2 / 3600
@@ -64,7 +64,7 @@ func FormatDuration(duration float64) string {
 }
 
 // Split lyrics into smaller messages
-func FormatLongMessage(text []string) []string {
+func formatLongMessage(text []string) []string {
 	var counter int
 	var output []string
 	var buffer string
@@ -90,7 +90,7 @@ func FormatLongMessage(text []string) []string {
 }
 
 // Shuffles a slice of strings
-func Shuffle(a []string) []string {
+func shuffle(a []string) []string {
 	final := make([]string, len(a))
 
 	for i, v := range rand.Perm(len(a)) {
@@ -140,14 +140,14 @@ func DeleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c <-chan 
 }
 
 // idGen returns the first 11 characters of the SHA1 hash for the given link
-func IdGen(link string) string {
+func idGen(link string) string {
 	h := sha1.New()
 	h.Write([]byte(link))
 
 	return strings.ToLower(base32.HexEncoding.EncodeToString(h.Sum(nil))[0:11])
 }
 
-func CheckAudioOnly(formats RequestedFormats) bool {
+func checkAudioOnly(formats RequestedFormats) bool {
 	for _, f := range formats {
 		if f.Resolution == "audio only" {
 			return true
@@ -157,7 +157,7 @@ func CheckAudioOnly(formats RequestedFormats) bool {
 	return false
 }
 
-// isCommandNotAvailable checks whatever a command is available
+// IsCommandNotAvailable isCommandNotAvailable checks whatever a command is available
 func IsCommandNotAvailable(name string) bool {
 	_, err := exec.LookPath(name)
 	return err != nil
@@ -173,7 +173,7 @@ func HasRole(roles []string, role string) bool {
 }
 
 // cleanURL removes tracking and other unnecessary parameters from a URL
-func CleanURL(link string) string {
+func cleanURL(link string) string {
 	u, _ := url.Parse(link)
 	q := u.Query()
 

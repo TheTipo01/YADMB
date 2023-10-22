@@ -19,17 +19,17 @@ import (
 	"time"
 )
 
-const YoutubeBase = "https://www.youtube.com/watch?v="
+const youtubeBase = "https://www.youtube.com/watch?v="
 
-// DownloadAndPlay downloads and plays a song from a YouTube link
-func (server *Server) DownloadAndPlay(clients *Clients, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
+// downloadAndPlay downloads and plays a song from a YouTube link
+func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
 	var c chan struct{}
 	if respond {
 		c = make(chan struct{})
 		go embed.SendEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c)
 	}
 
-	link = CleanURL(link)
+	link = cleanURL(link)
 
 	// Check if the song is the db, to speedup things
 	el, err := clients.Database.CheckInDb(link)
@@ -53,14 +53,14 @@ func (server *Server) DownloadAndPlay(clients *Clients, link, user string, i *di
 
 	// If we have a valid YouTube client, and the link is a YouTube link, use the YouTube api
 	if clients.Youtube != nil && (strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be")) {
-		err = server.DownloadAndPlayYouTubeAPI(clients, link, user, i, random, loop, respond, priority, c)
+		err = server.downloadAndPlayYouTubeAPI(clients, link, user, i, random, loop, respond, priority, c)
 		// If we have an error, we fall back to yt-dlp
 		if err == nil {
 			return
 		}
 	}
 
-	infoJSON, err := GetInfo(link)
+	infoJSON, err := getInfo(link)
 	if err != nil {
 		if respond {
 			embed.ModifyInteractionAndDelete(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
@@ -76,7 +76,7 @@ func (server *Server) DownloadAndPlay(clients *Clients, link, user string, i *di
 
 	// If we want to play the song in a random order, we just shuffle the slice
 	if random {
-		infoJSON = Shuffle(infoJSON)
+		infoJSON = shuffle(infoJSON)
 	}
 
 	if respond {
@@ -113,7 +113,7 @@ func (server *Server) DownloadAndPlay(clients *Clients, link, user string, i *di
 			el.Link = "https://youtu.be/" + ytDLP.ID
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
-			el.ID = IdGen(el.Link) + "-" + ytDLP.Extractor
+			el.ID = idGen(el.Link) + "-" + ytDLP.Extractor
 		default:
 			el.ID = ytDLP.ID + "-" + ytDLP.Extractor
 		}
@@ -131,7 +131,7 @@ func (server *Server) DownloadAndPlay(clients *Clients, link, user string, i *di
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			pipe, cmd := Gen(ytDLP.WebpageURL, el.ID, CheckAudioOnly(ytDLP.RequestedFormats))
+			pipe, cmd := gen(ytDLP.WebpageURL, el.ID, checkAudioOnly(ytDLP.RequestedFormats))
 			el.Reader = pipe
 			el.Downloading = true
 
@@ -155,7 +155,7 @@ func (server *Server) DownloadAndPlay(clients *Clients, link, user string, i *di
 }
 
 // DownloadAndPlayYouTubeAPI downloads and plays a song from a YouTube link, parsing the link with the YouTube API
-func (server *Server) DownloadAndPlayYouTubeAPI(clients *Clients, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool, c chan struct{}) error {
+func (server *Server) downloadAndPlayYouTubeAPI(clients *Clients, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool, c chan struct{}) error {
 	var (
 		result []youtube.Video
 		el     queue.Element
@@ -192,7 +192,7 @@ func (server *Server) DownloadAndPlayYouTubeAPI(clients *Clients, link, user str
 		el = queue.Element{
 			Title:       r.Title,
 			Duration:    FormatDuration(r.Duration),
-			Link:        YoutubeBase + r.ID,
+			Link:        youtubeBase + r.ID,
 			User:        user,
 			Thumbnail:   r.Thumbnail,
 			TextChannel: i.ChannelID,
@@ -225,7 +225,7 @@ func (server *Server) DownloadAndPlayYouTubeAPI(clients *Clients, link, user str
 
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
-			pipe, cmd := Gen(el.Link, el.ID, true)
+			pipe, cmd := gen(el.Link, el.ID, true)
 			el.Reader = pipe
 			el.Downloading = true
 
@@ -256,11 +256,11 @@ func (server *Server) DownloadAndPlayYouTubeAPI(clients *Clients, link, user str
 }
 
 // Searches a song from the query on YouTube
-func SearchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
+func searchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 	if yt != nil {
 		result := yt.Search(query, 1)
 		if len(result) > 0 {
-			return YoutubeBase + result[0].ID, nil
+			return youtubeBase + result[0].ID, nil
 		}
 	} else {
 		out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
@@ -268,7 +268,7 @@ func SearchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 			ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
 			if ids[0] != "" {
-				return YoutubeBase + ids[0], nil
+				return youtubeBase + ids[0], nil
 			}
 		}
 	}
@@ -277,7 +277,7 @@ func SearchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 }
 
 // Enqueues song from a spotify playlist, searching them on YouTube
-func (server *Server) SpotifyPlaylist(clients *Clients, user string, i *discordgo.Interaction, random, loop, priority bool, id spotAPI.ID) {
+func (server *Server) spotifyPlaylist(clients *Clients, user string, i *discordgo.Interaction, random, loop, priority bool, id spotAPI.ID) {
 	if clients.Spotify != nil {
 		if playlist, err := clients.Spotify.GetPlaylist(id); err == nil {
 			server.WG.Add(1)
@@ -292,8 +292,8 @@ func (server *Server) SpotifyPlaylist(clients *Clients, user string, i *discordg
 
 			for j := 0; j < len(playlist.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := playlist.Tracks.Tracks[j]
-				link, _ := SearchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, clients.Youtube)
-				server.DownloadAndPlay(clients, link, user, i, false, loop, false, priority)
+				link, _ := searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, clients.Youtube)
+				server.downloadAndPlay(clients, link, user, i, false, loop, false, priority)
 			}
 
 			server.WG.Done()
@@ -306,7 +306,7 @@ func (server *Server) SpotifyPlaylist(clients *Clients, user string, i *discordg
 	}
 }
 
-func (server *Server) SpotifyAlbum(clients *Clients, user string, i *discordgo.Interaction, random, loop, priority bool, id spotAPI.ID) {
+func (server *Server) spotifyAlbum(clients *Clients, user string, i *discordgo.Interaction, random, loop, priority bool, id spotAPI.ID) {
 	if clients.Spotify != nil {
 		if album, err := clients.Spotify.GetAlbum(id); err == nil {
 			server.WG.Add(1)
@@ -321,8 +321,8 @@ func (server *Server) SpotifyAlbum(clients *Clients, user string, i *discordgo.I
 
 			for j := 0; j < len(album.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := album.Tracks.Tracks[j]
-				link, _ := SearchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, clients.Youtube)
-				server.DownloadAndPlay(clients, link, user, i, false, loop, false, priority)
+				link, _ := searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, clients.Youtube)
+				server.downloadAndPlay(clients, link, user, i, false, loop, false, priority)
 			}
 
 			server.WG.Done()
@@ -336,11 +336,11 @@ func (server *Server) SpotifyAlbum(clients *Clients, user string, i *discordgo.I
 }
 
 // Gets info about a spotify track and plays it, searching it on YouTube
-func (server *Server) SpotifyTrack(clients *Clients, user string, i *discordgo.Interaction, loop, priority bool, id spotAPI.ID) {
+func (server *Server) spotifyTrack(clients *Clients, user string, i *discordgo.Interaction, loop, priority bool, id spotAPI.ID) {
 	if clients.Spotify != nil {
 		if track, err := clients.Spotify.GetTrack(id); err == nil {
-			link, _ := SearchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, clients.Youtube)
-			server.DownloadAndPlay(clients, link, user, i, false, loop, true, priority)
+			link, _ := searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, clients.Youtube)
+			server.downloadAndPlay(clients, link, user, i, false, loop, true, priority)
 		} else {
 			lit.Error("Can't get info on a spotify track: %s", err)
 			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
@@ -351,7 +351,7 @@ func (server *Server) SpotifyTrack(clients *Clients, user string, i *discordgo.I
 }
 
 // getInfo returns info about a song, with every line of the returned array as JSON of type YtDLP
-func GetInfo(link string) ([]string, error) {
+func getInfo(link string) ([]string, error) {
 	// Gets info about songs
 	out, err := exec.Command("yt-dlp", "--ignore-errors", "-q", "--no-warnings", "-j", link).CombinedOutput()
 
