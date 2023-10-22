@@ -184,6 +184,11 @@ func main() {
 	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
 
+	// Start the API, if enabled
+	if address != "" {
+		webApi = api.NewApi(server, address, owner, &clients)
+	}
+
 	// Open the websocket and begin listening.
 	err = dg.Open()
 	if err != nil {
@@ -198,11 +203,6 @@ func main() {
 	_, err = dg.ApplicationCommandBulkOverwrite(dg.State.User.ID, "", commands)
 	if err != nil {
 		lit.Error("Can't register commands, %s", err)
-	}
-
-	// Start the API, if enabled
-	if address != "" {
-		webApi = api.NewApi(server, address, owner, &clients)
 	}
 
 	// Wait here until CTRL-C or another term signal is received.
