@@ -27,7 +27,14 @@ func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, se
 func QuitVC(server *Server) {
 	time.Sleep(1 * time.Minute)
 
-	if server.Queue.IsEmpty() && server.VC != nil {
+	if server.Queue.IsEmpty() {
+		server.disconnect()
+	}
+}
+
+// Disconnect disconnects the bot from the voice channel
+func (server *Server) disconnect() {
+	if server.VC != nil && !server.Started.Load() {
 		_ = server.VC.Disconnect()
 		server.VC = nil
 		server.VoiceChannel = ""
@@ -59,10 +66,5 @@ func QuitIfEmptyVoiceChannel(server *Server) {
 
 func ClearAndExit(server *Server) {
 	server.Clean()
-
-	if server.VC != nil {
-		_ = server.VC.Disconnect()
-		server.VC = nil
-		server.VoiceChannel = ""
-	}
+	server.disconnect()
 }
