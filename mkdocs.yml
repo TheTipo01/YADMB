@@ -28,6 +28,7 @@ theme:
 plugins:
   - render_swagger
   - search
+  - offline
 
 # Repository
 repo_name: TheTipo01/YADMB
