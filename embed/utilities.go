@@ -38,6 +38,11 @@ func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 
 // SendAndDeleteEmbedInteraction sends and deletes after three second an embed in a given channel
 func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
+	// Silently return if the interaction is not valid
+	if i.ID == "" {
+		return
+	}
+
 	SendEmbedInteraction(s, embed, i, nil)
 
 	time.Sleep(wait)
