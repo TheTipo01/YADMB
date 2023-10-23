@@ -283,13 +283,18 @@ var (
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if user is not in a voice channel
-			if manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil && server[i.GuildID].IsPlaying() {
-				el := server[i.GuildID].Queue.GetFirstElement()
-				server[i.GuildID].Skip <- manager.Skip
-				server[i.GuildID].Paused.Store(false)
-				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle,
-					el.Title+" - "+el.Duration+" added by "+el.User).
-					SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+			if manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
+				if server[i.GuildID].IsPlaying() {
+					el := server[i.GuildID].Queue.GetFirstElement()
+					server[i.GuildID].Skip <- manager.Skip
+					server[i.GuildID].Paused.Store(false)
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle,
+						el.Title+" - "+el.Duration+" added by "+el.User).
+						SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+				} else {
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle, constants.QueueEmpty).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
@@ -348,12 +353,17 @@ var (
 		},
 		"pause": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
-				if server[i.GuildID].Paused.CompareAndSwap(false, true) {
-					server[i.GuildID].Pause <- struct{}{}
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.Paused).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				if server[i.GuildID].IsPlaying() {
+					if server[i.GuildID].Paused.CompareAndSwap(false, true) {
+						server[i.GuildID].Pause <- struct{}{}
+						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.Paused).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					} else {
+						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.AlreadyPaused).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.AlreadyPaused).
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.QueueEmpty).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				}
 			} else {
@@ -363,12 +373,17 @@ var (
 		},
 		"resume": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
-				if server[i.GuildID].Paused.CompareAndSwap(true, false) {
-					server[i.GuildID].Resume <- struct{}{}
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.Resumed).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				if server[i.GuildID].IsPlaying() {
+					if server[i.GuildID].Paused.CompareAndSwap(true, false) {
+						server[i.GuildID].Resume <- struct{}{}
+						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.Resumed).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					} else {
+						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.AlreadyResumed).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.AlreadyResumed).
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.QueueEmpty).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				}
 			} else {
