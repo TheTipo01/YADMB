@@ -38,7 +38,7 @@ func (a *Api) AddUser(user *discordgo.User, userInfo UserInfo) string {
 	// Generate a new token until it is unique
 	var token string
 	for {
-		token = uniuri.New()
+		token = uniuri.NewLen(32)
 		if _, ok := a.tokensToUsers[token]; !ok {
 			break
 		}
