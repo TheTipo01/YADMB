@@ -41,56 +41,122 @@ func (a *Api) addToQueue(c *gin.Context) {
 
 	i := a.interactionGenerator(u, song, playlist, shuffle, loop, priority, guild)
 
-	a.servers[guild].PlayCommand(a.clients, i, playlist, a.owner)
-
-	c.Status(http.StatusOK)
+	switch a.servers[guild].PlayCommand(a.clients, i, playlist, a.owner) {
+	case manager.Success:
+		c.Status(http.StatusOK)
+	case manager.NotInVC:
+		c.Status(http.StatusForbidden)
+	case manager.DjMode:
+		c.Status(http.StatusForbidden)
+	case manager.Playlist:
+		c.Status(http.StatusNotAcceptable)
+	}
 }
 
 func (a *Api) skip(c *gin.Context) {
-	token := c.Query("token")
+	token := c.PostForm("token")
 	guild := c.Param("guild")
-	_, authorized := a.checkAuthorizationAndGuild(token, guild)
+	u, authorized := a.checkAuthorizationAndGuild(token, guild)
 	if !authorized {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	a.servers[guild].Skip <- manager.Skip
-	a.servers[guild].Paused.Store(false)
-	c.Status(http.StatusOK)
+	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+		if !a.servers[guild].IsPlaying() {
+			c.Status(http.StatusNotAcceptable)
+		} else {
+			if stringToBool(c.PostForm("clean")) {
+				go a.servers[guild].Clean()
+				c.Status(http.StatusOK)
+			} else {
+				a.servers[guild].Skip <- manager.Skip
+				a.servers[guild].Paused.Store(false)
+				c.Status(http.StatusOK)
+			}
+		}
+	} else {
+		c.Status(http.StatusForbidden)
+	}
 }
 
 func (a *Api) pause(c *gin.Context) {
 	token := c.Query("token")
 	guild := c.Param("guild")
-	_, authorized := a.checkAuthorizationAndGuild(token, guild)
+	u, authorized := a.checkAuthorizationAndGuild(token, guild)
 	if !authorized {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	if a.servers[guild].Paused.CompareAndSwap(false, true) {
-		a.servers[guild].Pause <- struct{}{}
-		c.Status(http.StatusOK)
+	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+		if !a.servers[guild].IsPlaying() {
+			c.Status(http.StatusNotAcceptable)
+		} else {
+			if a.servers[guild].Paused.CompareAndSwap(false, true) {
+				a.servers[guild].Pause <- struct{}{}
+				c.Status(http.StatusOK)
+			} else {
+				c.Status(http.StatusNotAcceptable)
+			}
+		}
 	} else {
-		c.Status(http.StatusNotAcceptable)
+		c.Status(http.StatusForbidden)
 	}
 }
 
 func (a *Api) resume(c *gin.Context) {
 	token := c.Query("token")
 	guild := c.Param("guild")
-	_, authorized := a.checkAuthorizationAndGuild(token, guild)
+	u, authorized := a.checkAuthorizationAndGuild(token, guild)
 	if !authorized {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	if a.servers[guild].Paused.CompareAndSwap(true, false) {
-		a.servers[guild].Resume <- struct{}{}
-		c.Status(http.StatusOK)
+	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+		if !a.servers[guild].IsPlaying() {
+			c.Status(http.StatusNotAcceptable)
+		} else {
+			if a.servers[guild].Paused.CompareAndSwap(true, false) {
+				a.servers[guild].Resume <- struct{}{}
+				c.Status(http.StatusOK)
+			} else {
+				c.Status(http.StatusNotAcceptable)
+			}
+		}
 	} else {
-		c.Status(http.StatusNotAcceptable)
+		c.Status(http.StatusForbidden)
+	}
+}
+
+func (a *Api) toggle(c *gin.Context) {
+	token := c.Query("token")
+	guild := c.Param("guild")
+	u, authorized := a.checkAuthorizationAndGuild(token, guild)
+	if !authorized {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+		if !a.servers[guild].IsPlaying() {
+			c.Status(http.StatusNotAcceptable)
+		} else {
+			if a.servers[guild].Paused.CompareAndSwap(false, true) {
+				a.servers[guild].Pause <- struct{}{}
+				c.Status(http.StatusOK)
+			} else {
+				if a.servers[guild].Paused.CompareAndSwap(true, false) {
+					a.servers[guild].Resume <- struct{}{}
+					c.Status(http.StatusOK)
+				} else {
+					c.Status(http.StatusInternalServerError)
+				}
+			}
+		}
+	} else {
+		c.Status(http.StatusForbidden)
 	}
 }
 
@@ -139,27 +205,5 @@ func (a *Api) addFavorite(c *gin.Context) {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	} else {
 		c.Status(http.StatusOK)
-	}
-}
-
-func (a *Api) toggle(c *gin.Context) {
-	token := c.Query("token")
-	guild := c.Param("guild")
-	_, authorized := a.checkAuthorizationAndGuild(token, guild)
-	if !authorized {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	if a.servers[guild].Paused.CompareAndSwap(false, true) {
-		a.servers[guild].Pause <- struct{}{}
-		c.Status(http.StatusOK)
-	} else {
-		if a.servers[guild].Paused.CompareAndSwap(true, false) {
-			a.servers[guild].Resume <- struct{}{}
-			c.Status(http.StatusOK)
-		} else {
-			c.Status(http.StatusInternalServerError)
-		}
 	}
 }

@@ -257,7 +257,7 @@
             "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
+              "type": "boolean",
               "default": "false"
             },
             "description": "Is the song a playlist?"
@@ -267,7 +267,7 @@
             "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
+              "type": "boolean",
               "default": "false"
             },
             "description": "Should we shuffle the given playlist?"
@@ -277,7 +277,7 @@
             "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
+              "type": "boolean",
               "default": "false"
             },
             "description": "Should the song be looped?"
@@ -287,7 +287,7 @@
             "in": "header",
             "required": false,
             "schema": {
-              "type": "string",
+              "type": "boolean",
               "default": "false"
             },
             "description": "Should we add the song as the first in the queue?"
@@ -309,6 +309,12 @@
           },
           "401": {
             "description": "Token not valid or it doesn't have access to the given guild"
+          },
+          "403": {
+            "description": "User not in voice channel of the guild, or dj mode is active and user is not a dj"
+          },
+          "406": {
+            "description": "Playlist supplied, but flag was not raised"
           }
         }
       },
@@ -327,6 +333,16 @@
               "type": "string"
             },
             "description": "The guild id"
+          },
+          {
+            "name": "clean",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": "false"
+            },
+            "description": "Should we clean the entire queue?"
           }
         ],
         "operationId": "skip",
@@ -336,6 +352,12 @@
           },
           "401": {
             "description": "Token not valid or it doesn't have access to the given guild"
+          },
+          "403": {
+            "description": "User not in voice channel of the guild"
+          },
+          "406": {
+            "description": "The bot is not playing anything or the queue is empty"
           }
         }
       }
@@ -376,7 +398,7 @@
             "description": "Token not valid or it doesn't have access to the given guild"
           },
           "406": {
-            "description": "Song is already paused"
+            "description": "Song is already paused or the queue is empty"
           }
         }
       }
@@ -417,7 +439,7 @@
             "description": "Token not valid or it doesn't have access to the given guild"
           },
           "406": {
-            "description": "Song is already playing"
+            "description": "Song is already playing  or the queue is empty"
           }
         }
       }
@@ -456,6 +478,9 @@
           },
           "401": {
             "description": "Token not valid or it doesn't have access to the given guild"
+          },
+          "406": {
+            "description": "The queue is empty"
           },
           "500": {
             "description": "Couldn't toggle song"
