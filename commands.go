@@ -274,11 +274,11 @@ var (
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			server[i.GuildID].PlayCommand(&clients, i, false, owner)
+			_ = server[i.GuildID].PlayCommand(&clients, i, false, owner)
 		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
 		"playlist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			server[i.GuildID].PlayCommand(&clients, i, true, owner)
+			_ = server[i.GuildID].PlayCommand(&clients, i, true, owner)
 		},
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {

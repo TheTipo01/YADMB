@@ -11,10 +11,10 @@ import (
 )
 
 // SkipReason is used to determine why playSound returned
-type SkipReason int
+type SkipReason int8
 
 const (
-	Error = iota
+	Error SkipReason = iota
 	Finished
 	Skip
 	Clear
@@ -81,3 +81,12 @@ type Clients struct {
 	Discord  *discordgo.Session
 	Database *database.Database
 }
+
+type PlayStatus int8
+
+const (
+	Success PlayStatus = iota
+	NotInVC
+	Playlist
+	DjMode
+)

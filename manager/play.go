@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCreate, playlist bool, owner string) {
+func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCreate, playlist bool, owner string) (status PlayStatus) {
 	if server.DjModeCheck(clients.Discord, i, owner) {
-		return
+		return DjMode
 	}
 
 	// Check if user is not in a voice channel
@@ -41,16 +41,21 @@ func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCrea
 
 			if err == nil {
 				server.Play(clients, link, i.Interaction, vs.GuildID, i.Member.User.Username, shuffle, loop, priority)
+				status = Success
 			} else {
 				embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle,
 					"Playlist detected, but playlist command not used.").
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*10)
+				status = Playlist
 			}
 		}
 	} else {
 		embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
 			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+		status = NotInVC
 	}
+
+	return
 }
 
 func (server *Server) DjModeCheck(s *discordgo.Session, i *discordgo.InteractionCreate, owner string) bool {
