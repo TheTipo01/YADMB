@@ -36,7 +36,8 @@ var (
 	// Clients
 	clients manager.Clients
 	// API
-	webApi api.Api
+	webApi          api.Api
+	longLivedTokens []apiToken
 )
 
 func init() {
@@ -54,6 +55,7 @@ func init() {
 	token = cfg.Token
 	owner = cfg.Owner
 	address = cfg.Address
+	longLivedTokens = cfg.ApiTokens
 
 	// Set lit.LogLevel to the given value
 	switch strings.ToLower(cfg.LogLevel) {
@@ -203,6 +205,19 @@ func main() {
 	_, err = dg.ApplicationCommandBulkOverwrite(dg.State.User.ID, "", commands)
 	if err != nil {
 		lit.Error("Can't register commands, %s", err)
+	}
+
+	if address != "" && len(longLivedTokens) > 0 {
+		lit.Info("Loading long lived tokens")
+		for _, t := range longLivedTokens {
+			userInfo := api.UserInfo{
+				LongLivedToken: t.Token,
+				Guild:          t.Guild,
+				TextChannel:    t.TextChannel,
+			}
+			user, _ := dg.User(t.UserID)
+			webApi.AddLongLivedToken(user, userInfo)
+		}
 	}
 
 	// Wait here until CTRL-C or another term signal is received.

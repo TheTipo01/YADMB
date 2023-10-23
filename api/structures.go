@@ -19,7 +19,8 @@ type Api struct {
 }
 
 type UserInfo struct {
-	token       string
-	Guild       string
-	TextChannel string
+	token          string
+	LongLivedToken string
+	Guild          string
+	TextChannel    string
 }

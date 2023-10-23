@@ -32,7 +32,10 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 func (a *Api) AddUser(user *discordgo.User, userInfo UserInfo) string {
 	if u, ok := a.userInfo[user.ID]; ok {
 		delete(a.tokensToUsers, u.token)
-		delete(a.userInfo, user.ID)
+
+		if a.userInfo[user.ID].LongLivedToken == "" {
+			delete(a.userInfo, user.ID)
+		}
 	}
 
 	// Generate a new token until it is unique
@@ -45,9 +48,22 @@ func (a *Api) AddUser(user *discordgo.User, userInfo UserInfo) string {
 	}
 
 	a.tokensToUsers[token] = user
+
+	if a.userInfo[user.ID] != nil {
+		userInfo.LongLivedToken = a.userInfo[user.ID].LongLivedToken
+	}
 	userInfo.token = token
 
 	a.userInfo[user.ID] = &userInfo
 
 	return token
+}
+
+func (a *Api) AddLongLivedToken(user *discordgo.User, userInfo UserInfo) {
+	a.tokensToUsers[userInfo.LongLivedToken] = user
+
+	if a.userInfo[user.ID] != nil {
+		userInfo.token = a.userInfo[user.ID].token
+	}
+	a.userInfo[user.ID] = &userInfo
 }
