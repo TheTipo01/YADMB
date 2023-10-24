@@ -4,12 +4,19 @@ import (
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dchest/uniuri"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients) Api {
 	r := gin.New()
-	r.Use(gin.Recovery())
+
+	conf := cors.DefaultConfig()
+	conf.AllowMethods = []string{"GET", "POST", "DELETE"}
+	// TODO: Set this to false
+	conf.AllowAllOrigins = true
+
+	r.Use(gin.Recovery(), cors.New(conf))
 
 	a := Api{servers: servers, tokensToUsers: make(map[string]*discordgo.User), userInfo: make(map[string]*UserInfo), owner: owner, clients: clients}
 
