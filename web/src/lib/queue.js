@@ -43,3 +43,60 @@ export async function AddToQueue() {
             return -3;
     }
 }
+
+export async function RemoveFromQueue() { // AKA skip
+    let GuildID = document.getElementById("id")?.value;
+    let clear = document.getElementById("clear")?.value;
+
+    // Request
+    let route = `https://gerry.thetipo.rocks/queue/${GuildID}`
+    let response = await fetch(route, {
+        method: "DELETE",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+            'clean': clear
+        }).toString(),
+    })
+
+    // Error Handling
+    switch(response.status) {
+        case 200:
+            return 0;
+        case 401:
+            return -1;
+        case 403:
+            return -2;
+        case 406:
+            return -3;
+    }
+}
+
+export async function GetQueue() {
+    let GuildID = document.getElementById("id").value;
+    let token = document.getElementById("token").value;
+
+    // Request
+    let route = `https://gerry.thetipo.rocks/queue/${GuildID}`
+    let response = await fetch(route, {
+        method: "GET",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: {
+            'token': token,
+        },
+    })
+
+    // Error Handling
+    switch(response.status) {
+        case 200:
+            return response.json();
+        case 401:
+            return -1;
+    }
+
+}
