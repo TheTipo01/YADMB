@@ -74,27 +74,21 @@ export async function RemoveFromQueue() { // AKA skip
     }
 }
 
-export async function GetQueue() {
-    let GuildID = document.getElementById("id").value;
-    let token = document.getElementById("token").value;
-
+export async function GetQueue(GuildID, token) {
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}`
+    let route = `https://gerry.thetipo.rocks/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString()
     let response = await fetch(route, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: {
-            'token': token,
+            'Content-Type': 'application/x-www-form-urlencoded',
         },
     })
 
     // Error Handling
     switch(response.status) {
         case 200:
-            return response.json();
+            return await response.json();
         case 401:
             return -1;
     }

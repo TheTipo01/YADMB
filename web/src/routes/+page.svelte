@@ -1,21 +1,26 @@
 <script>
     import Queue from "./queue.svelte";
-    import Song from "./song.svelte"
     import Favorites from "./favorites.svelte"
-    import {Heading} from "flowbite-svelte"
+    import { Tabs, TabItem} from "flowbite-svelte"
+    import StarSolid from "flowbite-svelte-icons/StarSolid.svelte"
+    import ListMusicSolid from "flowbite-svelte-icons/ListMusicSolid.svelte"
 </script>
-<Heading tag="h1" align="center">Gerry UI</Heading>
-<div class="grid grid-cols-3 gap-4 m-5 items-center justify-item-center">
-    <div>
-        <Heading tag="h4">Queue</Heading>
+<Tabs style="underline">
+    <TabItem open>
+        <div slot="title" class="flex items-center gap-2">
+            <ListMusicSolid />
+            Queue
+        </div>
         <Queue />
-    </div>
-    <div>
-        <Song />
-    </div>
-    <div>
-        <Heading tag="h4">Favorites</Heading>
+    </TabItem>
+    <TabItem>
+        <div slot="title" class="flex items-center gap-2">
+            <StarSolid />
+            Favorites
+        </div>
         <Favorites />
-    </div>
+    </TabItem>
+</Tabs>
+<div >
 </div>
 
