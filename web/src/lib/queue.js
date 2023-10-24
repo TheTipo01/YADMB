@@ -19,9 +19,16 @@ export async function AddToQueue() {
         method: 'POST',
         headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: JSON.stringify({"song": song, "playlist": playlist, "shuffle": shuffle, "loop": loop, "priority": priority, "token": token})
+        body: new URLSearchParams({
+            'token': token,
+            'song': song,
+            'shuffle': shuffle,
+            'playlist': playlist,
+            'loop': loop,
+            'priority': priority
+        }).toString(),
     })
 
     //Error Handling

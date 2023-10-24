@@ -14,7 +14,7 @@
     <Label for="id" class="block mb-2">Guild ID</Label> 
     <Input type="text" id="id" /> 
     <Label for="link" class="mt-2">Song name or link</Label> 
-    <Input type="text" id="link" /> 
+    <Input type="text" id="song" />
     <Label for="token" class="mt-2">User token</Label> 
     <Input type="text" id="token" /> 
     <Label for="playlist" class="mt-2"> Playlist </Label>
