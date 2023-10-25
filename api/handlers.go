@@ -62,7 +62,7 @@ func (a *Api) addToQueue(c *gin.Context) {
 }
 
 func (a *Api) skip(c *gin.Context) {
-	token := c.PostForm("token")
+	token := c.Query("token")
 	guild := c.Param("guild")
 	u, authorized := a.checkAuthorizationAndGuild(token, guild)
 	if !authorized {
@@ -180,14 +180,14 @@ func (a *Api) getFavorites(c *gin.Context) {
 }
 
 func (a *Api) removeFavorite(c *gin.Context) {
-	token := c.PostForm("token")
+	token := c.Query("token")
 	u, authorized := a.checkAuthorization(token)
 	if !authorized {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 
-	name := c.PostForm("name")
+	name := c.Query("name")
 	err := a.clients.Database.RemoveFavorite(u.ID, name)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
