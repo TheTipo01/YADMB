@@ -39,7 +39,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			cleanUp(server, el.Closer)
 			return skipReason, nil
 		default:
-			if el.Segments[server.Frames] {
+			if el.Segments[int(server.Frames.Load())] {
 				skip = !skip
 			}
 
@@ -68,7 +68,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			err = binary.Read(el.Reader, binary.LittleEndian, &InBuf)
 
 			// Keep count of the frames in the song
-			server.Frames++
+			server.Frames.Add(1)
 
 			if skip {
 				continue
@@ -94,7 +94,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 
 func cleanUp(server *Server, closer io.Closer) {
 	_ = server.VC.Speaking(false)
-	server.Frames = 0
+	server.Frames.Store(0)
 
 	if closer != nil {
 		_ = closer.Close()

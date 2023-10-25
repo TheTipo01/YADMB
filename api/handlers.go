@@ -30,7 +30,7 @@ func (a *Api) getQueue(c *gin.Context) {
 
 	queue := a.servers[guild].Queue.GetAllQueue()
 	if len(queue) > 0 {
-		queue[0].Frames = a.servers[guild].Frames
+		queue[0].Frames = int(a.servers[guild].Frames.Load())
 	}
 
 	c.JSON(http.StatusOK, queue)

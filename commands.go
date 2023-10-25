@@ -324,7 +324,7 @@ var (
 			if server[i.GuildID].IsPlaying() {
 				el := server[i.GuildID].Queue.GetAllQueue()
 				e := embed.NewEmbed().SetTitle(s.State.User.Username).SetDescription(constants.QueueTitle).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
-					manager.FormatDuration(float64(server[i.GuildID].Frames)/constants.FrameSeconds), el[0].Duration, el[0].User))
+					manager.FormatDuration(float64(server[i.GuildID].Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User))
 
 				var nEl int
 				if len(el) > maxQueue {
@@ -604,7 +604,7 @@ var (
 						server[i.GuildID].Paused.Store(true)
 						server[i.GuildID].Pause <- struct{}{}
 
-						e.Segments[server[i.GuildID].Frames+1] = true
+						e.Segments[int(server[i.GuildID].Frames.Load()+1)] = true
 						e.Segments[int(t.Seconds()*constants.FrameSeconds)] = true
 
 						server[i.GuildID].Resume <- struct{}{}

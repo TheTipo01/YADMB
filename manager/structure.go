@@ -29,7 +29,7 @@ type Server struct {
 	// Custom commands, maps a command to a song
 	Custom map[string]*database.CustomCommand
 	// Frames
-	Frames int
+	Frames atomic.Uint64
 	// Quit channel
 	Skip chan SkipReason
 	// Whether the job scheduler has started

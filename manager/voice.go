@@ -37,6 +37,7 @@ func (server *Server) disconnect() {
 	if server.VC != nil && !server.Started.Load() {
 		_ = server.VC.Disconnect()
 		server.VC = nil
+		// TODO: the entire voice channel management is a source of race conditions
 		server.VoiceChannel = ""
 	}
 }
