@@ -27,5 +27,8 @@
 		"tailwindcss": "^3.3.2",
 		"vite": "^4.4.2"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"ws": "^8.14.2"
+	}
 }

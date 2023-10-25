@@ -14,7 +14,7 @@
     let showModal = false;
 </script>
 
-<Button class="w-25 absolute right-9 bottom-5 GenuineOrange" on:click={() => (showModal = true)}>
+<Button class="w-25 absolute right-9 bottom-5" on:click={() => (showModal = true)}>
     Add to Favorites
 </Button>
 
@@ -55,7 +55,7 @@
                 <P>{song.link}</P>
                 <div class="grid grid-cols-2">
                     <P>{song.folder}</P>
-                    <Button on:click={() => RemoveFavorite(token, song.name)}><TrashBinSolid /></Button>
+                    <Button on:click={() => RemoveFavorite(token, song.name)} class="w-1/3"><TrashBinSolid /></Button>
                 </div>
                 
             </div>

@@ -1,4 +1,5 @@
 // This file contains every function used in the queue.svelte component
+import { Response } from "./error";
 
 export async function AddToQueue(GuildID, token) {
     // Values needed for adding a song to a queue
@@ -31,19 +32,19 @@ export async function AddToQueue(GuildID, token) {
     //Error Handling
     switch(response.status) {
         case 200:
-            return 0;
+            return Response.SUCCESS;
         case 401:
-            return -1;
+            return Response.QUEUE_TOKEN_ERR;
         case 403:
-            return -2;
+            return Response.QUEUE_ADD_ERR;
         case 406:
-            return -3;
+            return Response.QUEUE_PLAYLIST_ERR;
     }
 }
 
 export async function RemoveFromQueue(GuildID, token, clear=false) { // AKA skip
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}` + new URLSearchParams({'clean': clear, 'token': token}).toString();
+    let route = `https://gerry.thetipo.rocks/queue/${GuildID}?` + new URLSearchParams({'clean': clear, 'token': token}).toString();
     let response = await fetch(route, {
         method: "DELETE",
         headers: {
@@ -55,19 +56,19 @@ export async function RemoveFromQueue(GuildID, token, clear=false) { // AKA skip
     // Error Handling
     switch(response.status) {
         case 200:
-            return 0;
+            return Response.SUCCESS;
         case 401:
-            return -1;
+            return Response.QUEUE_TOKEN_ERR;
         case 403:
-            return -2;
+            return Response.QUEUE_CHANNEL_ERR;
         case 406:
-            return -3;
+            return Response.QUEUE_PLAY_ERR;
     }
 }
 
 export async function GetQueue(GuildID, token) {
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString()
+    let route = `https://gerry.thetipo.rocks/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString();
     let response = await fetch(route, {
         method: "GET",
         headers: {
@@ -81,7 +82,7 @@ export async function GetQueue(GuildID, token) {
         case 200:
             return await response.json();
         case 401:
-            return -1;
+            return Response.QUEUE_TOKEN_ERR;
     }
 
 }

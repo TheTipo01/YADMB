@@ -1,3 +1,5 @@
+import { Response } from "./error";
+
 export async function AddFavorite(token) {
     let name = document.getElementById("name").value;
     let link = document.getElementById("link").value;
@@ -22,17 +24,17 @@ export async function AddFavorite(token) {
     //Error Handling
     switch(response.status) {
         case 200:
-            return 0;
+            return Response.SUCCESS;
         case 401:
-            return -1;
+            return Response.FAVORITE_TOKEN_ERROR;
         case 500:
-            return -5;
+            return Response.DUPLICATE_ERROR;
     }
 }
 
 export async function RemoveFavorite(token, name) {
     // Request
-    let route = `https://gerry.thetipo.rocks/favorites` + new URLSearchParams({'name': name, 'token': token}).toString();
+    let route = `https://gerry.thetipo.rocks/favorites?` + new URLSearchParams({'name': name, 'token': token}).toString();
     let response = await fetch(route, {
         method: 'DELETE',
         headers: {
@@ -48,11 +50,11 @@ export async function RemoveFavorite(token, name) {
     //Error Handling
     switch(response.status) {
         case 200:
-            return 0;
+            return Response.SUCCESS;
         case 401:
-            return -1;
+            return Response.FAVORITE_TOKEN_ERROR;
         case 500:
-            return -5;
+            return Response.FAVORITE_ERROR;
     }
 }
 
@@ -72,6 +74,6 @@ export async function GetFavorites(token) {
         case 200:
             return await response.json();
         case 401:
-            return -1;
+            return Response.FAVORITE_TOKEN_ERROR;
     }
 }
