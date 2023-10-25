@@ -1,18 +1,15 @@
 // This file contains every function used in the queue.svelte component
 
-export async function AddToQueue() {
+export async function AddToQueue(GuildID, token) {
     // Values needed for adding a song to a queue
-    let GuildID = document.getElementById("id")?.value;
-    let song = document.getElementById("song")?.value;
-    let token = document.getElementById("token")?.value;
+    let song = document.getElementById("song").value;
     let shuffle;
-    let playlist = document.getElementById("playlist").value;
-    let loop = document.getElementById("loop").value;
-    let priority = document.getElementById("priority").value
+    let playlist = document.getElementById("playlist")?.checked;
+    let loop = document.getElementById("loop")?.checked;
+    let priority = document.getElementById("priority")?.checked
     if(playlist) {
-        shuffle = document.getElementById("shuffle").value;
+        shuffle = document.getElementById("shuffle")?.checked;
     }
-
     // Request
     let route = `https://gerry.thetipo.rocks/queue/${GuildID}`
     let response = await fetch(route, {
@@ -44,21 +41,15 @@ export async function AddToQueue() {
     }
 }
 
-export async function RemoveFromQueue() { // AKA skip
-    let GuildID = document.getElementById("id")?.value;
-    let clear = document.getElementById("clear")?.value;
-
+export async function RemoveFromQueue(GuildID, token, clear=false) { // AKA skip
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}`
+    let route = `https://gerry.thetipo.rocks/queue/${GuildID}` + new URLSearchParams({'clean': clear, 'token': token}).toString();
     let response = await fetch(route, {
         method: "DELETE",
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams({
-            'clean': clear
-        }).toString(),
     })
 
     // Error Handling

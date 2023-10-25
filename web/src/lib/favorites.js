@@ -1,8 +1,7 @@
-export async function AddFavorite() {
-    let name = document.getElementById("name")?.value;
-    let link = documnent.getElementById("link")?.value;
+export async function AddFavorite(token) {
+    let name = document.getElementById("name").value;
+    let link = document.getElementById("link").value;
     let folder = document.getElementById("folder")?.value;
-    let token = document.getElementById("token")?.token;
 
     // Request
     let route = `https://gerry.thetipo.rocks/favorites`
@@ -31,12 +30,9 @@ export async function AddFavorite() {
     }
 }
 
-export async function RemoveFavorite() {
-    let name = document.getElementById("name")?.value;
-    let token = document.getElementById("token")?.value;
-
+export async function RemoveFavorite(token, name) {
     // Request
-    let route = `https://gerry.thetipo.rocks/favorites`
+    let route = `https://gerry.thetipo.rocks/favorites` + new URLSearchParams({'name': name, 'token': token}).toString();
     let response = await fetch(route, {
         method: 'DELETE',
         headers: {
@@ -60,26 +56,21 @@ export async function RemoveFavorite() {
     }
 }
 
-export async function GetFavorites() {
-    let token = document.getElementById("token")?.value;
-
+export async function GetFavorites(token) {
     // Request
-    let route = `https://gerry.thetipo.rocks/favorites`
+    let route = `https://gerry.thetipo.rocks/favorites?` + new URLSearchParams({"token": token}).toString();
     let response = await fetch(route, {
         method: "GET",
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: {
-            'token': token,
-        },
     })
 
     // Error Handling
     switch(response.status) {
         case 200:
-            return 0;
+            return await response.json();
         case 401:
             return -1;
     }
