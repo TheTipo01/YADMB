@@ -17,6 +17,10 @@
     {
       "name": "song",
       "description": "Play/pause the current song"
+    },
+    {
+      "name": "websockets",
+      "description": "Get notifications about events of the bot"
     }
   ],
   "paths": {
@@ -335,6 +339,15 @@
             "description": "The guild id"
           },
           {
+            "name": "token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Token for authentication"
+          },
+          {
             "name": "clean",
             "in": "header",
             "required": false,
@@ -484,6 +497,51 @@
           },
           "500": {
             "description": "Couldn't toggle song"
+          }
+        }
+      }
+    },
+    "/ws/{guild}": {
+      "get": {
+        "tags": [
+          "websockets"
+        ],
+        "summary": "Get a websocket for receiving notifications",
+        "description": "Estabilishes a websocket connection: every message contains the type of event (as an enum), and if needed the song pertaining the event. Note: for description about the enum, see [here](https://github.com/TheTipo01/YADMB/blob/master/api/notification/structure.go#L7).",
+        "parameters": [
+          {
+            "name": "guild",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The guild id"
+          },
+          {
+            "name": "token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Token for authentication"
+          }
+        ],
+        "operationId": "websocket",
+        "responses": {
+          "101": {
+            "description": "Websocket estabilished",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token not valid or it doesn't have access to the given guild"
           }
         }
       }
@@ -641,6 +699,28 @@
           "name",
           "link"
         ]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "notification": {
+            "type": "integer",
+            "example": 0
+          },
+          "song": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Element1"
+                },
+                {
+                  "$ref": "#/components/schemas/Element2"
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }
