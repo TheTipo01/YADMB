@@ -6,6 +6,7 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/bwmarrin/lit"
 	"io"
 	"os"
 )
@@ -81,7 +82,13 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			server.VC.OpusSend <- InBuf
+			if server.VC != nil {
+				server.VC.OpusSend <- InBuf
+			} else {
+				lit.Debug("VC is nil, triggering reconnection")
+				server.VC, _ = server.Clients.Discord.ChannelVoiceJoin(server.GuildID, server.VoiceChannel, false, true)
+			}
+
 		}
 	}
 }

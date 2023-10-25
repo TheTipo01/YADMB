@@ -278,6 +278,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 			// If the bot has been disconnected from the voice channel, reconnect it
 			var err error
 
+			lit.Debug("Reconnecting to voice channel %s on guild %s", server[v.GuildID].VoiceChannel, v.GuildID)
 			server[v.GuildID].VC, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].VoiceChannel, false, true)
 			if err != nil {
 				lit.Error("Can't join voice channel, %s", err)
