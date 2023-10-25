@@ -1,21 +1,17 @@
-export async function ToggleSong(action = "") {
-    let GuildID = document.getElementById("id").value;
-    let token = document.getElementById("token").value;
+// This file contains a function used in the queue.svelte component
 
+export async function ToggleSong(GuildID, token, action = "") {  // AKA Pause/Resume Song
     // Request
-    if(route === "") {
+    if(action === "") {
         return -8
     }
     else {
-        let route = `https://gerry.thetipo.rocks/song/${action}/${GuildID}`;
+        let route = `https://gerry.thetipo.rocks/song/${action}/${GuildID}?` + new URLSearchParams({"token": token}).toString();
         let response = await fetch(route, {
             method: "GET",
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: {
-                'token': token,
             },
         })
     
