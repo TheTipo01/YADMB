@@ -13,6 +13,10 @@ import (
 var wsupgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		// TODO: Set this to false, and add the frontend url
+		return true
+	},
 }
 
 func (a *Api) getQueue(c *gin.Context) {

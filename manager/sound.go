@@ -88,7 +88,6 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				lit.Debug("VC is nil, triggering reconnection")
 				server.VC, _ = server.Clients.Discord.ChannelVoiceJoin(server.GuildID, server.VoiceChannel, false, true)
 			}
-
 		}
 	}
 }

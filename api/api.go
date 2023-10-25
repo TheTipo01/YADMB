@@ -14,7 +14,7 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 
 	conf := cors.DefaultConfig()
 	conf.AllowMethods = []string{"GET", "POST", "DELETE"}
-	// TODO: Set this to false
+	// TODO: Set this to false, and add the frontend url
 	conf.AllowAllOrigins = true
 
 	r.Use(gin.Recovery(), cors.New(conf))
