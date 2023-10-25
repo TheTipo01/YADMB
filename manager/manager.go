@@ -88,10 +88,14 @@ func (server *Server) play() {
 			}
 		}()
 
-		if skipReason != Clear {
-			server.Queue.RemoveFirstElement()
-			go notify(notification.NotificationMessage{Notification: notification.Skip, Songs: []queue.Element{*el}, Guild: server.GuildID})
+		if skipReason == Finished {
+			go notify(notification.NotificationMessage{Notification: notification.Finished, Guild: server.GuildID})
+		} else {
+			go notify(notification.NotificationMessage{Notification: notification.Skip, Guild: server.GuildID})
+
 		}
+
+		server.Queue.RemoveFirstElement()
 	}
 
 	server.Started.Store(false)

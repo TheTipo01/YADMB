@@ -15,6 +15,8 @@ const (
 	Resume
 	// Clear notification for the queue being cleared
 	Clear
+	// Finished notification for the queue being finished
+	Finished
 )
 
 type Notification int8
