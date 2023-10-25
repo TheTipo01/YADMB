@@ -74,7 +74,7 @@ func (a *Api) skip(c *gin.Context) {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
-			if stringToBool(c.PostForm("clean")) {
+			if stringToBool(c.Query("clean")) {
 				go a.servers[guild].Clean()
 				c.Status(http.StatusOK)
 			} else {
