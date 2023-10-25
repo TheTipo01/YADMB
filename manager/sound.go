@@ -3,6 +3,7 @@ package manager
 import (
 	"encoding/binary"
 	"errors"
+	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
 	"io"
@@ -24,8 +25,10 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	for {
 		select {
 		case <-server.Pause:
+			go notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
 			select {
 			case <-server.Resume:
+				go notify(notification.NotificationMessage{Notification: notification.Resume, Guild: server.GuildID})
 				el.Segments = server.Queue.GetFirstElement().Segments
 			case skipReason = <-server.Skip:
 				cleanUp(server, el.Closer)

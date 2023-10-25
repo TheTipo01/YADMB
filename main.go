@@ -29,14 +29,13 @@ var (
 	owner string
 	// Discord bot token
 	token string
-	// Addresses for the web api
-	address string
 	// Cache for the blacklist
 	blacklist map[string]bool
 	// Clients
 	clients manager.Clients
-	// API
-	webApi          api.Api
+	// Web API
+	webApi *api.Api
+	// Array of long lived tokens
 	longLivedTokens []apiToken
 )
 
@@ -54,7 +53,6 @@ func init() {
 	// Config file found
 	token = cfg.Token
 	owner = cfg.Owner
-	address = cfg.Address
 	longLivedTokens = cfg.ApiTokens
 
 	// Set lit.LogLevel to the given value
@@ -74,6 +72,11 @@ func init() {
 		if err != nil {
 			lit.Error("spotify: couldn't get token: %s", err)
 		}
+	}
+
+	// Start the API, if enabled
+	if cfg.Address != "" {
+		webApi = api.NewApi(server, cfg.Address, owner, &clients)
 	}
 
 	// Initialize the database
@@ -186,11 +189,6 @@ func main() {
 	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
 
-	// Start the API, if enabled
-	if address != "" {
-		webApi = api.NewApi(server, address, owner, &clients)
-	}
-
 	// Open the websocket and begin listening.
 	err = dg.Open()
 	if err != nil {
@@ -207,16 +205,20 @@ func main() {
 		lit.Error("Can't register commands, %s", err)
 	}
 
-	if address != "" && len(longLivedTokens) > 0 {
-		lit.Info("Loading long lived tokens")
-		for _, t := range longLivedTokens {
-			userInfo := api.UserInfo{
-				LongLivedToken: t.Token,
-				Guild:          t.Guild,
-				TextChannel:    t.TextChannel,
+	if webApi != nil {
+		go webApi.HandleNotifications()
+
+		if len(longLivedTokens) > 0 {
+			lit.Info("Loading long lived tokens")
+			for _, t := range longLivedTokens {
+				userInfo := api.UserInfo{
+					LongLivedToken: t.Token,
+					Guild:          t.Guild,
+					TextChannel:    t.TextChannel,
+				}
+				user, _ := dg.User(t.UserID)
+				webApi.AddLongLivedToken(user, userInfo)
 			}
-			user, _ := dg.User(t.UserID)
-			webApi.AddLongLivedToken(user, userInfo)
 		}
 	}
 

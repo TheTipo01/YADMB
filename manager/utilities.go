@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"math/rand"
@@ -183,4 +184,8 @@ func cleanURL(link string) string {
 	u.RawQuery = q.Encode()
 
 	return u.String()
+}
+
+func notify(n notification.NotificationMessage) {
+	Notifications <- n
 }

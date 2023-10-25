@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
@@ -10,6 +11,10 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+)
+
+var (
+	Notifications = make(chan notification.NotificationMessage, 1)
 )
 
 // NewServer creates a new server manager
@@ -32,6 +37,8 @@ func NewServer(guildID string, clients *Clients) *Server {
 
 // AddSong adds a song to the queue
 func (server *Server) AddSong(priority bool, el ...queue.Element) {
+	go notify(notification.NotificationMessage{Notification: notification.NewSongs, Songs: el, Guild: server.GuildID})
+
 	if priority {
 		server.Queue.AddElementsPriority(el...)
 	} else {
@@ -83,6 +90,7 @@ func (server *Server) play() {
 
 		if skipReason != Clear {
 			server.Queue.RemoveFirstElement()
+			go notify(notification.NotificationMessage{Notification: notification.Skip, Songs: []queue.Element{*el}, Guild: server.GuildID})
 		}
 	}
 
@@ -101,6 +109,8 @@ func (server *Server) Clean() {
 	if server.IsPlaying() {
 		server.Clear.Store(true)
 		server.Skip <- Clear
+
+		go notify(notification.NotificationMessage{Notification: notification.Clear, Guild: server.GuildID})
 
 		server.WG.Wait()
 		server.Clear.Store(false)

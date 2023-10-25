@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dchest/uniuri"
@@ -8,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients) Api {
+func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients) *Api {
 	r := gin.New()
 
 	conf := cors.DefaultConfig()
@@ -18,7 +19,14 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 
 	r.Use(gin.Recovery(), cors.New(conf))
 
-	a := Api{servers: servers, tokensToUsers: make(map[string]*discordgo.User), userInfo: make(map[string]*UserInfo), owner: owner, clients: clients}
+	a := Api{
+		servers:       servers,
+		tokensToUsers: make(map[string]*discordgo.User),
+		userInfo:      make(map[string]*UserInfo),
+		owner:         owner,
+		clients:       clients,
+		notifier:      notification.NewNotifier(),
+	}
 
 	r.GET("/queue/:guild", a.getQueue)
 	r.POST("/queue/:guild", a.addToQueue)
@@ -29,9 +37,10 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 	r.GET("/favorites", a.getFavorites)
 	r.POST("/favorites", a.addFavorite)
 	r.DELETE("/favorites", a.removeFavorite)
+	r.GET("/ws/:guild", a.websocketHandler)
 	go r.Run(address)
 
-	return a
+	return &a
 }
 
 // AddUser adds a user to the api, returning the token.
@@ -73,4 +82,13 @@ func (a *Api) AddLongLivedToken(user *discordgo.User, userInfo UserInfo) {
 		userInfo.token = a.userInfo[user.ID].token
 	}
 	a.userInfo[user.ID] = &userInfo
+}
+
+func (a *Api) HandleNotifications() {
+	for {
+		select {
+		case n := <-manager.Notifications:
+			a.notifier.Notify(n.Guild, n)
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
 )
@@ -16,6 +17,8 @@ type Api struct {
 	owner string
 	// CLients for interacting with the various apis
 	clients *manager.Clients
+	// Websocket connections
+	notifier *notification.Notifier
 }
 
 type UserInfo struct {
