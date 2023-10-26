@@ -7,6 +7,7 @@
     import ListMusicSolid from "flowbite-svelte-icons/ListMusicSolid.svelte"
     import {GetGuildID, GetToken} from "../lib/utilities"
 	import { onMount } from "svelte";
+    import logo from "../assets/logo_yadmb.png"
 
     // variables
     let GuildId = '';
@@ -21,7 +22,7 @@
 
 </script>
 <div class="flex justify-center">
-    <Avatar src="src/assets/logo_yadmb.png" size="xl" class="mt-1"  />
+    <Avatar src="{logo}" size="xl" class="mt-1"  />
 </div>
 
 

@@ -11,6 +11,7 @@
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^2.0.0",
+		"@sveltejs/adapter-static": "^2.0.3",
 		"@sveltejs/kit": "^1.20.4",
 		"autoprefixer": "^10.4.14",
 		"eslint": "^8.28.0",
@@ -29,6 +30,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"svelte-preprocess": "^5.0.4",
 		"ws": "^8.14.2"
 	}
 }
