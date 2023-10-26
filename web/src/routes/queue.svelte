@@ -3,6 +3,7 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueue, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
+    import {addObjectToArray, RemoveObjectFromArray, ClearArray} from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
@@ -12,30 +13,13 @@
     export let GuildId;
     export let token;
 
+    // variables
     let queue = GetQueue(GuildId, token);
     let isPaused = false;
+    let showModal = false;
+    let isPlaylist = false;
 
-    // Function to add an object to the array 
-    function addObjectToArray(promise, objectToAdd) {
-    return promise.then((array) => {
-        return [...array, ...objectToAdd];
-        });
-    }
-
-    // Function to remove the first object from the array 
-    function RemoveObjectFromArray(promise) {
-    return promise.then((array) => {
-            array.shift();
-            return array;
-        });
-    }
-
-    function ClearArray(promise) {
-        return promise.then(() => {
-            return []
-        })
-    }
-
+    // WebSocket
     onMount(async () => {
         let websocket_url = `wss://gerry.thetipo.rocks/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();
         const socket = new WebSocket(websocket_url);
@@ -68,10 +52,9 @@
                     break;
             }
         }
+
+        return () => socket.close();
     });
-    
-    let showModal = false;
-    let isPlaylist = false;
 
 
 </script>

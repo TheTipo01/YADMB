@@ -1,5 +1,6 @@
 // This file contains every function used in the queue.svelte component
 import { Response } from "./error";
+import { GetToken } from "./utilities";
 
 export async function AddToQueue(GuildID, token) {
     // Values needed for adding a song to a queue
