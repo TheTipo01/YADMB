@@ -47,7 +47,7 @@
         </div>
         {#if activetab === "favorites"}
             {#if token !== '' && host !== ''}
-                <Favorites token={token} />
+                <Favorites token={token} host={host} />
             {/if}
         {/if}
     </TabItem>
