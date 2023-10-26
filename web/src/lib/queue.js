@@ -3,7 +3,7 @@ import { Response } from "./error";
 
 export async function AddToQueue(GuildID, token, host) {
     // Values needed for adding a song to a queue
-    let song = document.getElementById("song").value;
+    let song = document.getElementById("song").value.trim();
     let shuffle;
     let playlist = document.getElementById("playlist")?.checked;
     let loop = document.getElementById("loop")?.checked;

@@ -1,9 +1,9 @@
 import { Response } from "./error";
 
 export async function AddFavorite(token, host) {
-    let name = document.getElementById("name").value;
-    let link = document.getElementById("link").value;
-    let folder = document.getElementById("folder")?.value;
+    let name = document.getElementById("name").value.trim();
+    let link = document.getElementById("link").value.trim();
+    let folder = document.getElementById("folder")?.value.trim();
 
     // Request
     let route = `${host}/favorites`
