@@ -1,16 +1,12 @@
 <script>
     // Various Components and functions
-    import {Button} from "flowbite-svelte";
-    import {Avatar} from "flowbite-svelte";
-    import {P, Heading, A} from "flowbite-svelte";
-    import {Modal} from "flowbite-svelte";
-    import {Input, Label, Checkbox} from "flowbite-svelte";
-	import { GetQueue, AddToQueue, RemoveFromQueue } from "../lib/queue";
-    import { ToggleSong } from "../lib/song";
+    import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
+    import {AddToQueue, GetQueue, RemoveFromQueue} from "../lib/queue";
+    import {ToggleSong} from "../lib/song";
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
-	import { onMount } from "svelte";
+    import {onMount} from "svelte";
 
     // props
     export let GuildId;
@@ -22,8 +18,7 @@
     // Function to add an object to the array 
     function addObjectToArray(promise, objectToAdd) {
     return promise.then((array) => {
-            const newArray = [...array, ...objectToAdd];
-            return newArray;
+        return [...array, ...objectToAdd];
         });
     }
 
@@ -36,7 +31,7 @@
     }
 
     function ClearArray(promise) {
-        return promise.then((array) => {
+        return promise.then(() => {
             return []
         })
     }
@@ -51,6 +46,7 @@
                 Pause: 2,
                 Resume: 3,
                 Clear: 4,
+                Finished: 5,
             });
             let signal = JSON.parse(e.data)
             switch(signal.notification) {
@@ -58,6 +54,7 @@
                     queue = addObjectToArray(queue, signal.song);
                     break;
                 case Notification.Skip:
+                case Notification.Finished:
                     queue = RemoveObjectFromArray(queue);
                     break;
                 case Notification.Clear:
@@ -107,7 +104,7 @@
 {#await queue} 
 <P>Fetching Queue</P>
 {:then json}
-{#if json.length != 0 && typeof(json) != "number"}
+{#if json.length !== 0 && typeof(json) != "number"}
 <div class="grid grid-cols-2 gap-4">
     <div >
         <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
@@ -115,14 +112,14 @@
             <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause")} disabled={isPaused}><PauseSolid /></Button></div>
             <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume") } disabled={!isPaused}><PlaySolid  /></Button></div>
         </div>
-        <P class="mt-5">{json[0].title}</P>
+        <a class="mt-5" href={json[0].link}>{json[0].title}</a>
         <P>Requested by {json[0].user}</P>
         <Button on:click={() => RemoveFromQueue(GuildId, token)}>Skip song</Button>
     </div>
     <div>
         <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
         {#each json as song, index}
-            {#if index != 0}
+            {#if index !== 0}
             <div class="grid grid-cols-3 justify-items-center mt-3" >
                 <Avatar src={song.thumbnail} rounded/>
                 <A href={song.link}>{song.title}</A>
