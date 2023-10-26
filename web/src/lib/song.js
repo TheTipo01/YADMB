@@ -6,7 +6,7 @@ export async function ToggleSong(GuildID, token, action = "", host) {  // AKA Pa
         return -8
     }
     else {
-        let route = `https://${host}/${action}/${GuildID}?` + new URLSearchParams({"token": token}).toString();
+        let route = `${host}/${action}/${GuildID}?` + new URLSearchParams({"token": token}).toString();
         let response = await fetch(route, {
             method: "GET",
             headers: {

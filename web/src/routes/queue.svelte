@@ -22,7 +22,14 @@
 
     // WebSocket
     onMount(async () => {
-        let websocket_url = `wss://gerry.thetipo.rocks/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();
+        let websocket_url = `${host}/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();
+        // If the host is in https, use wss instead of ws
+        if (host.startsWith("https")) {
+            websocket_url = 'wss://' + websocket_url;
+        } else {
+            websocket_url = 'ws://' + websocket_url;
+        }
+
         const socket = new WebSocket(websocket_url);
         socket.onmessage = function(e) {
             const Notification = Object.freeze({

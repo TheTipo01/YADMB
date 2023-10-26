@@ -31,5 +31,5 @@ export function GetToken() {
 }
 
 export function GetHost() {
-    return window.location.host;
+    return window.location.protocol + "//" + window.location.host;
 }

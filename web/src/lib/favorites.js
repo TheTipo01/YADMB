@@ -6,7 +6,7 @@ export async function AddFavorite(token, host) {
     let folder = document.getElementById("folder")?.value;
 
     // Request
-    let route = `https://${host}/favorites`
+    let route = `${host}/favorites`
     let response = await fetch(route, {
         method: 'POST',
         headers: {
@@ -34,7 +34,7 @@ export async function AddFavorite(token, host) {
 
 export async function RemoveFavorite(token, name, host) {
     // Request
-    let route = `https://${host}/favorites?` + new URLSearchParams({'name': name, 'token': token}).toString();
+    let route = `${host}/favorites?` + new URLSearchParams({'name': name, 'token': token}).toString();
     let response = await fetch(route, {
         method: 'DELETE',
         headers: {
@@ -60,7 +60,7 @@ export async function RemoveFavorite(token, name, host) {
 
 export async function GetFavorites(token, host) {
     // Request
-    let route = `https://${host}/favorites?` + new URLSearchParams({"token": token}).toString();
+    let route = `${host}/favorites?` + new URLSearchParams({"token": token}).toString();
     let response = await fetch(route, {
         method: "GET",
         headers: {

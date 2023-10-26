@@ -12,7 +12,7 @@ export async function AddToQueue(GuildID, token, host) {
         shuffle = document.getElementById("shuffle")?.checked;
     }
     // Request
-    let route = `https://${host}/queue/${GuildID}`
+    let route = `${host}/queue/${GuildID}`
     let response = await fetch(route, {
         method: 'POST',
         headers: {
@@ -44,7 +44,7 @@ export async function AddToQueue(GuildID, token, host) {
 
 export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AKA skip
     // Request
-    let route = `https://${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear, 'token': token}).toString();
+    let route = `${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear, 'token': token}).toString();
     let response = await fetch(route, {
         method: "DELETE",
         headers: {
@@ -68,7 +68,7 @@ export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AK
 
 export async function GetQueue(GuildID, token, host) {
     // Request
-    let route = `https://${host}/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString();
+    let route = `${host}/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString();
     let response = await fetch(route, {
         method: "GET",
         headers: {
