@@ -5,18 +5,20 @@
     import {Avatar} from "flowbite-svelte"
     import StarSolid from "flowbite-svelte-icons/StarSolid.svelte"
     import ListMusicSolid from "flowbite-svelte-icons/ListMusicSolid.svelte"
-    import {GetGuildID, GetToken} from "../lib/utilities"
+    import {GetGuildID, GetToken, GetHost} from "../lib/utilities"
 	import { onMount } from "svelte";
     import logo from "../assets/logo_yadmb.png"
 
     // variables
     let GuildId = '';
     let token = '';
+    let host = '';
     let activetab = "queue";
 
     onMount(() => {
         GuildId = GetGuildID();
         token = GetToken();
+        host = GetHost();
     });
     
 
@@ -33,8 +35,8 @@
             Queue
         </div>
         {#if activetab === "queue"}
-            {#if GuildId !== '' && token !== ''}
-                <Queue GuildId={GuildId} token={token} />
+            {#if GuildId !== '' && token !== '' && host !== ''}
+                <Queue GuildId={GuildId} token={token} host={host} />
             {/if}
         {/if}
     </TabItem>
@@ -44,7 +46,7 @@
             Favorites
         </div>
         {#if activetab === "favorites"}
-            {#if token !== ''}
+            {#if token !== '' && host !== ''}
                 <Favorites token={token} />
             {/if}
         {/if}

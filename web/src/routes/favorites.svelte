@@ -8,9 +8,10 @@
 
     // props
     export let token;
+    export let host;
 
     //variables
-    let favorites = GetFavorites(token);
+    let favorites = GetFavorites(token, host);
     let showModal = false;
 </script>
 
@@ -36,7 +37,7 @@
         </div>
     </form>
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddFavorite(token)}>Add</Button>
+        <Button on:click={() => AddFavorite(token, host)}>Add</Button>
     </svelte:fragment>
 </Modal>
 
@@ -55,7 +56,7 @@
                 <P>{song.link}</P>
                 <div class="grid grid-cols-2">
                     <P>{song.folder}</P>
-                    <Button on:click={() => RemoveFavorite(token, song.name)} class="w-1/3"><TrashBinSolid /></Button>
+                    <Button on:click={() => RemoveFavorite(token, song.name, host)} class="w-1/3"><TrashBinSolid /></Button>
                 </div>
                 
             </div>

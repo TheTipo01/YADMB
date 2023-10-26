@@ -1,12 +1,12 @@
 import { Response } from "./error";
 
-export async function AddFavorite(token) {
+export async function AddFavorite(token, host) {
     let name = document.getElementById("name").value;
     let link = document.getElementById("link").value;
     let folder = document.getElementById("folder")?.value;
 
     // Request
-    let route = `https://gerry.thetipo.rocks/favorites`
+    let route = `https://${host}/favorites`
     let response = await fetch(route, {
         method: 'POST',
         headers: {
@@ -32,9 +32,9 @@ export async function AddFavorite(token) {
     }
 }
 
-export async function RemoveFavorite(token, name) {
+export async function RemoveFavorite(token, name, host) {
     // Request
-    let route = `https://gerry.thetipo.rocks/favorites?` + new URLSearchParams({'name': name, 'token': token}).toString();
+    let route = `https://${host}/favorites?` + new URLSearchParams({'name': name, 'token': token}).toString();
     let response = await fetch(route, {
         method: 'DELETE',
         headers: {
@@ -58,9 +58,9 @@ export async function RemoveFavorite(token, name) {
     }
 }
 
-export async function GetFavorites(token) {
+export async function GetFavorites(token, host) {
     // Request
-    let route = `https://gerry.thetipo.rocks/favorites?` + new URLSearchParams({"token": token}).toString();
+    let route = `https://${host}/favorites?` + new URLSearchParams({"token": token}).toString();
     let response = await fetch(route, {
         method: "GET",
         headers: {

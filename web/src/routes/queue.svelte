@@ -12,9 +12,10 @@
     // props
     export let GuildId;
     export let token;
+    export let host;
 
     // variables
-    let queue = GetQueue(GuildId, token);
+    let queue = GetQueue(GuildId, token, host);
     let isPaused = false;
     let showModal = false;
     let isPlaylist = false;
@@ -79,7 +80,7 @@
         </div>
     </form>
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddToQueue(GuildId, token)}>Add</Button>
+        <Button on:click={() => AddToQueue(GuildId, token, host)}>Add</Button>
     </svelte:fragment>
 </Modal>
 
@@ -92,12 +93,17 @@
     <div >
         <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
         <div class="mt-5 grid grid-cols-2 gap-2">
-            <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause")} disabled={isPaused}><PauseSolid /></Button></div>
-            <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume") } disabled={!isPaused}><PlaySolid  /></Button></div>
+            {#if json[0].isPaused}
+                <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={!isPaused}><PauseSolid /></Button></div>
+                <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={isPaused}><PlaySolid  /></Button></div>
+            {:else}
+                <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={isPaused}><PauseSolid /></Button></div>
+                <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!isPaused}><PlaySolid  /></Button></div>
+            {/if}
         </div>
         <a class="mt-5" href={json[0].link}>{json[0].title}</a>
         <P>Requested by {json[0].user}</P>
-        <Button on:click={() => RemoveFromQueue(GuildId, token)}>Skip song</Button>
+        <Button on:click={() => RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
     </div>
     <div>
         <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
@@ -111,7 +117,7 @@
             {/if}
         {/each}
         <div class="grid grid-rows-1 justify-items-end mt-5">
-            <Button align="right" on:click={() => RemoveFromQueue(GuildId, token, true)}>Clear Queue</Button>
+            <Button align="right" on:click={() => RemoveFromQueue(GuildId, token, true, host)}>Clear Queue</Button>
         </div>
         
     </div>

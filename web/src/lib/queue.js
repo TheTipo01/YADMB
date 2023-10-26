@@ -1,8 +1,7 @@
 // This file contains every function used in the queue.svelte component
 import { Response } from "./error";
-import { GetToken } from "./utilities";
 
-export async function AddToQueue(GuildID, token) {
+export async function AddToQueue(GuildID, token, host) {
     // Values needed for adding a song to a queue
     let song = document.getElementById("song").value;
     let shuffle;
@@ -13,7 +12,7 @@ export async function AddToQueue(GuildID, token) {
         shuffle = document.getElementById("shuffle")?.checked;
     }
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}`
+    let route = `https://${host}/queue/${GuildID}`
     let response = await fetch(route, {
         method: 'POST',
         headers: {
@@ -43,9 +42,9 @@ export async function AddToQueue(GuildID, token) {
     }
 }
 
-export async function RemoveFromQueue(GuildID, token, clear=false) { // AKA skip
+export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AKA skip
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}?` + new URLSearchParams({'clean': clear, 'token': token}).toString();
+    let route = `https://${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear, 'token': token}).toString();
     let response = await fetch(route, {
         method: "DELETE",
         headers: {
@@ -67,9 +66,9 @@ export async function RemoveFromQueue(GuildID, token, clear=false) { // AKA skip
     }
 }
 
-export async function GetQueue(GuildID, token) {
+export async function GetQueue(GuildID, token, host) {
     // Request
-    let route = `https://gerry.thetipo.rocks/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString();
+    let route = `https://${host}/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString();
     let response = await fetch(route, {
         method: "GET",
         headers: {

@@ -1,4 +1,3 @@
-import { onMount } from "svelte";
 
 // Function to add an object to the array 
 export function addObjectToArray(promise, objectToAdd) {
@@ -29,4 +28,8 @@ export function GetGuildID() {
 export function GetToken() {
     let query = new URLSearchParams(window.location.search);
     return query.get('token');
+}
+
+export function GetHost() {
+    return window.location.host;
 }
