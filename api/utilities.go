@@ -47,31 +47,39 @@ func (a *Api) interactionGenerator(u *discordgo.User, song string, playlist bool
 				User: u,
 			},
 			Data: discordgo.ApplicationCommandInteractionData{
+				Name:        "play",
+				CommandType: discordgo.ChatApplicationCommand,
 				Options: []*discordgo.ApplicationCommandInteractionDataOption{
 					{
 						Name:  "link",
 						Value: song,
+						Type:  discordgo.ApplicationCommandOptionString,
 					},
 					{
 						Name:  "playlist",
 						Value: playlist,
+						Type:  discordgo.ApplicationCommandOptionBoolean,
 					},
 					{
 						Name:  "shuffle",
 						Value: shuffle,
+						Type:  discordgo.ApplicationCommandOptionBoolean,
 					},
 					{
 						Name:  "loop",
 						Value: loop,
+						Type:  discordgo.ApplicationCommandOptionBoolean,
 					},
 					{
 						Name:  "priority",
 						Value: priority,
+						Type:  discordgo.ApplicationCommandOptionBoolean,
 					},
 				},
 			},
 			ChannelID: a.userInfo[u.ID].TextChannel,
 			GuildID:   guild,
+			Version:   1,
 		},
 	}
 }

@@ -20,7 +20,12 @@ import (
 // And if it doesn't contain an ID for the video, it returns an error.
 func filterPlaylist(link string) (string, error) {
 	if com, be := strings.Contains(link, "youtube.com"), strings.Contains(link, "youtu.be"); com || be {
-		u, _ := url.Parse(link)
+		u, err := url.Parse(link)
+		if err != nil {
+			lit.Error("filterPlaylist failed: %s", err)
+			return "", err
+		}
+
 		q := u.Query()
 		q.Del("list")
 		q.Del("index")
