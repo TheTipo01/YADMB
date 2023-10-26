@@ -4,6 +4,7 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
+	"net/http"
 )
 
 type Api struct {
@@ -19,6 +20,8 @@ type Api struct {
 	clients *manager.Clients
 	// Websocket connections
 	notifier *notification.Notifier
+	// HTTP filesystem
+	fe http.FileSystem
 }
 
 type UserInfo struct {

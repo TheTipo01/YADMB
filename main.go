@@ -1,6 +1,7 @@
 package main
 
 import (
+	e "embed"
 	"github.com/TheTipo01/YADMB/api"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database/mysql"
@@ -37,6 +38,8 @@ var (
 	webApi *api.Api
 	// Array of long lived tokens
 	longLivedTokens []apiToken
+	//go:embed all:web/build/*
+	buildFS e.FS
 )
 
 func init() {
@@ -76,7 +79,7 @@ func init() {
 
 	// Start the API, if enabled
 	if cfg.Address != "" {
-		webApi = api.NewApi(server, cfg.Address, owner, &clients)
+		webApi = api.NewApi(server, cfg.Address, owner, &clients, &buildFS)
 	}
 
 	// Initialize the database

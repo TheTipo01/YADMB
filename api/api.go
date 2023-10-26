@@ -1,15 +1,18 @@
 package api
 
 import (
+	"embed"
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dchest/uniuri"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients) *Api {
+func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients, buildFS *embed.FS) *Api {
 	r := gin.New()
 
 	conf := cors.DefaultConfig()
@@ -38,6 +41,11 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 	r.POST("/favorites", a.addFavorite)
 	r.DELETE("/favorites", a.removeFavorite)
 	r.GET("/ws/:guild", a.websocketHandler)
+	r.Use(static.Serve("/", EmbedFolder(buildFS, "web/build")))
+	r.NoRoute(func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/")
+	})
+
 	go r.Run(address)
 
 	return &a
