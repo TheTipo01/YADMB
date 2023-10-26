@@ -26,12 +26,12 @@ func (v *VC) GetChannelID() string {
 }
 
 func (v *VC) Disconnect() {
-	if v.isConnectionNil() {
-		_ = v.vc.Disconnect()
-
+	if !v.isConnectionNil() {
 		v.rw.Lock()
+		defer v.rw.Unlock()
+
+		_ = v.vc.Disconnect()
 		v.vc = nil
-		v.rw.Unlock()
 	}
 }
 
