@@ -2,6 +2,8 @@ version: '3.9'
 services:
   bot:
     image: thetipo01/yadmb
+    ports:
+      - 8080:8080
     restart: always
     volumes:
       - ./audio_cache:/audio_cache

@@ -1,8 +1,15 @@
 FROM --platform=$BUILDPLATFORM golang:alpine AS build
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git wget nodejs
+
+RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which sh)" sh -
 
 RUN git clone https://github.com/TheTipo01/YADMB /yadmb
+
+WORKDIR /yadmb/web
+RUN . "$HOME/.shrc" && pnpm install
+RUN . "$HOME/.shrc" && pnpm run build
+
 WORKDIR /yadmb
 ARG TARGETOS
 ARG TARGETARCH
