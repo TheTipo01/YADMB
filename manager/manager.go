@@ -33,7 +33,7 @@ func NewServer(guildID string, clients *Clients) *Server {
 		WG:                  &sync.WaitGroup{},
 		VoiceChannelMembers: make(map[string]*atomic.Int32),
 		Clients:             clients,
-		VC:                  vc.NewVC(clients.Discord, guildID),
+		VC:                  vc.NewVC(guildID),
 	}
 }
 

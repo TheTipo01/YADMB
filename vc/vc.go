@@ -8,13 +8,11 @@ import (
 type VC struct {
 	vc    *discordgo.VoiceConnection
 	guild string
-	s     *discordgo.Session
 	rw    *sync.RWMutex
 }
 
-func NewVC(s *discordgo.Session, guild string) *VC {
+func NewVC(guild string) *VC {
 	return &VC{
-		s:     s,
 		guild: guild,
 		rw:    &sync.RWMutex{},
 	}
@@ -55,11 +53,11 @@ func (v *VC) IsConnected() bool {
 	return v.vc.Ready
 }
 
-func (v *VC) Join(channelID string) error {
+func (v *VC) Join(s *discordgo.Session, channelID string) error {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	vc, err := v.s.ChannelVoiceJoin(v.guild, channelID, false, true)
+	vc, err := s.ChannelVoiceJoin(v.guild, channelID, false, true)
 	if err != nil {
 		return err
 	}
@@ -69,11 +67,11 @@ func (v *VC) Join(channelID string) error {
 	return nil
 }
 
-func (v *VC) Reconnect() error {
+func (v *VC) Reconnect(s *discordgo.Session) error {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	vc, err := v.s.ChannelVoiceJoin(v.guild, v.vc.ChannelID, false, true)
+	vc, err := s.ChannelVoiceJoin(v.guild, v.vc.ChannelID, false, true)
 	if err != nil {
 		return err
 	}
@@ -89,7 +87,7 @@ func (v *VC) SendAudioPacket(packet []byte) {
 	}
 }
 
-func (v *VC) ChangeChannel(id string) error {
+func (v *VC) ChangeChannel(s *discordgo.Session, id string) error {
 	var err error
 
 	v.vc.RLock()
@@ -97,7 +95,7 @@ func (v *VC) ChangeChannel(id string) error {
 		v.vc.RUnlock()
 
 		_ = v.vc.Disconnect()
-		v.vc, err = v.s.ChannelVoiceJoin(v.guild, id, false, true)
+		v.vc, err = s.ChannelVoiceJoin(v.guild, id, false, true)
 	} else {
 		v.vc.RUnlock()
 	}

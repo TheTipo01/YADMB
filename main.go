@@ -18,6 +18,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -42,6 +43,8 @@ var (
 	buildFS e.FS
 	// Origin for CORS and link generation
 	origin string
+	// Server mutex
+	serverMutex sync.RWMutex
 )
 
 func init() {
@@ -168,6 +171,9 @@ func main() {
 		return
 	}
 
+	// Save the session
+	clients.Discord = dg
+
 	// Add events handler
 	dg.AddHandler(ready)
 	dg.AddHandler(guildCreate)
@@ -201,9 +207,6 @@ func main() {
 		lit.Error("Error opening Discord session: %s", err)
 		return
 	}
-
-	// Save the session
-	clients.Discord = dg
 
 	// Register commands
 	_, err = dg.ApplicationCommandBulkOverwrite(dg.State.User.ID, "", commands)
@@ -250,6 +253,9 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 // Initialize Server structure
 func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
+	serverMutex.Lock()
+	defer serverMutex.Unlock()
+
 	initializeServer(e.ID)
 
 	// Populate the voiceChannelMembers map
@@ -282,7 +288,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	if v.UserID == s.State.User.ID && v.ChannelID == "" {
 		if server[v.GuildID].IsPlaying() {
 			// If the bot has been disconnected from the voice channel, reconnect it
-			err := server[v.GuildID].VC.Reconnect()
+			err := server[v.GuildID].VC.Reconnect(s)
 			if err != nil {
 				lit.Error("Can't join voice channel, %s", err)
 			}
