@@ -16,7 +16,12 @@
 
     // variables
     let queue = GetQueue(GuildId, token, host);
-    let isPaused = false;
+    let isPaused = queue.then((json) => {
+        if (json.length !== 0) {
+            return json[0].isPaused;
+        }
+        return false;
+    });
     let showModal = false;
     let isPlaylist = false;
 
@@ -44,13 +49,16 @@
             switch(signal.notification) {
                 case Notification.NewSong: // New song
                     queue = addObjectToArray(queue, signal.song);
+                    isPaused = false;
                     break;
                 case Notification.Skip:
                 case Notification.Finished:
                     queue = RemoveObjectFromArray(queue);
+                    isPaused = false;
                     break;
                 case Notification.Clear:
                     queue = ClearArray(queue);
+                    isPaused = false;
                     break;
                 case Notification.Pause:
                     isPaused = true;
@@ -100,13 +108,8 @@
     <div >
         <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
         <div class="mt-5 grid grid-cols-2 gap-2">
-            {#if json[0].isPaused}
-                <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={!isPaused}><PauseSolid /></Button></div>
-                <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={isPaused}><PlaySolid  /></Button></div>
-            {:else}
-                <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={isPaused}><PauseSolid /></Button></div>
-                <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!isPaused}><PlaySolid  /></Button></div>
-            {/if}
+            <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={isPaused}><PauseSolid /></Button></div>
+            <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!isPaused}><PlaySolid  /></Button></div>
         </div>
         <a class="mt-5" href={json[0].link}>{json[0].title}</a>
         <P>Requested by {json[0].user}</P>
