@@ -11,6 +11,7 @@ type Config struct {
 	LogLevel     string     `fig:"loglevel" validate:"required"`
 	YouTubeAPI   string     `fig:"youtubeapikey"`
 	Address      string     `fig:"address"`
+	Origin       string     `fig:"origin"`
 	ApiTokens    []apiToken `fig:"apitokens"`
 }
 

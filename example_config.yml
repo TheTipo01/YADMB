@@ -44,6 +44,8 @@ loglevel: informational
 
 # Web server address, to access the web interface
 address: :8080
+# Origin, to satisfy CORS and allow the generation of the links
+origin: https://example.com
 
 # Long-lived API tokens, to access the API without having to log in every time.
 #apitokens:

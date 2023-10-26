@@ -10,15 +10,6 @@ import (
 	"time"
 )
 
-var wsupgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// TODO: Set this to false, and add the frontend url
-		return true
-	},
-}
-
 func (a *Api) getQueue(c *gin.Context) {
 	token := c.Query("token")
 	guild := c.Param("guild")
@@ -31,6 +22,8 @@ func (a *Api) getQueue(c *gin.Context) {
 	queue := a.servers[guild].Queue.GetAllQueue()
 	if len(queue) > 0 {
 		queue[0].Frames = int(a.servers[guild].Frames.Load())
+		isPaused := a.servers[guild].Paused.Load()
+		queue[0].IsPaused = &isPaused
 	}
 
 	c.JSON(http.StatusOK, queue)
@@ -240,7 +233,7 @@ func (a *Api) websocketHandler(c *gin.Context) {
 		return
 	}
 
-	conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, err := a.wsUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err == nil {
 		n := make(chan notification.NotificationMessage)
 		a.notifier.AddChannel(n, guild)

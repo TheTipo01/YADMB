@@ -40,6 +40,8 @@ var (
 	longLivedTokens []apiToken
 	//go:embed all:web/build/*
 	buildFS e.FS
+	// Origin for CORS and link generation
+	origin string
 )
 
 func init() {
@@ -57,6 +59,7 @@ func init() {
 	token = cfg.Token
 	owner = cfg.Owner
 	longLivedTokens = cfg.ApiTokens
+	origin = cfg.Origin
 
 	// Set lit.LogLevel to the given value
 	switch strings.ToLower(cfg.LogLevel) {
@@ -79,7 +82,7 @@ func init() {
 
 	// Start the API, if enabled
 	if cfg.Address != "" {
-		webApi = api.NewApi(server, cfg.Address, owner, &clients, &buildFS)
+		webApi = api.NewApi(server, cfg.Address, owner, &clients, &buildFS, origin)
 	}
 
 	// Initialize the database

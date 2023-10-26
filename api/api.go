@@ -9,18 +9,29 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"net/http"
 )
 
-func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients, buildFS *embed.FS) *Api {
+func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
 	r := gin.New()
 
 	conf := cors.DefaultConfig()
 	conf.AllowMethods = []string{"GET", "POST", "DELETE"}
-	// TODO: Set this to false, and add the frontend url
-	conf.AllowAllOrigins = true
+	conf.AllowOrigins = []string{origin}
 
 	r.Use(gin.Recovery(), cors.New(conf))
+
+	var checkOrigin func(r *http.Request) bool
+	if origin == "" || origin == "*" {
+		checkOrigin = func(r *http.Request) bool {
+			return true
+		}
+	} else {
+		checkOrigin = func(r *http.Request) bool {
+			return r.Header.Get("Origin") == origin
+		}
+	}
 
 	a := Api{
 		servers:       servers,
@@ -29,6 +40,11 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 		owner:         owner,
 		clients:       clients,
 		notifier:      notification.NewNotifier(),
+		wsUpgrader: &websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+			CheckOrigin:     checkOrigin,
+		},
 	}
 
 	r.GET("/queue/:guild", a.getQueue)

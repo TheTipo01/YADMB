@@ -751,7 +751,7 @@ var (
 		"webui": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			if vs := manager.FindUserVoiceState(clients.Discord, i.GuildID, i.Member.User.ID); vs != nil {
 				token := webApi.AddUser(i.Member.User, api.UserInfo{Guild: i.GuildID, TextChannel: i.ChannelID})
-				embed := embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.WebUITitle, token).SetColor(0x7289DA).MessageEmbed
+				embed := embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, i.GuildID)).SetColor(0x7289DA).MessageEmbed
 
 				// Send the response as ephemeral
 				_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

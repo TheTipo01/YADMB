@@ -36,6 +36,8 @@ type Element struct {
 	Loop bool `json:"loop"`
 	// How many frames have been played. Valid only for the first element in the queue
 	Frames int `json:"frames,omitempty"`
+	// Whether the song is paused
+	IsPaused *bool `json:"isPaused,omitempty"`
 }
 
 type Queue struct {
