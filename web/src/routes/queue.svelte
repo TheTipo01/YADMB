@@ -24,10 +24,10 @@
     onMount(async () => {
         let websocket_url = `${host}/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();
         // If the host is in https, use wss instead of ws
-        if (host.startsWith("https")) {
-            websocket_url = 'wss://' + websocket_url;
+        if (window.location.protocol === "https:") {
+            websocket_url = websocket_url.replace("https://", "wss://");
         } else {
-            websocket_url = 'ws://' + websocket_url;
+            websocket_url = websocket_url.replace("http://", "ws://");
         }
 
         const socket = new WebSocket(websocket_url);
