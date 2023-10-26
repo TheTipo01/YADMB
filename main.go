@@ -279,19 +279,15 @@ func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
 // Update the voice channel when the bot is moved
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	// If the bot is moved to another channel
-	if v.UserID == s.State.User.ID && server[v.GuildID].IsPlaying() {
-		if v.ChannelID == "" {
+	if v.UserID == s.State.User.ID && v.ChannelID == "" {
+		if server[v.GuildID].IsPlaying() {
 			// If the bot has been disconnected from the voice channel, reconnect it
-			var err error
-
-			lit.Debug("Reconnecting to voice channel %s on guild %s", server[v.GuildID].VoiceChannel, v.GuildID)
-			server[v.GuildID].VC, err = s.ChannelVoiceJoin(v.GuildID, server[v.GuildID].VoiceChannel, false, true)
+			err := server[v.GuildID].VC.Reconnect()
 			if err != nil {
 				lit.Error("Can't join voice channel, %s", err)
 			}
 		} else {
-			// Update the voice channel
-			server[v.GuildID].VoiceChannel = v.ChannelID
+			server[v.GuildID].VC.Disconnect()
 		}
 	}
 
@@ -306,7 +302,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	}
 
 	// If the bot is alone in the voice channel, stop the music
-	if server[v.GuildID].VoiceChannel != "" && server[v.GuildID].VoiceChannelMembers[server[v.GuildID].VoiceChannel].Load() == 1 {
+	if server[v.GuildID].VC.IsConnected() && server[v.GuildID].VoiceChannelMembers[server[v.GuildID].VC.GetChannelID()].Load() == 1 {
 		go manager.QuitIfEmptyVoiceChannel(server[v.GuildID])
 	}
 }

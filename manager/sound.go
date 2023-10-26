@@ -6,7 +6,6 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/lit"
 	"io"
 	"os"
 )
@@ -21,7 +20,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	)
 
 	// Start speaking.
-	_ = server.VC.Speaking(true)
+	_ = server.VC.SetSpeaking(true)
 
 	for {
 		select {
@@ -82,18 +81,13 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			if server.VC != nil {
-				server.VC.OpusSend <- InBuf
-			} else {
-				lit.Debug("VC is nil, triggering reconnection")
-				server.VC, _ = server.Clients.Discord.ChannelVoiceJoin(server.GuildID, server.VoiceChannel, false, true)
-			}
+			server.VC.SendAudioPacket(InBuf)
 		}
 	}
 }
 
 func cleanUp(server *Server, closer io.Closer) {
-	_ = server.VC.Speaking(false)
+	_ = server.VC.SetSpeaking(false)
 	server.Frames.Store(0)
 
 	if closer != nil {

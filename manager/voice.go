@@ -9,16 +9,14 @@ import (
 
 // JoinVC joins the voice channel if not already joined, returns true if joined successfully
 func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, server *Server) bool {
-	if server.VC == nil {
+	if !server.VC.IsConnected() {
 		// Join the voice channel
-		vc, err := s.ChannelVoiceJoin(i.GuildID, channelID, false, true)
+		err := server.VC.Join(channelID)
 		if err != nil {
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CantJoinVC).
 				SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
 			return false
 		}
-		server.VC = vc
-		server.VoiceChannel = channelID
 	}
 	return true
 }
@@ -28,17 +26,7 @@ func QuitVC(server *Server) {
 	time.Sleep(1 * time.Minute)
 
 	if server.Queue.IsEmpty() {
-		server.disconnect()
-	}
-}
-
-// Disconnect disconnects the bot from the voice channel
-func (server *Server) disconnect() {
-	if server.VC != nil && !server.Started.Load() {
-		_ = server.VC.Disconnect()
-		server.VC = nil
-		// TODO: the entire voice channel management is a source of race conditions
-		server.VoiceChannel = ""
+		server.VC.Disconnect()
 	}
 }
 
@@ -60,12 +48,12 @@ func FindUserVoiceState(s *discordgo.Session, guildID, userID string) *discordgo
 func QuitIfEmptyVoiceChannel(server *Server) {
 	time.Sleep(1 * time.Minute)
 
-	if server.VoiceChannel != "" && server.VoiceChannelMembers[server.VoiceChannel].Load() == 1 {
+	if server.VC.IsConnected() && server.VoiceChannelMembers[server.VC.GetChannelID()].Load() == 1 {
 		ClearAndExit(server)
 	}
 }
 
 func ClearAndExit(server *Server) {
 	server.Clean()
-	server.disconnect()
+	server.VC.Disconnect()
 }

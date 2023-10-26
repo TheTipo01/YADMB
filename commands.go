@@ -395,9 +395,7 @@ var (
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
 				if !server[i.GuildID].IsPlaying() {
-					_ = server[i.GuildID].VC.Disconnect()
-					server[i.GuildID].VC = nil
-					server[i.GuildID].VoiceChannel = ""
+					server[i.GuildID].VC.Disconnect()
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DisconnectedTitle, constants.Disconnected).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
 				} else {

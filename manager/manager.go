@@ -6,6 +6,7 @@ import (
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/TheTipo01/YADMB/vc"
 	"github.com/bwmarrin/discordgo"
 	"io"
 	"os"
@@ -32,6 +33,7 @@ func NewServer(guildID string, clients *Clients) *Server {
 		WG:                  &sync.WaitGroup{},
 		VoiceChannelMembers: make(map[string]*atomic.Int32),
 		Clients:             clients,
+		VC:                  vc.NewVC(clients.Discord, guildID),
 	}
 }
 

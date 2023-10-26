@@ -4,6 +4,7 @@ import (
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/spotify"
+	"github.com/TheTipo01/YADMB/vc"
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
 	"sync"
@@ -25,7 +26,7 @@ type Server struct {
 	// The queue
 	Queue queue.Queue
 	// Voice connection
-	VC *discordgo.VoiceConnection
+	VC *vc.VC
 	// Custom commands, maps a command to a song
 	Custom map[string]*database.CustomCommand
 	// Frames
@@ -38,8 +39,6 @@ type Server struct {
 	Clear atomic.Bool
 	// Guild ID
 	GuildID string
-	// Voice channel where the bot is connected
-	VoiceChannel string
 	// Number of people in the voice channels of the guild
 	VoiceChannelMembers map[string]*atomic.Int32
 	// Whether the bot is paused
