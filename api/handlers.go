@@ -252,6 +252,9 @@ func (a *Api) websocketHandler(c *gin.Context) {
 			clean()
 			return nil
 		})
+		conn.SetPongHandler(func(string) error {
+			return conn.SetReadDeadline(time.Now().Add(pongWait))
+		})
 
 		// TODO: Handling websockets like this exposes the api to a DoS attack, by simpling spawning a lot of connections
 		for {
