@@ -281,8 +281,11 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	}
 
 	// If the bot is alone in the voice channel, stop the music
-	if server[v.GuildID].VC.IsConnected() && countVoiceStates(s, v.GuildID, server[v.GuildID].VC.GetChannelID()) == 0 {
-		go QuitIfEmptyVoiceChannel(server[v.GuildID])
+	if server[v.GuildID].VC.IsConnected() {
+		channel := server[v.GuildID].VC.GetChannelID()
+		if (v.ChannelID == channel || (v.BeforeUpdate != nil && v.BeforeUpdate.ChannelID == channel)) && countVoiceStates(s, v.GuildID, channel) == 0 {
+			go QuitIfEmptyVoiceChannel(server[v.GuildID])
+		}
 	}
 }
 
