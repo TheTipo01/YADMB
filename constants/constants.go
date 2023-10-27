@@ -56,6 +56,7 @@ const (
 	SpotifyNotConfigure = "Spotify is not configured!\nSee the documentation for more info."
 	CommandExists       = "Command already exists!"
 	CommandNotExists    = "Command doesn't exist!"
+	ErrorDM             = "Commands are not available in DM!"
 
 	// Feedback
 	Disconnected = "Bye-bye!"
@@ -66,6 +67,11 @@ const (
 	DjNot         = "User is not a DJ, and DJ mode is enabled!"
 	DjRoleChanged = "DJ role changed!"
 	DjRoleEqual   = "DJ role is already that role!"
+
+	// Blacklist
+	BlacklistAdded   = "User added to the blacklist!"
+	BlacklistRemoved = "User removed from the blacklist!"
+	UserInBlacklist  = "User is in blacklist!"
 )
 
 const (

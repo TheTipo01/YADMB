@@ -564,7 +564,7 @@ var (
 						}
 
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.BlacklistTitle,
-							"User removed from the blacklist!").
+							constants.BlacklistRemoved).
 							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
 					} else {
 						// Adding
@@ -576,7 +576,7 @@ var (
 						}
 
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.BlacklistTitle,
-							"User added to the blacklist!").
+							constants.BlacklistAdded).
 							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
 					}
 				}
