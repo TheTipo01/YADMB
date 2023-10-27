@@ -18,14 +18,23 @@ func SendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 }
 
 // SendEmbedInteraction sends an embed as response to an interaction
-func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}) {
+func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}, isDeferred bool) {
 	// Silently return if the interaction is not valid
 	if i.ID == "" {
 		return
 	}
 
-	sliceEmbed := []*discordgo.MessageEmbed{embed}
-	err := s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
+	var (
+		sliceEmbed = []*discordgo.MessageEmbed{embed}
+		err        error
+	)
+
+	if isDeferred {
+		_, err = s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
+	} else {
+		err = s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
+	}
+
 	if err != nil {
 		lit.Error("InteractionRespond failed: %s", err)
 		return
@@ -37,13 +46,13 @@ func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 }
 
 // SendAndDeleteEmbedInteraction sends and deletes after three second an embed in a given channel
-func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
+func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration, isDeferred bool) {
 	// Silently return if the interaction is not valid
 	if i.ID == "" {
 		return
 	}
 
-	SendEmbedInteraction(s, embed, i, nil)
+	SendEmbedInteraction(s, embed, i, nil, isDeferred)
 
 	time.Sleep(wait)
 

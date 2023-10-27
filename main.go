@@ -187,7 +187,7 @@ func main() {
 			if _, ok := blacklist[i.Member.User.ID]; ok {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					constants.UserInBlacklist).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 			} else {
 				if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 					h(s, i)
@@ -197,11 +197,11 @@ func main() {
 			if _, ok := blacklist[i.User.ID]; ok {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					constants.UserInBlacklist).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					constants.ErrorDM).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15, false)
 			}
 		}
 	})

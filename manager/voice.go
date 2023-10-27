@@ -14,7 +14,7 @@ func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, se
 		err := server.VC.Join(s, channelID)
 		if err != nil {
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CantJoinVC).
-				SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+				SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
 			return false
 		}
 	}

@@ -31,7 +31,7 @@ func (server *Server) Play(clients *Clients, song string, i *discordgo.Interacti
 		if err == nil {
 			server.downloadAndPlay(clients, link, username, i, random, loop, true, priority)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
 		}
 	}
 }

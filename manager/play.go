@@ -21,6 +21,8 @@ func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCrea
 				options                 = i.ApplicationCommandData().Options
 			)
 
+			_ = DeferResponse(clients.Discord, i.Interaction)
+
 			for j := 1; j < len(options); j++ {
 				switch options[j].Name {
 				case "shuffle":
@@ -45,13 +47,13 @@ func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCrea
 			} else {
 				embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle,
 					"Playlist detected, but playlist command not used.").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*10)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*10, true)
 				status = Playlist
 			}
 		}
 	} else {
 		embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, true)
 		status = NotInVC
 	}
 
@@ -61,7 +63,7 @@ func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCrea
 func (server *Server) DjModeCheck(s *discordgo.Session, i *discordgo.InteractionCreate, owner string) bool {
 	if server.DjMode && i.Member.User.ID != owner && !HasRole(i.Member.Roles, server.DjRole) {
 		embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.DjNot).
-			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, true)
 		return true
 	}
 	return false

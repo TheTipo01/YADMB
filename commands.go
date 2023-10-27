@@ -290,14 +290,14 @@ var (
 					server[i.GuildID].Paused.Store(false)
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle,
 						el.Title+" - "+el.Duration+" added by "+el.User).
-						SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle, constants.QueueEmpty).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 
@@ -308,14 +308,14 @@ var (
 				if server[i.GuildID].IsPlaying() {
 					go server[i.GuildID].Clean()
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.QueueTitle, constants.QueueCleared).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.QueueTitle, constants.QueueEmpty).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		"queue": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -344,11 +344,11 @@ var (
 				}
 
 				// Send embed
-				embed.SendAndDeleteEmbedInteraction(s, e.SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*20)
+				embed.SendAndDeleteEmbedInteraction(s, e.SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*20, false)
 			} else {
 				// Queue is empty
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.QueueTitle, constants.QueueEmpty).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		"pause": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -357,18 +357,18 @@ var (
 					if server[i.GuildID].Paused.CompareAndSwap(false, true) {
 						server[i.GuildID].Pause <- struct{}{}
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.Paused).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 					} else {
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.AlreadyPaused).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.PauseTitle, constants.QueueEmpty).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		"resume": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -377,34 +377,36 @@ var (
 					if server[i.GuildID].Paused.CompareAndSwap(true, false) {
 						server[i.GuildID].Resume <- struct{}{}
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.Resumed).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 					} else {
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.AlreadyResumed).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ResumeTitle, constants.QueueEmpty).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		"disconnect": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			_ = manager.DeferResponse(clients.Discord, i.Interaction)
+
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID) != nil {
 				if !server[i.GuildID].IsPlaying() {
 					server[i.GuildID].VC.Disconnect()
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DisconnectedTitle, constants.Disconnected).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, true)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.StillPlaying).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, true)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, true)
 			}
 		},
 		// Restarts the bot
@@ -412,13 +414,13 @@ var (
 			// Check if the owner of the bot is the one who sent the command
 			if owner == i.Member.User.ID {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.RestartTitle, constants.Disconnected).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*1)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*1, false)
 
 				_ = s.Close()
 				clients.Database.Close()
 				os.Exit(0)
 			} else {
-				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, "I'm sorry "+i.Member.User.Username+", I'm afraid I can't do that").SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, "I'm sorry "+i.Member.User.Username+", I'm afraid I can't do that").SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		// Creates a custom command to play a song or playlist
@@ -436,14 +438,14 @@ var (
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, err.Error()).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SuccessfulTitle, constants.CommandAdded).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CommandExists).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		// Removes a custom command from the DB
@@ -454,14 +456,14 @@ var (
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, err.Error()).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SuccessfulTitle, constants.CommandRemoved).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CommandNotExists).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		// Lists all custom commands for the current server
@@ -475,7 +477,7 @@ var (
 			sort.Strings(commands)
 
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.CommandsTitle, strings.Join(commands, ", ")).
-				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*30)
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*30, false)
 		},
 		// Calls a custom command
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -497,11 +499,11 @@ var (
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CommandInvalid).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		// Stats, like latency, and the size of the local cache
@@ -511,7 +513,7 @@ var (
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.StatsTitle, "Called by "+i.Member.User.Username).
 				AddField("Latency", s.HeartbeatLatency().String()).AddField("Guilds", strconv.Itoa(len(s.State.Guilds))).
 				AddField("Shard", strconv.Itoa(s.ShardID+1)+"/"+strconv.Itoa(s.ShardCount)).AddField("Cached song", strconv.Itoa(files)+", "+
-				manager.ByteCountSI(size)).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15)
+				manager.ByteCountSI(size)).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15, false)
 		},
 		// Refreshes things about a song
 		"update": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -525,7 +527,7 @@ var (
 			if manager.IsValidURL(url) {
 				if el, err := clients.Database.CheckInDb(url); err != nil {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotCached).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					if info {
 						clients.Database.RemoveFromDB(el)
@@ -540,11 +542,11 @@ var (
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SuccessfulTitle,
 						"Requested data will be updated next time the song is played!").
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.InvalidURL).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		"blacklist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -552,7 +554,7 @@ var (
 				if id := i.ApplicationCommandData().Options[0].UserValue(nil).ID; id == i.Member.User.ID {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 						"You are really trying to add yourself to the blacklist?").
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 				} else {
 					if _, ok := blacklist[id]; ok {
 						// Removing from the blacklist
@@ -565,7 +567,7 @@ var (
 
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.BlacklistTitle,
 							constants.BlacklistRemoved).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 					} else {
 						// Adding
 						blacklist[id] = true
@@ -577,13 +579,13 @@ var (
 
 						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.BlacklistTitle,
 							constants.BlacklistAdded).
-							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 					}
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 			}
 		},
 		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
@@ -592,7 +594,7 @@ var (
 				t, err := time.ParseDuration(i.ApplicationCommandData().Options[0].Value.(string))
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.GotoInvalid).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					server[i.GuildID].Queue.ModifyFirstElement(func(e *queue.Element) {
 						if e.Segments == nil {
@@ -610,11 +612,11 @@ var (
 					})
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.GotoTitle, constants.SkippedTo+t.String()).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NothingPlaying).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		// Streams a song from the given URL, useful for radios
@@ -627,7 +629,7 @@ var (
 				url := i.ApplicationCommandData().Options[0].Value.(string)
 				if !strings.HasPrefix(url, "file") && manager.IsValidURL(url) {
 					c := make(chan struct{})
-					go embed.SendEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.EnqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c)
+					go embed.SendEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.EnqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c, false)
 
 					stdout, cmds := manager.Stream(url)
 					el := queue.Element{
@@ -657,11 +659,11 @@ var (
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.InvalidURL).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 		// Enables or disables DJ mode
@@ -675,7 +677,7 @@ var (
 					}
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DjTitle, constants.DjDisabled).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					server[i.GuildID].DjMode = true
 					err := clients.Database.SetDJSettings(i.GuildID, true)
@@ -684,12 +686,12 @@ var (
 					}
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DjTitle, constants.DjEnabled).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 			}
 		},
 		// Sets the DJ role
@@ -704,15 +706,15 @@ var (
 					}
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DjTitle, constants.DjRoleChanged).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DjTitle, constants.DjRoleEqual).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 			}
 		},
 		// Adds or removes the DJ role from a user
@@ -733,16 +735,16 @@ var (
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 						"The bot doesn't have the necessary permission!").
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 				} else {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.DjTitle,
 						"The role has been succefully "+action).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!").
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
 			}
 		},
 		// Generates a link to the web UI
@@ -761,7 +763,7 @@ var (
 				})
 			} else {
 				embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.NotInVC).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5)
+					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, false)
 			}
 		},
 	}

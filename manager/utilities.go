@@ -194,3 +194,9 @@ func cleanURL(link string) string {
 func notify(n notification.NotificationMessage) {
 	Notifications <- n
 }
+
+func DeferResponse(s *discordgo.Session, i *discordgo.Interaction) error {
+	return s.InteractionRespond(i, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+	})
+}
