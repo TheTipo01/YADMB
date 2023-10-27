@@ -1,7 +1,6 @@
 package notification
 
 import (
-	"github.com/bwmarrin/lit"
 	"sync"
 )
 
@@ -22,8 +21,6 @@ func (n *Notifier) AddChannel(channel chan<- NotificationMessage, guild string) 
 	defer n.mutex.Unlock()
 
 	n.channels[guild] = append(n.channels[guild], channel)
-
-	lit.Debug("Added channel")
 }
 
 func (n *Notifier) RemoveChannel(channel chan<- NotificationMessage, guild string) {
@@ -36,8 +33,6 @@ func (n *Notifier) RemoveChannel(channel chan<- NotificationMessage, guild strin
 			break
 		}
 	}
-
-	lit.Debug("Removed channel")
 }
 
 func (n *Notifier) Notify(guild string, message NotificationMessage) {

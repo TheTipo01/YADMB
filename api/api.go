@@ -107,12 +107,3 @@ func (a *Api) AddLongLivedToken(user *discordgo.User, userInfo UserInfo) {
 	}
 	a.userInfo[user.ID] = &userInfo
 }
-
-func (a *Api) HandleNotifications() {
-	for {
-		select {
-		case n := <-manager.Notifications:
-			a.notifier.Notify(n.Guild, n)
-		}
-	}
-}
