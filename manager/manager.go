@@ -21,19 +21,18 @@ var (
 // NewServer creates a new server manager
 func NewServer(guildID string, clients *Clients) *Server {
 	return &Server{
-		Queue:               queue.NewQueue(),
-		Custom:              make(map[string]*database.CustomCommand),
-		GuildID:             guildID,
-		Pause:               make(chan struct{}),
-		Resume:              make(chan struct{}),
-		Skip:                make(chan SkipReason),
-		Started:             atomic.Bool{},
-		Clear:               atomic.Bool{},
-		Paused:              atomic.Bool{},
-		WG:                  &sync.WaitGroup{},
-		VoiceChannelMembers: make(map[string]*atomic.Int32),
-		Clients:             clients,
-		VC:                  vc.NewVC(guildID),
+		Queue:   queue.NewQueue(),
+		Custom:  make(map[string]*database.CustomCommand),
+		GuildID: guildID,
+		Pause:   make(chan struct{}),
+		Resume:  make(chan struct{}),
+		Skip:    make(chan SkipReason),
+		Started: atomic.Bool{},
+		Clear:   atomic.Bool{},
+		Paused:  atomic.Bool{},
+		WG:      &sync.WaitGroup{},
+		Clients: clients,
+		VC:      vc.NewVC(guildID),
 	}
 }
 

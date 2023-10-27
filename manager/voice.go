@@ -43,17 +43,3 @@ func FindUserVoiceState(s *discordgo.Session, guildID, userID string) *discordgo
 
 	return nil
 }
-
-// QuitIfEmptyVoiceChannel stops the music if the bot is alone in the voice channel
-func QuitIfEmptyVoiceChannel(server *Server) {
-	time.Sleep(1 * time.Minute)
-
-	if server.VC.IsConnected() && server.VoiceChannelMembers[server.VC.GetChannelID()].Load() == 1 {
-		ClearAndExit(server)
-	}
-}
-
-func ClearAndExit(server *Server) {
-	server.Clean()
-	server.VC.Disconnect()
-}

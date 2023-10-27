@@ -39,8 +39,6 @@ type Server struct {
 	Clear atomic.Bool
 	// Guild ID
 	GuildID string
-	// Number of people in the voice channels of the guild
-	VoiceChannelMembers map[string]*atomic.Int32
 	// Whether the bot is paused
 	Paused atomic.Bool
 	// Channel for pausing

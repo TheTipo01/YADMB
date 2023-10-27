@@ -19,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -179,7 +178,6 @@ func main() {
 	dg.AddHandler(guildCreate)
 	dg.AddHandler(guildDelete)
 	dg.AddHandler(voiceStateUpdate)
-	dg.AddHandler(channelCreate)
 	dg.AddHandler(guildMemberUpdate)
 
 	// Add commands handler
@@ -253,29 +251,14 @@ func ready(s *discordgo.Session, _ *discordgo.Ready) {
 
 // Initialize Server structure
 func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
-	serverMutex.Lock()
-	defer serverMutex.Unlock()
-
 	initializeServer(e.ID)
-
-	// Populate the voiceChannelMembers map
-	for _, c := range e.Channels {
-		if c.Type == discordgo.ChannelTypeGuildVoice {
-			server[e.ID].VoiceChannelMembers[c.ID] = &atomic.Int32{}
-		}
-	}
-
-	// And count the members in each voice channel
-	for _, v := range e.VoiceStates {
-		server[e.ID].VoiceChannelMembers[v.ChannelID].Add(1)
-	}
 
 	ready(s, nil)
 }
 
 func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
 	if server[e.ID].IsPlaying() {
-		manager.ClearAndExit(server[e.ID])
+		ClearAndExit(server[e.ID])
 	}
 
 	// Update the status
@@ -297,31 +280,15 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 		}
 	}
 
-	// Update the voice channel members
-	if v.ChannelID != "" {
-		if v.BeforeUpdate != nil {
-			server[v.GuildID].VoiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
-		}
-		server[v.GuildID].VoiceChannelMembers[v.ChannelID].Add(1)
-	} else {
-		server[v.GuildID].VoiceChannelMembers[v.BeforeUpdate.ChannelID].Add(-1)
-	}
-
 	// If the bot is alone in the voice channel, stop the music
-	if server[v.GuildID].VC.IsConnected() && server[v.GuildID].VoiceChannelMembers[server[v.GuildID].VC.GetChannelID()].Load() == 1 {
-		go manager.QuitIfEmptyVoiceChannel(server[v.GuildID])
-	}
-}
-
-func channelCreate(_ *discordgo.Session, c *discordgo.ChannelCreate) {
-	if c.Type == discordgo.ChannelTypeGuildVoice && server[c.GuildID].VoiceChannelMembers[c.ID] == nil {
-		server[c.GuildID].VoiceChannelMembers[c.ID] = &atomic.Int32{}
+	if server[v.GuildID].VC.IsConnected() && countVoiceStates(s, v.GuildID, server[v.GuildID].VC.GetChannelID()) == 0 {
+		go QuitIfEmptyVoiceChannel(server[v.GuildID])
 	}
 }
 
 func guildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
 	if m.User.ID == s.State.User.ID && m.CommunicationDisabledUntil != nil && server[m.GuildID].IsPlaying() {
-		manager.ClearAndExit(server[m.GuildID])
+		ClearAndExit(server[m.GuildID])
 	}
 }
