@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -38,7 +39,7 @@ func (a *Api) addToQueue(c *gin.Context) {
 		return
 	}
 
-	song := c.PostForm("song")
+	song := strings.TrimSpace(c.PostForm("song"))
 	playlist := stringToBool(c.PostForm("playlist"))
 	shuffle := stringToBool(c.PostForm("shuffle"))
 	loop := stringToBool(c.PostForm("loop"))

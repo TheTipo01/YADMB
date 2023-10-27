@@ -90,14 +90,12 @@ func (v *VC) SendAudioPacket(packet []byte) {
 func (v *VC) ChangeChannel(s *discordgo.Session, id string) error {
 	var err error
 
-	v.vc.RLock()
-	if v.vc.ChannelID != id {
-		v.vc.RUnlock()
-
+	if v.GetChannelID() != id {
+		v.rw.Lock()
+		defer v.rw.Unlock()
+		
 		_ = v.vc.Disconnect()
 		v.vc, err = s.ChannelVoiceJoin(v.guild, id, false, true)
-	} else {
-		v.vc.RUnlock()
 	}
 
 	return err
