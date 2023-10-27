@@ -43,8 +43,7 @@ func (a *Api) websocketHandler(c *gin.Context) {
 			if counter.CompareAndSwap(false, true) {
 				pingTicker.Stop()
 				_ = conn.Close()
-				close(n)
-				a.notifier.RemoveChannel(n, guild)
+				_ = a.notifier.RemoveChannel(n, guild)
 			}
 		}
 
