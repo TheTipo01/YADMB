@@ -23,6 +23,11 @@
       "description": "Get notifications about events of the bot"
     }
   ],
+  "security": [
+    {
+      "TokenAuthentication": []
+    }
+  ],
   "paths": {
     "/favorites": {
       "get": {
@@ -31,17 +36,6 @@
         ],
         "summary": "Get favorites",
         "description": "Returns all the favorite for the given user",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
-          }
-        ],
         "operationId": "getFavorites",
         "responses": {
           "200": {
@@ -51,17 +45,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/components/schemas/Favorite1"
-                      },
-                      {
-                        "$ref": "#/components/schemas/Favorite2"
-                      },
-                      {
-                        "$ref": "#/components/schemas/Favorite3"
-                      }
-                    ]
+                    "$ref": "#/components/schemas/Favorite"
                   }
                 }
               }
@@ -78,50 +62,39 @@
         ],
         "summary": "Add a favorite",
         "description": "Adds a favorite to the database",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 0,
-              "maxLength": 100
-            },
-            "description": "The name of the favorite, max 100 characters"
-          },
-          {
-            "name": "link",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 0,
-              "maxLength": 200
-            },
-            "description": "The link of the song, max 200 characters"
-          },
-          {
-            "name": "folder",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "minLength": 0,
-              "maxLength": 100
-            },
-            "description": "The name of the folder"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 100,
+                    "description": "The name of the favorite, max 100 characters"
+                  },
+                  "link": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 200,
+                    "description": "The link of the song, max 200 characters"
+                  },
+                  "folder": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 100,
+                    "description": "The name of the folder, max 100 characters"
+                  }
+                },
+                "required": [
+                  "name",
+                  "link"
+                ]
+              }
+            }
           }
-        ],
+        },
         "operationId": "addFavorite",
         "responses": {
           "200": {
@@ -141,28 +114,26 @@
         ],
         "summary": "Remove a favorite",
         "description": "Removes a favorite from the database",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 0,
-              "maxLength": 100
-            },
-            "description": "The name of the favorite"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 100,
+                    "description": "The name of the favorite, max 100 characters"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
           }
-        ],
+        },
         "operationId": "removeFavorite",
         "responses": {
           "200": {
@@ -193,15 +164,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
           }
         ],
         "operationId": "getQueue",
@@ -213,14 +175,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/components/schemas/Element1"
-                      },
-                      {
-                        "$ref": "#/components/schemas/Element2"
-                      }
-                    ]
+                    "$ref": "#/components/schemas/Element"
                   }
                 }
               }
@@ -237,6 +192,44 @@
         ],
         "summary": "Add a song to the queue",
         "description": "Adds the given song to the queue",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "song": {
+                    "type": "string",
+                    "description": "A link to a song or a query to search on youtube"
+                  },
+                  "playlist": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Is the song a playlist?"
+                  },
+                  "shuffle": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Should we shuffle the given playlist?"
+                  },
+                  "loop": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Should the song be looped?"
+                  },
+                  "priority": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Should we add the song as the first in the queue?"
+                  }
+                },
+                "required": [
+                  "song"
+                ]
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "name": "guild",
@@ -246,64 +239,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "song",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "A link to a song or a query to search on youtube"
-          },
-          {
-            "name": "playlist",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": "false"
-            },
-            "description": "Is the song a playlist?"
-          },
-          {
-            "name": "shuffle",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": "false"
-            },
-            "description": "Should we shuffle the given playlist?"
-          },
-          {
-            "name": "loop",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": "false"
-            },
-            "description": "Should the song be looped?"
-          },
-          {
-            "name": "priority",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": "false"
-            },
-            "description": "Should we add the song as the first in the queue?"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
           }
         ],
         "operationId": "addToQueue",
@@ -328,6 +263,22 @@
         ],
         "summary": "Skip the currently playing song",
         "description": "Skip the currently playing song",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clean": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Should we clean the entire queue?"
+                  }
+                }
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "name": "guild",
@@ -337,25 +288,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
-          },
-          {
-            "name": "clean",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": "false"
-            },
-            "description": "Should we clean the entire queue?"
           }
         ],
         "operationId": "skip",
@@ -391,15 +323,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
           }
         ],
         "operationId": "pause",
@@ -432,15 +355,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
           }
         ],
         "operationId": "resume",
@@ -473,15 +387,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
           }
         ],
         "operationId": "toggle",
@@ -517,15 +422,6 @@
               "type": "string"
             },
             "description": "The guild id"
-          },
-          {
-            "name": "token",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Token for authentication"
           }
         ],
         "operationId": "websocket",
@@ -548,8 +444,15 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "TokenAuthentication": {
+        "type": "apiKey",
+        "in": "query",
+        "name": "token"
+      }
+    },
     "schemas": {
-      "Element1": {
+      "Element": {
         "type": "object",
         "properties": {
           "id": {
@@ -583,46 +486,8 @@
           "frames": {
             "type": "integer",
             "example": 10248
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "duration",
-          "link",
-          "user",
-          "thumbnail",
-          "loop"
-        ]
-      },
-      "Element2": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "PvuYSybooLg-youtube"
           },
-          "title": {
-            "type": "string",
-            "example": "Lights, Camera, Action! - Studiopolis Zone Act 1"
-          },
-          "duration": {
-            "type": "string",
-            "example": "03:08"
-          },
-          "link": {
-            "type": "string",
-            "example": "https://www.youtube.com/watch?v=PvuYSybooLg"
-          },
-          "user": {
-            "type": "string",
-            "example": "thetipo01"
-          },
-          "thumbnail": {
-            "type": "string",
-            "example": "https://i.ytimg.com/vi/PvuYSybooLg/maxresdefault.jpg"
-          },
-          "loop": {
+          "isPaused": {
             "type": "boolean",
             "example": false
           }
@@ -637,7 +502,7 @@
           "loop"
         ]
       },
-      "Favorite1": {
+      "Favorite": {
         "type": "object",
         "properties": {
           "name": {
@@ -658,48 +523,6 @@
           "link"
         ]
       },
-      "Favorite2": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "The Top"
-          },
-          "link": {
-            "type": "string",
-            "example": "https://www.youtube.com/watch?v=6wftUIvoHAQ"
-          },
-          "folder": {
-            "type": "string",
-            "example": "Eurobeat"
-          }
-        },
-        "required": [
-          "name",
-          "link"
-        ]
-      },
-      "Favorite3": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Blue Jeans"
-          },
-          "link": {
-            "type": "string",
-            "example": "https://www.youtube.com/watch?v=4MKAf6YX_7M"
-          },
-          "folder": {
-            "type": "string",
-            "example": ""
-          }
-        },
-        "required": [
-          "name",
-          "link"
-        ]
-      },
       "Notification": {
         "type": "object",
         "properties": {
@@ -710,14 +533,7 @@
           "song": {
             "type": "array",
             "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/Element1"
-                },
-                {
-                  "$ref": "#/components/schemas/Element2"
-                }
-              ]
+              "$ref": "#/components/schemas/Element"
             }
           }
         }
