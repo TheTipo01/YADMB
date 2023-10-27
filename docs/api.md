@@ -1,2 +1,2 @@
 # API Reference
-!!swagger openapi.json!!
+!!swagger openapi.yml!!
