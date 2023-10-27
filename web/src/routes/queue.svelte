@@ -3,7 +3,7 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueue, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
-    import {addObjectToArray, RemoveObjectFromArray, ClearArray} from "../lib/utilities"
+    import {addObjectToArray, RemoveObjectFromArray, ClearArray, KeyPressed} from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
@@ -16,12 +16,7 @@
 
     // variables
     let queue = GetQueue(GuildId, token, host);
-    let isPaused = queue.then((json) => {
-        if (json.length !== 0) {
-            return json[0].isPaused;
-        }
-        return false;
-    });
+    let isPaused = false;
     let showModal = false;
     let isPlaylist = false;
 
@@ -60,18 +55,13 @@
                     queue = ClearArray(queue);
                     isPaused = false;
                     break;
-                case Notification.Pause:
-                    isPaused = true;
-                    break;
                 case Notification.Resume:
-                    isPaused = false;
+                case Notification.Pause:
+                    isPaused = !isPaused;
                     break;
             }
         }
-
-        return () => socket.close();
     });
-
 
 </script>
 
@@ -95,7 +85,7 @@
         </div>
     </form>
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddToQueue(GuildId, token, host)}>Add</Button>
+        <Button on:click={() => AddToQueue(GuildId, token, host)} on:keydown={(e) => (KeyPressed(e, "queue", GuildId, token, host))}>Add</Button>
     </svelte:fragment>
 </Modal>
 

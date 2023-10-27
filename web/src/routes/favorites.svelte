@@ -1,6 +1,7 @@
 <script>
     import { Button } from "flowbite-svelte";
     import { GetFavorites, AddFavorite, RemoveFavorite} from "../lib/favorites";
+    import {KeyPressed} from "../lib/utilities"
     import {Modal} from "flowbite-svelte";
     import {Input, Label} from "flowbite-svelte"
     import {Heading, P} from "flowbite-svelte"
@@ -37,7 +38,7 @@
         </div>
     </form>
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddFavorite(token, host)}>Add</Button>
+        <Button on:click={() => AddFavorite(token, host)} on:keydown={(e) => (KeyPressed(e, "favorite", "", token, host))}>Add</Button>
     </svelte:fragment>
 </Modal>
 

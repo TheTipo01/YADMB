@@ -1,3 +1,5 @@
+import { AddFavorite } from "./favorites";
+import { AddToQueue } from "./queue";
 
 // Function to add an object to the array 
 export function addObjectToArray(promise, objectToAdd) {
@@ -32,4 +34,17 @@ export function GetToken() {
 
 export function GetHost() {
     return window.location.protocol + "//" + window.location.host;
+}
+
+export function KeyPressed(e, scope, GuildId = "", token = "", host = "") {
+    switch(e.key) {
+        case 'Enter':
+            switch(scope) {
+                case 'queue':
+                    AddToQueue(GuildId, token, host);
+                case 'favorite':
+                    AddFavorite(token, host);
+            }
+            break;
+    }
 }
