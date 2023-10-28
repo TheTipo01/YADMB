@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
 	"github.com/TheTipo01/YADMB/api/notification"
@@ -54,7 +55,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 					}
 
 					f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
-					el.Reader = f
+					el.Reader = bufio.NewReader(f)
 					el.Closer = f
 					continue
 				} else {

@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"bufio"
 	"errors"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
@@ -37,7 +38,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 		if err == nil && info.Size() > 0 {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
 			el.User = p.Username
-			el.Reader = f
+			el.Reader = bufio.NewReader(f)
 			el.Closer = f
 			el.TextChannel = p.Interaction.ChannelID
 			el.Loop = p.Loop
@@ -131,7 +132,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
 			pipe, cmd := gen(ytDLP.WebpageURL, el.ID, checkAudioOnly(ytDLP.RequestedFormats))
-			el.Reader = pipe
+			el.Reader = bufio.NewReader(pipe)
 			el.Downloading = true
 
 			el.BeforePlay = func() {
@@ -143,7 +144,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			}
 		} else {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
-			el.Reader = f
+			el.Reader = bufio.NewReader(f)
 			el.Closer = f
 		}
 
@@ -225,7 +226,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
 			pipe, cmd := gen(el.Link, el.ID, true)
-			el.Reader = pipe
+			el.Reader = bufio.NewReader(pipe)
 			el.Downloading = true
 
 			el.BeforePlay = func() {
@@ -237,7 +238,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 			}
 		} else {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
-			el.Reader = f
+			el.Reader = bufio.NewReader(f)
 			el.Closer = f
 		}
 
