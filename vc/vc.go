@@ -81,9 +81,11 @@ func (v *VC) Reconnect(s *discordgo.Session) error {
 	return nil
 }
 
-func (v *VC) SendAudioPacket(packet []byte) {
+func (v *VC) GetAudioChannel() chan []byte {
 	if !v.isConnectionNil() {
-		v.vc.OpusSend <- packet
+		return v.vc.OpusSend
+	} else {
+		return nil
 	}
 }
 

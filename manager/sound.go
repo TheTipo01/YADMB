@@ -21,6 +21,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 
 	// Start speaking.
 	_ = server.VC.SetSpeaking(true)
+	audioChannel := server.VC.GetAudioChannel()
 
 	for {
 		select {
@@ -81,7 +82,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			server.VC.SendAudioPacket(InBuf)
+			audioChannel <- InBuf
 		}
 	}
 }
