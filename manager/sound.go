@@ -78,7 +78,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			if err != nil {
 				cleanUp(server, el.Closer)
 				// Force to re-download the song
-				_ = os.Remove(constants.CachePath + el.ID + ".dca")
+				_ = os.Remove(constants.CachePath + el.ID + constants.AudioExtension)
 				return Error, err
 			}
 

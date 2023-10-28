@@ -8,13 +8,13 @@ import (
 )
 
 // JoinVC joins the voice channel if not already joined, returns true if joined successfully
-func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, server *Server) bool {
+func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, server *Server, isDeferred chan struct{}) bool {
 	if !server.VC.IsConnected() {
 		// Join the voice channel
 		err := server.VC.Join(s, channelID)
 		if err != nil {
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CantJoinVC).
-				SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+				SetColor(0x7289DA).MessageEmbed, i, time.Second*5, isDeferred)
 			return false
 		}
 	}

@@ -7,7 +7,6 @@ import (
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/sponsorblock"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 	spotAPI "github.com/zmb3/spotify/v2"
@@ -22,52 +21,52 @@ import (
 const youtubeBase = "https://www.youtube.com/watch?v="
 
 // downloadAndPlay downloads and plays a song from a YouTube link
-func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool) {
+func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 	var c chan struct{}
 	if respond {
 		c = make(chan struct{})
-		go embed.SendEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, link).SetColor(0x7289DA).MessageEmbed, i, c, true)
+		go embed.SendEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, p.Song).SetColor(0x7289DA).MessageEmbed, p.Interaction, c, p.IsDeferred)
 	}
 
-	link = cleanURL(link)
+	p.Song = cleanURL(p.Song)
 
 	// Check if the song is the db, to speedup things
-	el, err := clients.Database.CheckInDb(link)
+	el, err := p.Clients.Database.CheckInDb(p.Song)
 	if err == nil {
 		info, err := os.Stat(constants.CachePath + el.ID + constants.AudioExtension)
 		if err == nil && info.Size() > 0 {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
-			el.User = user
+			el.User = p.Username
 			el.Reader = f
 			el.Closer = f
-			el.TextChannel = i.ChannelID
-			el.Loop = loop
+			el.TextChannel = p.Interaction.ChannelID
+			el.Loop = p.Loop
 
 			if respond {
-				go DeleteInteraction(clients.Discord, i, c)
+				go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
 			}
-			server.AddSong(priority, el)
+			server.AddSong(p.Priority, el)
 			return
 		}
 	}
 
 	// If we have a valid YouTube client, and the link is a YouTube link, use the YouTube api
-	if clients.Youtube != nil && (strings.Contains(link, "youtube.com") || strings.Contains(link, "youtu.be")) {
-		err = server.downloadAndPlayYouTubeAPI(clients, link, user, i, random, loop, respond, priority, c)
+	if p.Clients.Youtube != nil && (strings.Contains(p.Song, "youtube.com") || strings.Contains(p.Song, "youtu.be")) {
+		err = server.downloadAndPlayYouTubeAPI(p, respond, c)
 		// If we have an error, we fall back to yt-dlp
 		if err == nil {
 			return
 		}
 	}
 
-	infoJSON, err := getInfo(link)
+	infoJSON, err := getInfo(p.Song)
 	if err != nil {
 		if respond {
-			embed.ModifyInteractionAndDelete(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5)
+			embed.ModifyInteractionAndDelete(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5)
 		} else {
-			msg := embed.SendEmbed(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i.ChannelID)
+			msg := embed.SendEmbed(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction.ChannelID)
 			time.Sleep(time.Second * 5)
-			_ = clients.Discord.ChannelMessageDelete(msg.ChannelID, msg.ID)
+			_ = p.Clients.Discord.ChannelMessageDelete(msg.ChannelID, msg.ID)
 		}
 		return
 	}
@@ -75,12 +74,12 @@ func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *di
 	var ytDLP YtDLP
 
 	// If we want to play the song in a random order, we just shuffle the slice
-	if random {
+	if p.Random {
 		infoJSON = shuffle(infoJSON)
 	}
 
 	if respond {
-		go DeleteInteraction(clients.Discord, i, c)
+		go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
 	}
 
 	elements := make([]queue.Element, 0, len(infoJSON))
@@ -93,10 +92,10 @@ func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *di
 			Title:       ytDLP.Title,
 			Duration:    FormatDuration(ytDLP.Duration),
 			Link:        ytDLP.WebpageURL,
-			User:        user,
+			User:        p.Username,
 			Thumbnail:   ytDLP.Thumbnail,
-			TextChannel: i.ChannelID,
-			Loop:        loop,
+			TextChannel: p.Interaction.ChannelID,
+			Loop:        p.Loop,
 		}
 
 		exist := false
@@ -107,7 +106,7 @@ func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *di
 			el.Segments = sponsorblock.GetSegments(ytDLP.ID)
 
 			// If the song is on YouTube, we also add it with its compact url, for faster parsing
-			clients.Database.AddToDb(el, false)
+			p.Clients.Database.AddToDb(el, false)
 			exist = true
 
 			el.Link = "https://youtu.be/" + ytDLP.ID
@@ -119,11 +118,11 @@ func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *di
 		}
 
 		// We add the song to the db, for faster parsing
-		clients.Database.AddToDb(el, exist)
+		p.Clients.Database.AddToDb(el, exist)
 
 		// If we didn't encounter a playlist, and the link is not the same as the one we got from yt-dlp, add it to the db
-		if len(infoJSON) == 1 && el.Link != link {
-			go clients.Database.AddLinkDB(el.ID, link)
+		if len(infoJSON) == 1 && el.Link != p.Song {
+			go p.Clients.Database.AddLinkDB(el.ID, p.Song)
 		}
 
 		// Checks if video is already downloaded
@@ -151,29 +150,29 @@ func (server *Server) downloadAndPlay(clients *Clients, link, user string, i *di
 		elements = append(elements, el)
 	}
 
-	server.AddSong(priority, elements...)
+	server.AddSong(p.Priority, elements...)
 }
 
 // DownloadAndPlayYouTubeAPI downloads and plays a song from a YouTube link, parsing the link with the YouTube API
-func (server *Server) downloadAndPlayYouTubeAPI(clients *Clients, link, user string, i *discordgo.Interaction, random, loop, respond, priority bool, c chan struct{}) error {
+func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c chan struct{}) error {
 	var (
 		result []youtube.Video
 		el     queue.Element
 	)
 
 	// Check if we have a YouTube playlist, and get its parameter
-	u, _ := url.Parse(link)
+	u, _ := url.Parse(p.Song)
 	q := u.Query()
 	if id := q.Get("list"); id != "" {
-		result = clients.Youtube.GetPlaylist(id)
+		result = p.Clients.Youtube.GetPlaylist(id)
 	} else {
-		if strings.Contains(link, "youtube.com") {
+		if strings.Contains(p.Song, "youtube.com") {
 			id = q.Get("v")
 		} else {
-			id = strings.TrimPrefix(link, "https://youtu.be/")
+			id = strings.TrimPrefix(p.Song, "https://youtu.be/")
 		}
 
-		if video := clients.Youtube.GetVideo(id); video != nil {
+		if video := p.Clients.Youtube.GetVideo(id); video != nil {
 			result = append(result, *video)
 		}
 	}
@@ -183,7 +182,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(clients *Clients, link, user str
 	}
 
 	if respond {
-		go DeleteInteraction(clients.Discord, i, c)
+		go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
 	}
 
 	elements := make([]queue.Element, 0, len(result))
@@ -193,10 +192,10 @@ func (server *Server) downloadAndPlayYouTubeAPI(clients *Clients, link, user str
 			Title:       r.Title,
 			Duration:    FormatDuration(r.Duration),
 			Link:        youtubeBase + r.ID,
-			User:        user,
+			User:        p.Username,
 			Thumbnail:   r.Thumbnail,
-			TextChannel: i.ChannelID,
-			Loop:        loop,
+			TextChannel: p.Interaction.ChannelID,
+			Loop:        p.Loop,
 		}
 
 		exist := false
@@ -205,20 +204,20 @@ func (server *Server) downloadAndPlayYouTubeAPI(clients *Clients, link, user str
 		el.Segments = sponsorblock.GetSegments(r.ID)
 
 		// If the song is on YouTube, we also add it with its compact url, for faster parsing
-		clients.Database.AddToDb(el, false)
+		p.Clients.Database.AddToDb(el, false)
 		exist = true
 
 		// YouTube shorts can have two different links: the one that redirects to a classical YouTube video
 		// and one that is played on the new UI. This is a workaround to save also the link to the new UI
-		if strings.Contains(link, "shorts") {
-			el.Link = link
-			clients.Database.AddToDb(el, exist)
+		if strings.Contains(p.Song, "shorts") {
+			el.Link = p.Song
+			p.Clients.Database.AddToDb(el, exist)
 		}
 
 		el.Link = "https://youtu.be/" + r.ID
 
 		// We add the song to the db, for faster parsing
-		go clients.Database.AddToDb(el, exist)
+		go p.Clients.Database.AddToDb(el, exist)
 
 		// Checks if video is already downloaded
 		info, err := os.Stat(constants.CachePath + el.ID + constants.AudioExtension)
@@ -245,13 +244,13 @@ func (server *Server) downloadAndPlayYouTubeAPI(clients *Clients, link, user str
 		elements = append(elements, el)
 	}
 
-	if random {
+	if p.Random {
 		rand.Shuffle(len(elements), func(i, j int) {
 			elements[i], elements[j] = elements[j], elements[i]
 		})
 	}
 
-	server.AddSong(priority, elements...)
+	server.AddSong(p.Priority, elements...)
 	return nil
 }
 
@@ -277,14 +276,14 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 }
 
 // Enqueues song from a spotify playlist, searching them on YouTube
-func (server *Server) spotifyPlaylist(clients *Clients, user string, i *discordgo.Interaction, random, loop, priority bool, id spotAPI.ID) {
-	if clients.Spotify != nil {
-		if playlist, err := clients.Spotify.GetPlaylist(id); err == nil {
+func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
+	if p.Clients.Spotify != nil {
+		if playlist, err := p.Clients.Spotify.GetPlaylist(id); err == nil {
 			server.WG.Add(1)
 
-			go embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3, true)
+			go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
 
-			if random {
+			if p.Random {
 				rand.Shuffle(len(playlist.Tracks.Tracks), func(i, j int) {
 					playlist.Tracks.Tracks[i], playlist.Tracks.Tracks[j] = playlist.Tracks.Tracks[j], playlist.Tracks.Tracks[i]
 				})
@@ -292,28 +291,28 @@ func (server *Server) spotifyPlaylist(clients *Clients, user string, i *discordg
 
 			for j := 0; j < len(playlist.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := playlist.Tracks.Tracks[j]
-				link, _ := searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, clients.Youtube)
-				server.downloadAndPlay(clients, link, user, i, false, loop, false, priority)
+				p.Song, _ = searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, p.Clients.Youtube)
+				server.downloadAndPlay(p, false)
 			}
 
 			server.WG.Done()
 		} else {
 			lit.Error("Can't get info on a spotify playlist: %s", err)
-			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+		embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 	}
 }
 
-func (server *Server) spotifyAlbum(clients *Clients, user string, i *discordgo.Interaction, random, loop, priority bool, id spotAPI.ID) {
-	if clients.Spotify != nil {
-		if album, err := clients.Spotify.GetAlbum(id); err == nil {
+func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
+	if p.Clients.Spotify != nil {
+		if album, err := p.Clients.Spotify.GetAlbum(id); err == nil {
 			server.WG.Add(1)
 
-			go embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String()).SetColor(0x7289DA).MessageEmbed, i, time.Second*3, true)
+			go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
 
-			if random {
+			if p.Random {
 				rand.Shuffle(len(album.Tracks.Tracks), func(i, j int) {
 					album.Tracks.Tracks[i], album.Tracks.Tracks[j] = album.Tracks.Tracks[j], album.Tracks.Tracks[i]
 				})
@@ -321,32 +320,32 @@ func (server *Server) spotifyAlbum(clients *Clients, user string, i *discordgo.I
 
 			for j := 0; j < len(album.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := album.Tracks.Tracks[j]
-				link, _ := searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, clients.Youtube)
-				server.downloadAndPlay(clients, link, user, i, false, loop, false, priority)
+				p.Song, _ = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
+				server.downloadAndPlay(p, false)
 			}
 
 			server.WG.Done()
 		} else {
 			lit.Error("Can't get info on a spotify album: %s", err)
-			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+		embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 	}
 }
 
 // Gets info about a spotify track and plays it, searching it on YouTube
-func (server *Server) spotifyTrack(clients *Clients, user string, i *discordgo.Interaction, loop, priority bool, id spotAPI.ID) {
-	if clients.Spotify != nil {
-		if track, err := clients.Spotify.GetTrack(id); err == nil {
-			link, _ := searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, clients.Youtube)
-			server.downloadAndPlay(clients, link, user, i, false, loop, true, priority)
+func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
+	if p.Clients.Spotify != nil {
+		if track, err := p.Clients.Spotify.GetTrack(id); err == nil {
+			p.Song, _ = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
+			server.downloadAndPlay(p, true)
 		} else {
 			lit.Error("Can't get info on a spotify track: %s", err)
-			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+		embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 	}
 }
 

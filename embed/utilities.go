@@ -18,7 +18,7 @@ func SendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel s
 }
 
 // SendEmbedInteraction sends an embed as response to an interaction
-func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}, isDeferred bool) {
+func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}, isDeferred chan struct{}) {
 	// Silently return if the interaction is not valid
 	if i.ID == "" {
 		return
@@ -29,7 +29,8 @@ func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 		err        error
 	)
 
-	if isDeferred {
+	if isDeferred != nil {
+		<-isDeferred
 		_, err = s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
 	} else {
 		err = s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
@@ -46,7 +47,7 @@ func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 }
 
 // SendAndDeleteEmbedInteraction sends and deletes after three second an embed in a given channel
-func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration, isDeferred bool) {
+func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration, isDeferred chan struct{}) {
 	// Silently return if the interaction is not valid
 	if i.ID == "" {
 		return
@@ -84,4 +85,16 @@ func ModifyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEm
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
 	}
+}
+
+func DeferResponse(s *discordgo.Session, i *discordgo.Interaction) chan struct{} {
+	c := make(chan struct{})
+	go func() {
+		_ = s.InteractionRespond(i, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		})
+		c <- struct{}{}
+	}()
+
+	return c
 }

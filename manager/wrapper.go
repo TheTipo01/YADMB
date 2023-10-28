@@ -9,29 +9,44 @@ import (
 	"time"
 )
 
+// PlayEvent is the struct for playing songs
+type PlayEvent struct {
+	Username    string
+	Song        string
+	Clients     *Clients
+	Interaction *discordgo.Interaction
+	Random      bool
+	Loop        bool
+	Priority    bool
+	IsDeferred  chan struct{}
+}
+
 // Wrapper function for playing songs
-func (server *Server) Play(clients *Clients, song string, i *discordgo.Interaction, guild, username string, random, loop, priority bool) {
+func (server *Server) Play(p PlayEvent) {
 	switch {
-	case strings.HasPrefix(song, "spotify:playlist:"):
-		server.spotifyPlaylist(clients, username, i, random, loop, priority, spotify.ID(strings.TrimPrefix(song, "spotify:playlist:")))
-	case strings.Contains(song, "spotify.com/playlist/"):
-		server.spotifyPlaylist(clients, username, i, random, loop, priority, spotify.ID(strings.Split(strings.TrimPrefix(song, "https://open.spotify.com/playlist/"), "?")[0]))
-	case strings.HasPrefix(song, "spotify:track:"):
-		server.spotifyTrack(clients, username, i, loop, priority, spotify.ID(strings.TrimPrefix(song, "spotify:track:")))
-	case strings.Contains(song, "spotify.com/track/"):
-		server.spotifyTrack(clients, username, i, loop, priority, spotify.ID(strings.Split(strings.TrimPrefix(song, "https://open.spotify.com/track/"), "?")[0]))
-	case strings.HasPrefix(song, "spotify:album:"):
-		server.spotifyAlbum(clients, username, i, random, loop, priority, spotify.ID(strings.TrimPrefix(song, "spotify:album:")))
-	case strings.Contains(song, "spotify.com/album/"):
-		server.spotifyAlbum(clients, username, i, random, loop, priority, spotify.ID(strings.Split(strings.TrimPrefix(song, "https://open.spotify.com/album/"), "?")[0]))
-	case IsValidURL(song):
-		server.downloadAndPlay(clients, song, username, i, random, loop, true, priority)
+	case strings.HasPrefix(p.Song, "spotify:playlist:"):
+		server.spotifyPlaylist(p, spotify.ID(strings.TrimPrefix(p.Song, "spotify:playlist:")))
+	case strings.Contains(p.Song, "spotify.com/playlist/"):
+		server.spotifyPlaylist(p, spotify.ID(strings.Split(strings.TrimPrefix(p.Song, "https://open.spotify.com/playlist/"), "?")[0]))
+	case strings.HasPrefix(p.Song, "spotify:track:"):
+		server.spotifyTrack(p, spotify.ID(strings.TrimPrefix(p.Song, "spotify:track:")))
+	case strings.Contains(p.Song, "spotify.com/track/"):
+		server.spotifyTrack(p, spotify.ID(strings.Split(strings.TrimPrefix(p.Song, "https://open.spotify.com/track/"), "?")[0]))
+	case strings.HasPrefix(p.Song, "spotify:album:"):
+		server.spotifyAlbum(p, spotify.ID(strings.TrimPrefix(p.Song, "spotify:album:")))
+	case strings.Contains(p.Song, "spotify.com/album/"):
+		server.spotifyAlbum(p, spotify.ID(strings.Split(strings.TrimPrefix(p.Song, "https://open.spotify.com/album/"), "?")[0]))
+	case IsValidURL(p.Song):
+		server.downloadAndPlay(p, true)
 	default:
-		link, err := searchDownloadAndPlay(song, clients.Youtube)
+		var err error
+
+		p.Song, err = searchDownloadAndPlay(p.Song, p.Clients.Youtube)
 		if err == nil {
-			server.downloadAndPlay(clients, link, username, i, random, loop, true, priority)
+			server.downloadAndPlay(p, true)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(clients.Discord, embed.NewEmbed().SetTitle(clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, i, time.Second*5, true)
+			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).
+				AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
 		}
 	}
 }

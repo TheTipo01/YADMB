@@ -179,32 +179,7 @@ func main() {
 	dg.AddHandler(guildDelete)
 	dg.AddHandler(voiceStateUpdate)
 	dg.AddHandler(guildMemberUpdate)
-
-	// Add commands handler
-	dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		// Ignores commands from DM
-		if i.User == nil {
-			if _, ok := blacklist[i.Member.User.ID]; ok {
-				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-					constants.UserInBlacklist).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
-			} else {
-				if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-					h(s, i)
-				}
-			}
-		} else {
-			if _, ok := blacklist[i.User.ID]; ok {
-				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-					constants.UserInBlacklist).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, false)
-			} else {
-				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-					constants.ErrorDM).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15, false)
-			}
-		}
-	})
+	dg.AddHandler(interactionCreate)
 
 	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
@@ -303,5 +278,30 @@ func guildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
 	if m.User.ID == s.State.User.ID && m.CommunicationDisabledUntil != nil && server[m.GuildID].IsPlaying() {
 		ClearAndExit(server[m.GuildID])
+	}
+}
+
+func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	// Ignores commands from DM
+	if i.User == nil {
+		if _, ok := blacklist[i.Member.User.ID]; ok {
+			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
+				constants.UserInBlacklist).
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+		} else {
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		}
+	} else {
+		if _, ok := blacklist[i.User.ID]; ok {
+			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
+				constants.UserInBlacklist).
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+		} else {
+			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
+				constants.ErrorDM).
+				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15, nil)
+		}
 	}
 }
