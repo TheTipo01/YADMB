@@ -18,8 +18,8 @@ func initializeServer(guild string) {
 func countVoiceStates(s *discordgo.Session, guild, channel string) (count int) {
 	g, err := s.State.Guild(guild)
 	if err == nil {
-		s.RLock()
-		defer s.RUnlock()
+		s.State.RLock()
+		defer s.State.RUnlock()
 
 		for _, vs := range g.VoiceStates {
 			if vs.ChannelID == channel && vs.UserID != s.State.User.ID {
