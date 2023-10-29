@@ -1,7 +1,7 @@
 // This file contains every function used in the queue.svelte component
 import { Response } from "./error";
 
-export async function AddToQueue(GuildID, token, host) {
+export async function AddToQueueHTML(GuildID, token, host) {
     // Values needed for adding a song to a queue
     let song = document.getElementById("song").value.trim();
     let shuffle = document.getElementById("shuffle")?.checked;
@@ -9,6 +9,10 @@ export async function AddToQueue(GuildID, token, host) {
     let loop = document.getElementById("loop")?.checked;
     let priority = document.getElementById("priority")?.checked
 
+    return AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority);
+}
+
+export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority) {
     // Request
     let route = `${host}/queue/${GuildID}`
     let response = await fetch(route, {

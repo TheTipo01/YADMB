@@ -6,13 +6,16 @@
     import {Input, Label} from "flowbite-svelte"
     import {Heading, P} from "flowbite-svelte"
     import TrashBinSolid from "flowbite-svelte-icons/TrashBinSolid.svelte"
+    import {PlusSolid} from "flowbite-svelte-icons";
+    import {AddToQueue} from "../lib/queue"
 
     // props
+    export let GuildId;
     export let token;
     export let host;
 
-    //variables
-    let favorites = GetFavorites(token, host);
+    // variables
+    export let favorites = GetFavorites(token, host);
     let showModal = false;
 </script>
 
@@ -45,7 +48,7 @@
 {#await favorites}
     <P>Loading Favorites</P>
 {:then favorite} 
-    {#if favorite.length != 0}
+    {#if favorite.length !== 0}
         <div class="grid grid-cols-3">
             <Heading tag="h5">Song Name</Heading>
             <Heading tag="h5">Link</Heading>
@@ -55,9 +58,10 @@
             <div class="grid grid-cols-3 mt-5">
                 <P>{song.name}</P>
                 <P>{song.link}</P>
-                <div class="grid grid-cols-2">
+                <div class="grid grid-cols-3">
                     <P>{song.folder}</P>
                     <Button on:click={() => RemoveFavorite(token, song.name, host)} class="w-1/3"><TrashBinSolid /></Button>
+                    <Button on:click={() => AddToQueue(GuildId, token, host, song.link, false, false, false, false)} class="w-1/3"><PlusSolid /></Button>
                 </div>
                 
             </div>

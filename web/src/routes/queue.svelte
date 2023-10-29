@@ -1,7 +1,7 @@
 <script>
     // Various Components and functions
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
-    import {AddToQueue, GetQueue, RemoveFromQueue} from "../lib/queue";
+    import {AddToQueueHTML, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
     import {addObjectToArray, RemoveObjectFromArray, ClearArray, KeyPressed} from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
@@ -92,7 +92,7 @@
         </div>
     </form>
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddToQueue(GuildId, token, host)} on:keydown={(e) => (KeyPressed(e, "queue", GuildId, token, host))}>Add</Button>
+        <Button on:click={() => AddToQueueHTML(GuildId, token, host)} on:keydown={(e) => (KeyPressed(e, "queue", GuildId, token, host))}>Add</Button>
     </svelte:fragment>
 </Modal>
 
