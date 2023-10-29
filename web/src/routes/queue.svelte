@@ -14,9 +14,15 @@
     export let token;
     export let host;
 
+    export let isPaused = false;
+
     // variables
     let queue = GetQueue(GuildId, token, host);
-    let isPaused = false;
+    queue.then((value) => {
+        if (value.length !== 0) {
+            isPaused = value[0].isPaused === "true";
+        }
+    });
     let showModal = false;
     let isPlaylist = false;
 
@@ -44,7 +50,6 @@
             switch(signal.notification) {
                 case Notification.NewSong: // New song
                     queue = addObjectToArray(queue, signal.song);
-                    isPaused = false;
                     break;
                 case Notification.Skip:
                 case Notification.Finished:
@@ -56,8 +61,10 @@
                     isPaused = false;
                     break;
                 case Notification.Resume:
+                    isPaused = false;
+                    break;
                 case Notification.Pause:
-                    isPaused = !isPaused;
+                    isPaused = true;
                     break;
             }
         }

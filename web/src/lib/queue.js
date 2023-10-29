@@ -4,13 +4,11 @@ import { Response } from "./error";
 export async function AddToQueue(GuildID, token, host) {
     // Values needed for adding a song to a queue
     let song = document.getElementById("song").value.trim();
-    let shuffle;
+    let shuffle = document.getElementById("shuffle")?.checked;
     let playlist = document.getElementById("playlist")?.checked;
     let loop = document.getElementById("loop")?.checked;
     let priority = document.getElementById("priority")?.checked
-    if(playlist) {
-        shuffle = document.getElementById("shuffle")?.checked;
-    }
+
     // Request
     let route = `${host}/queue/${GuildID}`
     let response = await fetch(route, {
@@ -22,14 +20,14 @@ export async function AddToQueue(GuildID, token, host) {
         body: new URLSearchParams({
             'token': token,
             'song': song,
-            'shuffle': shuffle,
-            'playlist': playlist,
-            'loop': loop,
-            'priority': priority
+            'shuffle': shuffle.toString(),
+            'playlist': playlist.toString(),
+            'loop': loop.toString(),
+            'priority': priority.toString(),
         }).toString(),
     })
 
-    //Error Handling
+    // Error Handling
     switch(response.status) {
         case 200:
             return Response.SUCCESS;
@@ -44,7 +42,7 @@ export async function AddToQueue(GuildID, token, host) {
 
 export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AKA skip
     // Request
-    let route = `${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear, 'token': token}).toString();
+    let route = `${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear.toString(), 'token': token}).toString();
     let response = await fetch(route, {
         method: "DELETE",
         headers: {
@@ -84,5 +82,4 @@ export async function GetQueue(GuildID, token, host) {
         case 401:
             return Response.QUEUE_TOKEN_ERR;
     }
-
 }

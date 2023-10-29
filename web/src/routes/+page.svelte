@@ -19,7 +19,6 @@
         GuildId = GetGuildID();
         token = GetToken();
         host = GetHost();
-        document.title = "YADMB Web UI"
     });
     
 
