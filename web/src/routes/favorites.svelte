@@ -8,6 +8,8 @@
     import TrashBinSolid from "flowbite-svelte-icons/TrashBinSolid.svelte"
     import {PlusSolid} from "flowbite-svelte-icons";
     import {AddToQueue} from "../lib/queue"
+    import {AddObjectToArray, RemoveObjectFromArray} from "../lib/utilities"
+    import {Response} from "$lib/error.js";
 
     // props
     export let GuildId;
@@ -41,7 +43,17 @@
         </div>
     </form>
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddFavorite(token, host)} on:keydown={(e) => (KeyPressed(e, "favorite", "", token, host))}>Add</Button>
+        <Button on:click={ async () => {
+            let result = await AddFavorite(token, host, favorites);
+            switch(result) {
+                // TODO: Add error handling
+                case Response.FAVORITE_TOKEN_ERROR:
+                case Response.DUPLICATE_ERROR:
+                    break;
+                default:
+                    favorites = AddObjectToArray(favorites, result);
+            }
+        }} on:keydown={(e) => (KeyPressed(e, "favorite", "", token, host))}>Add</Button>
     </svelte:fragment>
 </Modal>
 
@@ -60,7 +72,17 @@
                 <P>{song.link}</P>
                 <div class="grid grid-cols-3">
                     <P>{song.folder}</P>
-                    <Button on:click={() => RemoveFavorite(token, song.name, host)} class="w-1/3"><TrashBinSolid /></Button>
+                    <Button on:click={ async () => {
+                        let result = await RemoveFavorite(token, song.name, host);
+                        switch(result) {
+                            // TODO: Add error handling
+                            case Response.FAVORITE_TOKEN_ERROR:
+                            case Response.FAVORITE_NOT_FOUND:
+                                break;
+                            default:
+                                favorites = RemoveObjectFromArray(favorites, song);
+                        }
+                    }} class="w-1/3"><TrashBinSolid /></Button>
                     <Button on:click={() => AddToQueue(GuildId, token, host, song.link, false, false, false, false)} class="w-1/3"><PlusSolid /></Button>
                 </div>
                 

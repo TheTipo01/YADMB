@@ -3,7 +3,7 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueueHTML, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
-    import {addObjectToArray, RemoveObjectFromArray, ClearArray, KeyPressed} from "../lib/utilities"
+    import {AddObjectToArray, RemoveFirstObjectFromArray, ClearArray, KeyPressed} from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
@@ -49,11 +49,11 @@
             let signal = JSON.parse(e.data)
             switch(signal.notification) {
                 case Notification.NewSong: // New song
-                    queue = addObjectToArray(queue, signal.song);
+                    queue = AddObjectToArray(queue, signal.song);
                     break;
                 case Notification.Skip:
                 case Notification.Finished:
-                    queue = RemoveObjectFromArray(queue);
+                    queue = RemoveFirstObjectFromArray(queue);
                     isPaused = false;
                     break;
                 case Notification.Clear:

@@ -24,7 +24,7 @@ export async function AddFavorite(token, host) {
     //Error Handling
     switch(response.status) {
         case 200:
-            return Response.SUCCESS;
+            return [{name: name, link: link, folder: folder}];
         case 401:
             return Response.FAVORITE_TOKEN_ERROR;
         case 500:

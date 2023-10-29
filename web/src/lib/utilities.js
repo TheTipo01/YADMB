@@ -2,17 +2,26 @@ import { AddFavorite } from "./favorites";
 import { AddToQueue } from "./queue";
 
 // Function to add an object to the array 
-export function addObjectToArray(promise, objectToAdd) {
+export function AddObjectToArray(promise, objectToAdd) {
     return promise.then((array) => {
         return [...array, ...objectToAdd];
         });
     }
 
 // Function to remove the first object from the array 
-export function RemoveObjectFromArray(promise) {
+export function RemoveFirstObjectFromArray(promise) {
 return promise.then((array) => {
         array.shift();
         return array;
+    });
+}
+
+// Function to remove the given object from the array
+export function RemoveObjectFromArray(promise, objectToRemove) {
+    return promise.then((array) => {
+        return array.filter((object) => {
+            return object !== objectToRemove;
+        });
     });
 }
 
