@@ -25,6 +25,27 @@ export function RemoveObjectFromArray(promise, objectToRemove) {
     });
 }
 
+// Function to negate isPaused of the first element in the queue
+export function TogglePause(promise) {
+    return promise.then((array) => {
+        if (array.length > 0) {
+            array[0].isPaused = !array[0].isPaused;
+        }
+        return array;
+    });
+}
+
+// Function to set isPaused of the first element in the queue
+export function SetPause(promise, isPaused) {
+    return promise.then((array) => {
+        if (array.length > 0) {
+            array[0].isPaused = isPaused;
+        }
+
+        return array;
+    });
+}
+
 export function ClearArray(promise) {
     return promise.then(() => {
         return [];

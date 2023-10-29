@@ -3,7 +3,14 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueueHTML, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
-    import {AddObjectToArray, RemoveFirstObjectFromArray, ClearArray, KeyPressed} from "../lib/utilities"
+    import {
+        AddObjectToArray,
+        RemoveFirstObjectFromArray,
+        ClearArray,
+        KeyPressed,
+        TogglePause,
+        SetPause
+    } from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
@@ -14,15 +21,9 @@
     export let token;
     export let host;
 
-    export let isPaused = false;
 
     // variables
     let queue = GetQueue(GuildId, token, host);
-    queue.then((value) => {
-        if (value.length !== 0) {
-            isPaused = value[0].isPaused === "true";
-        }
-    });
     let showModal = false;
     let isPlaylist = false;
 
@@ -54,17 +55,15 @@
                 case Notification.Skip:
                 case Notification.Finished:
                     queue = RemoveFirstObjectFromArray(queue);
-                    isPaused = false;
+                    queue = SetPause(queue, false);
                     break;
                 case Notification.Clear:
                     queue = ClearArray(queue);
-                    isPaused = false;
+                    queue = SetPause(queue, false);
                     break;
                 case Notification.Resume:
-                    isPaused = false;
-                    break;
                 case Notification.Pause:
-                    isPaused = true;
+                    queue = TogglePause(queue);
                     break;
             }
         }
@@ -105,13 +104,14 @@
     <div >
         <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
         <div class="mt-5 grid grid-cols-2 gap-2">
-            <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={isPaused}><PauseSolid /></Button></div>
-            <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!isPaused}><PlaySolid  /></Button></div>
+            <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={json[0].isPaused}><PauseSolid /></Button></div>
+            <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!json[0].isPaused}><PlaySolid  /></Button></div>
         </div>
         <a class="mt-5" href={json[0].link}>{json[0].title}</a>
         <P>Requested by {json[0].user}</P>
         <Button on:click={() => RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
     </div>
+
     <div>
         <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
         {#each json as song, index}
