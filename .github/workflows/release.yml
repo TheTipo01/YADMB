@@ -26,8 +26,10 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install
+        working-directory: ./web
       - name: Build the website
         run: pnpm run build
+        working-directory: ./web
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
