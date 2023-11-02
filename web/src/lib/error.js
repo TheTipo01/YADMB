@@ -14,9 +14,9 @@ export const Response = Object.freeze({
     FAVORITE_TOKEN_ERROR: 12,
 })
 
+// Function to handle the status code of each function
 export function get_message(code) {
     let msg = ""
-    console.log(code);
     switch(code) {
         case Response.SUCCESS:
             msg = "Done.";

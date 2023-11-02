@@ -12,6 +12,7 @@ export async function AddToQueueHTML(GuildID, token, host) {
     return AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority);
 }
 
+// Function to add a song to the queue
 export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority) {
     // Request
     let route = `${host}/queue/${GuildID}`
@@ -44,6 +45,7 @@ export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, 
     }
 }
 
+// Function to remove a song from the queue or clear it
 export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AKA skip
     // Request
     let route = `${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear.toString(), 'token': token}).toString();
@@ -68,6 +70,7 @@ export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AK
     }
 }
 
+// Function to get the queue
 export async function GetQueue(GuildID, token, host) {
     // Request
     let route = `${host}/queue/${GuildID}?` + new URLSearchParams({"token": token}).toString();

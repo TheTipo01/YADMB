@@ -21,12 +21,15 @@
     let showModal = false;
 </script>
 
+<!-- Modal Button -->
 <Button class="w-25 absolute right-9 bottom-5" on:click={() => (showModal = true)}>
     Add to Favorites
 </Button>
 
+<!-- Modal Component -->
 <Modal title="Add Favorite" bind:open={showModal} autoclose>
     <form id="form">
+        <!-- Form inputs -->
         <div class="grid grid-rows-3">
             <div>
                 <Label for="name" class="mb-2">Song Name</Label>
@@ -42,6 +45,8 @@
             </div>
         </div>
     </form>
+    
+    <!-- Submit button -->
     <svelte:fragment slot="footer">
         <Button on:click={ async () => {
             let result = await AddFavorite(token, host, favorites);

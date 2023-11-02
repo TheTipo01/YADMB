@@ -37,8 +37,10 @@
             websocket_url = websocket_url.replace("http://", "ws://");
         }
 
+        // Connects to the websocket
         const socket = new WebSocket(websocket_url);
         socket.onmessage = function(e) {
+            // Enum for the events
             const Notification = Object.freeze({
                 NewSong: 0,
                 Skip: 1,
@@ -53,16 +55,16 @@
                     queue = AddObjectToArray(queue, signal.song);
                     break;
                 case Notification.Skip:
-                case Notification.Finished:
+                case Notification.Finished: // Song skipped or finished
                     queue = RemoveFirstObjectFromArray(queue);
                     queue = SetPause(queue, false);
                     break;
-                case Notification.Clear:
+                case Notification.Clear: // Queue cleared
                     queue = ClearArray(queue);
                     queue = SetPause(queue, false);
                     break;
                 case Notification.Resume:
-                case Notification.Pause:
+                case Notification.Pause: // Song paused or resumed
                     queue = TogglePause(queue);
                     break;
             }
@@ -71,47 +73,61 @@
 
 </script>
 
+<!-- Modal Button -->
 <Button class="w-25 absolute right-9 bottom-5" on:click={() => (showModal = true)}>
     Add to Queue
 </Button>
 
+<!-- Modal component -->
 <Modal title="Add To Queue" bind:open={showModal} autoclose>
     <form id="form">
         <div class="grid grid-rows-2">
+            <!-- Song input -->
             <div>
                 <Label for="song" class="mb-2">Song Link/Name</Label>
-                <Input type="text" id="song" required/>
+                <Input type="text" id="song" on:keydown={(e) => (KeyPressed(e, "queue", GuildId, token, host))} required/>
             </div>
-            <div class="grid grid-cols-4">
+            <!-- Checkboxes -->
+            <div class="flex gap-3">
                 <Checkbox on:click={() => (isPlaylist=!isPlaylist)} id="playlist">Playlist</Checkbox>
-                <Checkbox disabled={!isPlaylist} id="shuffle">Shuffle</Checkbox>
+                {#if isPlaylist}
+                    <Checkbox id="shuffle">Shuffle</Checkbox>
+                {:else}
+                    <Checkbox disabled id="shuffle">Shuffle</Checkbox>
+                {/if}
                 <Checkbox id="loop">Loop song</Checkbox>
                 <Checkbox id="priority">Priority</Checkbox>
             </div>
         </div>
     </form>
+    <!-- Submit Button -->
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddToQueueHTML(GuildId, token, host)} on:keydown={(e) => (KeyPressed(e, "queue", GuildId, token, host))}>Add</Button>
+        <Button on:click={() => AddToQueueHTML(GuildId, token, host)}>Add</Button>
     </svelte:fragment>
 </Modal>
 
-
+<!-- Queue -->
 {#await queue} 
 <P>Fetching Queue</P>
 {:then json}
 {#if json.length !== 0 && typeof(json) != "number"}
 <div class="grid grid-cols-2 gap-4">
+    <!-- Left side of the grid shows the current song -->
     <div >
+        <!-- Thumbnail and pause/resume buttons -->
         <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
         <div class="mt-5 grid grid-cols-2 gap-2">
             <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={json[0].isPaused}><PauseSolid /></Button></div>
             <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!json[0].isPaused}><PlaySolid  /></Button></div>
         </div>
+        <!-- Title and various info -->
         <a class="mt-5" href={json[0].link}>{json[0].title}</a>
         <P>Requested by {json[0].user}</P>
+        <!-- Skip button -->
         <Button on:click={() => RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
     </div>
 
+    <!-- Right side of the grid just renders the actual queue -->
     <div>
         <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
         {#each json as song, index}
@@ -129,6 +145,8 @@
         
     </div>
 </div>
+
+<!-- If there are any errors the 'Error' component is rendered instead -->
 {:else if typeof(json) === "number"}
     <Error code={json} />
 {:else}

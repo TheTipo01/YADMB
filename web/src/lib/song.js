@@ -1,6 +1,7 @@
 // This file contains a function used in the queue.svelte component
 
-export async function ToggleSong(GuildID, token, action = "", host) {  // AKA Pause/Resume Song
+// Function to pause or resume the current song 
+export async function ToggleSong(GuildID, token, action = "", host) {
     // Request
     if(action === "") {
         return -8

@@ -1,5 +1,6 @@
 import { Response } from "./error";
 
+// Function to add a song to the favorites
 export async function AddFavorite(token, host) {
     let name = document.getElementById("name").value.trim();
     let link = document.getElementById("link").value.trim();
@@ -32,6 +33,7 @@ export async function AddFavorite(token, host) {
     }
 }
 
+// Function to remove a song from the favorites
 export async function RemoveFavorite(token, name, host) {
     // Request
     let route = `${host}/favorites?` + new URLSearchParams({'name': name, 'token': token}).toString();
@@ -58,6 +60,7 @@ export async function RemoveFavorite(token, name, host) {
     }
 }
 
+// Function to get the favorite songs
 export async function GetFavorites(token, host) {
     // Request
     let route = `${host}/favorites?` + new URLSearchParams({"token": token}).toString();

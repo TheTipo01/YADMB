@@ -1,5 +1,5 @@
 import { AddFavorite } from "./favorites";
-import { AddToQueue } from "./queue";
+import { AddToQueueHTML } from "./queue";
 
 // Function to add an object to the array 
 export function AddObjectToArray(promise, objectToAdd) {
@@ -46,35 +46,47 @@ export function SetPause(promise, isPaused) {
     });
 }
 
+// Function used when clearing the queue
 export function ClearArray(promise) {
     return promise.then(() => {
         return [];
     })
 }
 
+// Function to get the GuildID from URL query
 export function GetGuildID() {
     let query = new URLSearchParams(window.location.search);
     return query.get("GuildId");
 }
 
+// Function to get the Token from URL query
 export function GetToken() {
     let query = new URLSearchParams(window.location.search);
     return query.get('token');
 }
 
+// Function to get the hostname and protocol from URL
 export function GetHost() {
     return window.location.protocol + "//" + window.location.host;
 }
 
+// Function to handle keyboard inputs
 export function KeyPressed(e, scope, GuildId = "", token = "", host = "") {
     switch(e.key) {
         case 'Enter':
             switch(scope) {
                 case 'queue':
-                    AddToQueue(GuildId, token, host);
+                    console.log(e.target.value);
+                    AddToQueueHTML(GuildId, token, host);
+                    break;
                 case 'favorite':
                     AddFavorite(token, host);
+                    break;
+                default:
+                    break;
             }
+            break;
+        default:
             break;
     }
 }
