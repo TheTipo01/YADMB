@@ -1,5 +1,5 @@
 // This file contains every function used in the queue.svelte component
-import { Response } from "./error";
+import {Response} from "./error";
 
 export async function AddToQueueHTML(GuildID, token, host) {
     // Values needed for adding a song to a queue
@@ -33,7 +33,7 @@ export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, 
     })
 
     // Error Handling
-    switch(response.status) {
+    switch (response.status) {
         case 200:
             return Response.SUCCESS;
         case 401:
@@ -46,9 +46,12 @@ export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, 
 }
 
 // Function to remove a song from the queue or clear it
-export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AKA skip
+export async function RemoveFromQueue(GuildID, token, clear = false, host) { // AKA skip
     // Request
-    let route = `${host}/queue/${GuildID}?` + new URLSearchParams({'clean': clear.toString(), 'token': token}).toString();
+    let route = `${host}/queue/${GuildID}?` + new URLSearchParams({
+        'clean': clear.toString(),
+        'token': token
+    }).toString();
     let response = await fetch(route, {
         method: "DELETE",
         headers: {
@@ -58,7 +61,7 @@ export async function RemoveFromQueue(GuildID, token, clear=false, host) { // AK
     })
 
     // Error Handling
-    switch(response.status) {
+    switch (response.status) {
         case 200:
             return Response.SUCCESS;
         case 401:
@@ -83,7 +86,7 @@ export async function GetQueue(GuildID, token, host) {
     })
 
     // Error Handling
-    switch(response.status) {
+    switch (response.status) {
         case 200:
             return await response.json();
         case 401:

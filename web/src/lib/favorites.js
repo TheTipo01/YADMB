@@ -1,4 +1,4 @@
-import { Response } from "./error";
+import {Response} from "./error";
 
 // Function to add a song to the favorites
 export async function AddFavorite(token, host) {
@@ -23,7 +23,7 @@ export async function AddFavorite(token, host) {
     })
 
     //Error Handling
-    switch(response.status) {
+    switch (response.status) {
         case 200:
             return [{name: name, link: link, folder: folder}];
         case 401:
@@ -50,7 +50,7 @@ export async function RemoveFavorite(token, name, host) {
     })
 
     //Error Handling
-    switch(response.status) {
+    switch (response.status) {
         case 200:
             return Response.SUCCESS;
         case 401:
@@ -73,7 +73,7 @@ export async function GetFavorites(token, host) {
     })
 
     // Error Handling
-    switch(response.status) {
+    switch (response.status) {
         case 200:
             return await response.json();
         case 401:

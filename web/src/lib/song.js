@@ -3,10 +3,9 @@
 // Function to pause or resume the current song 
 export async function ToggleSong(GuildID, token, action = "", host) {
     // Request
-    if(action === "") {
+    if (action === "") {
         return -8
-    }
-    else {
+    } else {
         let route = `${host}/song/${action}/${GuildID}?` + new URLSearchParams({"token": token}).toString();
         let response = await fetch(route, {
             method: "GET",
@@ -15,9 +14,9 @@ export async function ToggleSong(GuildID, token, action = "", host) {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
         })
-    
+
         // Error Handling
-        switch(response.status) {
+        switch (response.status) {
             case 200:
                 return 0;
             case 401:

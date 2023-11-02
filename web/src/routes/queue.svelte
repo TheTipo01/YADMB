@@ -3,14 +3,7 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueueHTML, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
-    import {
-        AddObjectToArray,
-        RemoveFirstObjectFromArray,
-        ClearArray,
-        KeyPressed,
-        TogglePause,
-        SetPause
-    } from "../lib/utilities"
+    import {AddObjectToArray, ClearArray, RemoveFirstObjectFromArray, SetPause, TogglePause} from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
@@ -39,7 +32,7 @@
 
         // Connects to the websocket
         const socket = new WebSocket(websocket_url);
-        socket.onmessage = function(e) {
+        socket.onmessage = function (e) {
             // Enum for the events
             const Notification = Object.freeze({
                 NewSong: 0,
@@ -50,7 +43,7 @@
                 Finished: 5,
             });
             let signal = JSON.parse(e.data)
-            switch(signal.notification) {
+            switch (signal.notification) {
                 case Notification.NewSong: // New song
                     queue = AddObjectToArray(queue, signal.song);
                     break;
@@ -85,7 +78,12 @@
             <!-- Song input -->
             <div>
                 <Label for="song" class="mb-2">Song Link/Name</Label>
-                <Input type="text" id="song" on:keydown={(e) => (KeyPressed(e, "queue", GuildId, token, host))} required/>
+                <Input type="text" id="song" on:keydown={(e) => {
+                    if (e.key === "Enter") {
+                        AddToQueueHTML(GuildId, token, host);
+                        showModal = false;
+                    }
+                }} required/>
             </div>
             <!-- Checkboxes -->
             <div class="flex gap-3">
@@ -107,50 +105,60 @@
 </Modal>
 
 <!-- Queue -->
-{#await queue} 
-<P>Fetching Queue</P>
+{#await queue}
+    <P>Fetching Queue</P>
 {:then json}
-{#if json.length !== 0 && typeof(json) != "number"}
-<div class="grid grid-cols-2 gap-4">
-    <!-- Left side of the grid shows the current song -->
-    <div >
-        <!-- Thumbnail and pause/resume buttons -->
-        <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
-        <div class="mt-5 grid grid-cols-2 gap-2">
-            <div class="justify-self-end"><Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={json[0].isPaused}><PauseSolid /></Button></div>
-            <div class="justify-self-start"><Button on:click={() => ToggleSong(GuildId, token, "resume", host) } disabled={!json[0].isPaused}><PlaySolid  /></Button></div>
-        </div>
-        <!-- Title and various info -->
-        <a class="mt-5" href={json[0].link}>{json[0].title}</a>
-        <P>Requested by {json[0].user}</P>
-        <!-- Skip button -->
-        <Button on:click={() => RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
-    </div>
-
-    <!-- Right side of the grid just renders the actual queue -->
-    <div>
-        <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
-        {#each json as song, index}
-            {#if index !== 0}
-            <div class="grid grid-cols-3 justify-items-center mt-3" >
-                <Avatar src={song.thumbnail} rounded/>
-                <A href={song.link}>{song.title}</A>
-                <P>{song.duration}</P>
+    {#if json.length !== 0 && typeof (json) != "number"}
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Left side of the grid shows the current song -->
+            <div>
+                <!-- Thumbnail and pause/resume buttons -->
+                <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
+                <div class="mt-5 grid grid-cols-2 gap-2">
+                    <div class="justify-self-end">
+                        <Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={json[0].isPaused}>
+                            <PauseSolid/>
+                        </Button>
+                    </div>
+                    <div class="justify-self-start">
+                        <Button on:click={() => ToggleSong(GuildId, token, "resume", host) }
+                                disabled={!json[0].isPaused}>
+                            <PlaySolid/>
+                        </Button>
+                    </div>
+                </div>
+                <!-- Title and various info -->
+                <a class="mt-5" href={json[0].link}>{json[0].title}</a>
+                <P>Requested by {json[0].user}</P>
+                <!-- Skip button -->
+                <Button on:click={() => RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
             </div>
-            {/if}
-        {/each}
-        <div class="grid grid-rows-1 justify-items-end mt-5">
-            <Button align="right" on:click={() => RemoveFromQueue(GuildId, token, true, host)}>Clear Queue</Button>
-        </div>
-        
-    </div>
-</div>
 
-<!-- If there are any errors the 'Error' component is rendered instead -->
-{:else if typeof(json) === "number"}
-    <Error code={json} />
-{:else}
-    <P>Queue is empty</P>
-{/if}
+            <!-- Right side of the grid just renders the actual queue -->
+            <div>
+                <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
+                {#each json as song, index}
+                    {#if index !== 0}
+                        <div class="grid grid-cols-3 justify-items-center mt-3">
+                            <Avatar src={song.thumbnail} rounded/>
+                            <A href={song.link}>{song.title}</A>
+                            <P>{song.duration}</P>
+                        </div>
+                    {/if}
+                {/each}
+                <div class="grid grid-rows-1 justify-items-end mt-5">
+                    <Button align="right" on:click={() => RemoveFromQueue(GuildId, token, true, host)}>Clear Queue
+                    </Button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- If there are any errors the 'Error' component is rendered instead -->
+    {:else if typeof (json) === "number"}
+        <Error code={json}/>
+    {:else}
+        <P>Queue is empty</P>
+    {/if}
 {/await}
 

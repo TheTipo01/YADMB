@@ -1,16 +1,13 @@
-import { AddFavorite } from "./favorites";
-import { AddToQueueHTML } from "./queue";
-
-// Function to add an object to the array 
+// Function to add an object to the array
 export function AddObjectToArray(promise, objectToAdd) {
     return promise.then((array) => {
         return [...array, ...objectToAdd];
-        });
-    }
+    });
+}
 
 // Function to remove the first object from the array 
 export function RemoveFirstObjectFromArray(promise) {
-return promise.then((array) => {
+    return promise.then((array) => {
         array.shift();
         return array;
     });
@@ -68,25 +65,4 @@ export function GetToken() {
 // Function to get the hostname and protocol from URL
 export function GetHost() {
     return window.location.protocol + "//" + window.location.host;
-}
-
-// Function to handle keyboard inputs
-export function KeyPressed(e, scope, GuildId = "", token = "", host = "") {
-    switch(e.key) {
-        case 'Enter':
-            switch(scope) {
-                case 'queue':
-                    console.log(e.target.value);
-                    AddToQueueHTML(GuildId, token, host);
-                    break;
-                case 'favorite':
-                    AddFavorite(token, host);
-                    break;
-                default:
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
 }

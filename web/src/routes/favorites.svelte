@@ -1,14 +1,10 @@
 <script>
-    import { Button } from "flowbite-svelte";
-    import { GetFavorites, AddFavorite, RemoveFavorite} from "../lib/favorites";
-    import {KeyPressed} from "../lib/utilities"
-    import {Modal} from "flowbite-svelte";
-    import {Input, Label} from "flowbite-svelte"
-    import {Heading, P} from "flowbite-svelte"
+    import {Button, Heading, Input, Label, Modal, P} from "flowbite-svelte";
+    import {AddFavorite, GetFavorites, RemoveFavorite} from "../lib/favorites";
+    import {AddObjectToArray, RemoveObjectFromArray} from "../lib/utilities"
     import TrashBinSolid from "flowbite-svelte-icons/TrashBinSolid.svelte"
     import {PlusSolid} from "flowbite-svelte-icons";
     import {AddToQueue} from "../lib/queue"
-    import {AddObjectToArray, RemoveObjectFromArray} from "../lib/utilities"
     import {Response} from "$lib/error.js";
 
     // props
@@ -41,11 +37,11 @@
             </div>
             <div>
                 <Label for="folder" class="mb-2">Folder</Label>
-                <Input type="text" id="folder" />
+                <Input type="text" id="folder"/>
             </div>
         </div>
     </form>
-    
+
     <!-- Submit button -->
     <svelte:fragment slot="footer">
         <Button on:click={ async () => {
@@ -58,13 +54,19 @@
                 default:
                     favorites = AddObjectToArray(favorites, result);
             }
-        }} on:keydown={(e) => (KeyPressed(e, "favorite", "", token, host))}>Add</Button>
+        }} on:keydown={(e) => {
+            if (e.key === "Enter") {
+                AddFavorite(token, host);
+                showModal = false;
+            }
+        }}>Add
+        </Button>
     </svelte:fragment>
 </Modal>
 
 {#await favorites}
     <P>Loading Favorites</P>
-{:then favorite} 
+{:then favorite}
     {#if favorite.length !== 0}
         <div class="grid grid-cols-3">
             <Heading tag="h5">Song Name</Heading>
@@ -87,10 +89,15 @@
                             default:
                                 favorites = RemoveObjectFromArray(favorites, song);
                         }
-                    }} class="w-1/3"><TrashBinSolid /></Button>
-                    <Button on:click={() => AddToQueue(GuildId, token, host, song.link, false, false, false, false)} class="w-1/3"><PlusSolid /></Button>
+                    }} class="w-1/3">
+                        <TrashBinSolid/>
+                    </Button>
+                    <Button on:click={() => AddToQueue(GuildId, token, host, song.link, false, false, false, false)}
+                            class="w-1/3">
+                        <PlusSolid/>
+                    </Button>
                 </div>
-                
+
             </div>
         {/each}
     {:else}
