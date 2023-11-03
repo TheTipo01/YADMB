@@ -5,6 +5,7 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/bwmarrin/discordgo"
 	"github.com/zmb3/spotify/v2"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -23,22 +24,34 @@ type PlayEvent struct {
 
 // Wrapper function for playing songs
 func (server *Server) Play(p PlayEvent) {
-	switch {
-	case strings.HasPrefix(p.Song, "spotify:playlist:"):
-		server.spotifyPlaylist(p, spotify.ID(strings.TrimPrefix(p.Song, "spotify:playlist:")))
-	case strings.Contains(p.Song, "spotify.com/playlist/"):
-		server.spotifyPlaylist(p, spotify.ID(strings.Split(strings.TrimPrefix(p.Song, "https://open.spotify.com/playlist/"), "?")[0]))
-	case strings.HasPrefix(p.Song, "spotify:track:"):
-		server.spotifyTrack(p, spotify.ID(strings.TrimPrefix(p.Song, "spotify:track:")))
-	case strings.Contains(p.Song, "spotify.com/track/"):
-		server.spotifyTrack(p, spotify.ID(strings.Split(strings.TrimPrefix(p.Song, "https://open.spotify.com/track/"), "?")[0]))
-	case strings.HasPrefix(p.Song, "spotify:album:"):
-		server.spotifyAlbum(p, spotify.ID(strings.TrimPrefix(p.Song, "spotify:album:")))
-	case strings.Contains(p.Song, "spotify.com/album/"):
-		server.spotifyAlbum(p, spotify.ID(strings.Split(strings.TrimPrefix(p.Song, "https://open.spotify.com/album/"), "?")[0]))
-	case IsValidURL(p.Song):
+	if strings.Contains(p.Song, "spotify.com/") {
+		// Parse URL
+		u, err := url.Parse(p.Song)
+		if err == nil {
+			splitted := strings.Split(u.Path, "/")
+			if len(splitted) >= 2 {
+				if len(splitted) == 4 {
+					// Remove second element
+					splitted = append(splitted[:1], splitted[2:]...)
+				}
+
+				switch splitted[1] {
+				case "track":
+					server.spotifyTrack(p, spotify.ID(splitted[2]))
+				case "playlist":
+					server.spotifyPlaylist(p, spotify.ID(splitted[2]))
+				case "album":
+					server.spotifyAlbum(p, spotify.ID(splitted[2]))
+				}
+
+				return
+			}
+		}
+	}
+
+	if IsValidURL(p.Song) {
 		server.downloadAndPlay(p, true)
-	default:
+	} else {
 		var err error
 
 		p.Song, err = searchDownloadAndPlay(p.Song, p.Clients.Youtube)
