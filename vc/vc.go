@@ -68,17 +68,17 @@ func (v *VC) Join(s *discordgo.Session, channelID string) error {
 }
 
 func (v *VC) Reconnect(s *discordgo.Session) error {
-	v.rw.Lock()
-	defer v.rw.Unlock()
+	channel := v.GetChannelID()
+	if v.isConnectionNil() {
+		return v.Join(s, channel)
+	} else {
+		v.rw.Lock()
+		v.vc.Lock()
+		defer v.rw.Unlock()
+		defer v.vc.Unlock()
 
-	vc, err := s.ChannelVoiceJoin(v.guild, v.vc.ChannelID, false, true)
-	if err != nil {
-		return err
+		return v.vc.ChangeChannel(channel, false, true)
 	}
-
-	v.vc = vc
-
-	return nil
 }
 
 func (v *VC) GetAudioChannel() chan []byte {
@@ -95,7 +95,7 @@ func (v *VC) ChangeChannel(s *discordgo.Session, id string) error {
 	if v.GetChannelID() != id {
 		v.rw.Lock()
 		defer v.rw.Unlock()
-		
+
 		_ = v.vc.Disconnect()
 		v.vc, err = s.ChannelVoiceJoin(v.guild, id, false, true)
 	}
