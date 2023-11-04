@@ -17,6 +17,7 @@
 
     // variables
     let queue = GetQueue(GuildId, token, host);
+    let code = queue;
     let showModal = false;
     let isPlaylist = false;
 
@@ -80,7 +81,7 @@
                 <Label for="song" class="mb-2">Song Link/Name</Label>
                 <Input type="text" id="song" on:keydown={(e) => {
                     if (e.key === "Enter") {
-                        AddToQueueHTML(GuildId, token, host);
+                        code = AddToQueueHTML(GuildId, token, host);
                         showModal = false;
                     }
                 }} required/>
@@ -100,65 +101,86 @@
     </form>
     <!-- Submit Button -->
     <svelte:fragment slot="footer">
-        <Button on:click={() => AddToQueueHTML(GuildId, token, host)}>Add</Button>
+        <Button on:click={() => {code = AddToQueueHTML(GuildId, token, host)}}>Add</Button>
     </svelte:fragment>
 </Modal>
+
+<!-- Error Toast -->
+<Error response={code} />
 
 <!-- Queue -->
 {#await queue}
     <P>Fetching Queue</P>
 {:then json}
     {#if json.length !== 0 && typeof (json) != "number"}
-        <div class="grid grid-cols-2 gap-4">
-            <!-- Left side of the grid shows the current song -->
-            <div>
-                <!-- Thumbnail and pause/resume buttons -->
-                <img alt="thumbnail" src={json[0].thumbnail} class="justify-self-center"/>
-                <div class="mt-5 grid grid-cols-2 gap-2">
-                    <div class="justify-self-end">
-                        <Button on:click={() => ToggleSong(GuildId, token, "pause", host)} disabled={json[0].isPaused}>
-                            <PauseSolid/>
-                        </Button>
-                    </div>
-                    <div class="justify-self-start">
-                        <Button on:click={() => ToggleSong(GuildId, token, "resume", host) }
-                                disabled={!json[0].isPaused}>
-                            <PlaySolid/>
-                        </Button>
+        <div class="grid grid-row-2 gap-4">
+            <!-- First Row -->
+            <div class="grid grid-cols-2">
+                <!-- Left side of the grid shows the current song -->
+                <div class="justify-self-center">
+                    <!-- Thumbnail and pause/resume buttons -->
+                    <A href={json[0].link}><img alt="thumbnail" src={json[0].thumbnail} href={json.link} class="max-w-3xl"/></A>
+
+                    <div class="mt-5 grid grid-cols-2 gap-2">
+                        <!-- Pause -->
+                        <div class="justify-self-end">
+                            <Button on:click={() => code = ToggleSong(GuildId, token, "pause", host)} disabled={json[0].isPaused}>
+                                <PauseSolid/>
+                            </Button>
+                        </div>
+                        
+                        <!-- Resume -->
+                        <div class="justify-self-start">
+                            <Button on:click={() => code = ToggleSong(GuildId, token, "resume", host) }
+                                    disabled={!json[0].isPaused}>
+                                <PlaySolid/>
+                            </Button>
+                        </div>
                     </div>
                 </div>
-                <!-- Title and various info -->
-                <a class="mt-5" href={json[0].link}>{json[0].title}</a>
-                <P>Requested by {json[0].user}</P>
-                <!-- Skip button -->
-                <Button on:click={() => RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
+
+                <!-- Right side of the grid renders the actual queue -->
+                <div>
+                    <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
+                    {#each json as song, index}
+                        {#if index !== 0}
+                            <div class="grid grid-cols-3 justify-items-center mt-3">
+                                <Avatar src={song.thumbnail} rounded/>
+                                <A href={song.link}>{song.title}</A>
+                                <P>{song.duration}</P>
+                            </div>
+                        {/if}
+                    {/each}
+                </div>
             </div>
 
-            <!-- Right side of the grid just renders the actual queue -->
+            <!-- Second Row -->
             <div>
-                <Heading tag="h4" class="mb-5" align="center">Queue</Heading>
-                {#each json as song, index}
-                    {#if index !== 0}
-                        <div class="grid grid-cols-3 justify-items-center mt-3">
-                            <Avatar src={song.thumbnail} rounded/>
-                            <A href={song.link}>{song.title}</A>
-                            <P>{song.duration}</P>
-                        </div>
-                    {/if}
-                {/each}
-                <div class="grid grid-rows-1 justify-items-end mt-5">
-                    <Button align="right" on:click={() => RemoveFromQueue(GuildId, token, true, host)}>Clear Queue
-                    </Button>
-                </div>
+                <div class="grid grid-cols-2">
+                    <div>
+                        <!-- Title and various info -->
+                        <div>
+                            <A class="mt-0" href={json[0].link}><P weight="bold" class="mt-0 justify-self-start">{json[0].title}</P></A>
+                            <P>Requested by {json[0].user}</P>
 
+                            <!-- Skip button -->
+                            <Button on:click={() => code = RemoveFromQueue(GuildId, token, false, host)}>Skip song</Button>
+                        </div>
+                    </div>
+
+                    <!-- Clear button -->
+                    <div class="justify-self-start">
+                        <Button align="right" on:click={() => code = RemoveFromQueue(GuildId, token, true, host)}>Clear Queue
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- If there are any errors the 'Error' component is rendered instead -->
-    {:else if typeof (json) === "number"}
-        <Error code={json}/>
+    <!-- If there are any errors the 'Error' component is rendered instead -->
     {:else}
         <P>Queue is empty</P>
     {/if}
 {/await}
+
 

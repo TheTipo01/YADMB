@@ -49,7 +49,7 @@ export function get_message(code) {
             msg = "Can't toggle song";
             break;
         case Response.DUPLICATE_ERROR:
-            msg = "Name is already present";
+            msg = "Name is a duplicate";
             break;
         case Response.FAVORITE_ERROR:
             msg = "Favorite does not exist";
