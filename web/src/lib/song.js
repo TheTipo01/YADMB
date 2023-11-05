@@ -23,7 +23,7 @@ export async function ToggleSong(GuildID, token, action = "", host) {
                 return Response.QUEUE_TOKEN_ERR;
                 break;
             case 406:
-                return Response.QUEUE_EMPTY_ERR;
+                return Response.SONG_PAUSED_ERR;
                 break;
             case 500:
                 return Response.SONG_TOGGLE_ERR;

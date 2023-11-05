@@ -3,67 +3,21 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueueHTML, GetQueue, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
-    import {AddObjectToArray, ClearArray, RemoveFirstObjectFromArray, SetPause, TogglePause} from "../lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
-    import {onMount} from "svelte";
 
     // props
     export let GuildId;
     export let token;
     export let host;
+    export let queue;
 
 
     // variables
-    let queue = GetQueue(GuildId, token, host);
     let code = queue;
     let showModal = false;
     let isPlaylist = false;
-
-    // WebSocket
-    onMount(async () => {
-        let websocket_url = `${host}/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();
-        // If the host is in https, use wss instead of ws
-        if (window.location.protocol === "https:") {
-            websocket_url = websocket_url.replace("https://", "wss://");
-        } else {
-            websocket_url = websocket_url.replace("http://", "ws://");
-        }
-
-        // Connects to the websocket
-        const socket = new WebSocket(websocket_url);
-        socket.onmessage = function (e) {
-            // Enum for the events
-            const Notification = Object.freeze({
-                NewSong: 0,
-                Skip: 1,
-                Pause: 2,
-                Resume: 3,
-                Clear: 4,
-                Finished: 5,
-            });
-            let signal = JSON.parse(e.data)
-            switch (signal.notification) {
-                case Notification.NewSong: // New song
-                    queue = AddObjectToArray(queue, signal.song);
-                    break;
-                case Notification.Skip:
-                case Notification.Finished: // Song skipped or finished
-                    queue = RemoveFirstObjectFromArray(queue);
-                    queue = SetPause(queue, false);
-                    break;
-                case Notification.Clear: // Queue cleared
-                    queue = ClearArray(queue);
-                    queue = SetPause(queue, false);
-                    break;
-                case Notification.Resume:
-                case Notification.Pause: // Song paused or resumed
-                    queue = TogglePause(queue);
-                    break;
-            }
-        }
-    });
 
 </script>
 

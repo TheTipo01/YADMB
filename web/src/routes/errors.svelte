@@ -1,5 +1,5 @@
 <script>
-    import {Toast, P} from "flowbite-svelte";
+    import {Toast} from "flowbite-svelte";
     import {get_message, Response} from "../lib/error"
     import CheckCircleSolid from "flowbite-svelte-icons/CheckCircleSolid.svelte"
     import CloseCircleSolid from "flowbite-svelte-icons/CloseCircleSolid.svelte"
