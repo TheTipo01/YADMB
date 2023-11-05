@@ -29,6 +29,7 @@
         GuildId = GetGuildID();
         token = GetToken();
         host = GetHost();
+        host = "http://localhost:8080"
         queue = GetQueue(GuildId, token, host);
 
         let websocket_url = `${host}/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();

@@ -74,6 +74,7 @@
                     code = Response.DUPLICATE_ERROR;
                     break;
                 default:
+                    code = Response.SUCCESS;
                     favorites = AddObjectToArray(favorites, result);
             }
         }}>Add
@@ -127,9 +128,10 @@
                                             case Response.FAVORITE_TOKEN_ERROR:
                                                 code = Response.FAVORITE_TOKEN_ERROR;
                                             case Response.FAVORITE_NOT_FOUND:
-                                                code = Response.FAVORITE_NOT_FOUND
+                                                code = Response.FAVORITE_NOT_FOUND;
                                                 break;
                                             default:
+                                                code = Response.SUCCESS;
                                                 favorites = RemoveObjectFromArray(favorites, song);
                                         }
                                     }}>

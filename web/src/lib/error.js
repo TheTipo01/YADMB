@@ -16,7 +16,7 @@ export const Response = Object.freeze({
 
 // Function to handle the status code of each function
 export function get_message(code) {
-    let msg = ""
+    let msg = "";
     switch (code) {
         case Response.SUCCESS:
             msg = "Done.";
