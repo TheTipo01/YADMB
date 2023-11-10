@@ -1,3 +1,5 @@
+import { P } from "flowbite-svelte";
+
 // Function to add an object to the array
 export function AddObjectToArray(promise, objectToAdd) {
     return promise.then((array) => {
@@ -50,6 +52,13 @@ export function ClearArray(promise) {
     })
 }
 
+// Function to get the frames
+export function GetFrames(promise) {
+    return promise.then(array => {
+        return array[0].frames;
+    })
+}
+
 // Function to get the GuildID from URL query
 export function GetGuildID() {
     let query = new URLSearchParams(window.location.search);
@@ -79,4 +88,27 @@ export function GetFolders(favorites) {
     }
 
     return folders;
+}
+
+// Function to get timestamp
+export function GetTime(seconds) {
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(seconds / 3600);
+    seconds = Math.floor(seconds % 60);
+    
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+
+    if(hours !== 0) {
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        hours = hours < 10 ? "0" + hours : hours;
+        return `${hours}:${minutes}:${seconds}`;
+    }
+    if(minutes !== 0) {
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        return `${minutes}:${seconds}`;
+    }
+
+    return `00:${seconds}`;
+
+
 }

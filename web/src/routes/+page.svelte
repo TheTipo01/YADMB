@@ -23,6 +23,7 @@
     let token = '';
     let host = '';
     let activetab = "queue";
+    let playing;
     let queue = null;
 
     onMount(() => {
@@ -51,6 +52,7 @@
                     Resume: 3,
                     Clear: 4,
                     Finished: 5,
+                    Playing: 6,
                 });
                 let signal = JSON.parse(e.data)
                 switch (signal.notification) {
@@ -61,6 +63,7 @@
                     case Notification.Finished: // Song skipped or finished
                         queue = RemoveFirstObjectFromArray(queue);
                         queue = SetPause(queue, false);
+                        playing = false;
                         break;
                     case Notification.Clear: // Queue cleared
                         queue = ClearArray(queue);
@@ -69,6 +72,10 @@
                     case Notification.Resume:
                     case Notification.Pause: // Song paused or resumed
                         queue = TogglePause(queue);
+                        playing = !playing;
+                        break;
+                    case Notification.Playing:
+                        playing = true;
                         break;
                 }
             }
@@ -98,7 +105,7 @@
         </div>
         {#if activetab === "queue"}
             {#if GuildId !== '' && token !== '' && host !== '' && queue != null}
-                <Queue GuildId={GuildId} token={token} host={host} queue={queue}/>
+                <Queue GuildId={GuildId} token={token} host={host} queue={queue} playing={playing}/>
             {/if}
         {/if}
     </TabItem>

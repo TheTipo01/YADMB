@@ -1,23 +1,36 @@
 <script>
     // Various Components and functions
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
-    import {AddToQueueHTML, GetQueue, RemoveFromQueue} from "../lib/queue";
+    import {AddToQueueHTML, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
+    import {GetTime, GetFrames} from "$lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
+	import { onMount } from "svelte";
 
     // props
     export let GuildId;
     export let token;
     export let host;
     export let queue;
+    export let playing;
 
 
     // variables
+    const FrameSeconds = 50.00067787;
     let code = queue;
     let showModal = false;
     let isPlaylist = false;
+    let seconds = 0;
+    let timestamp;
+    
+    // Playback time
+    onMount(async () => {
+        if(seconds === 0) seconds = await GetFrames(queue) / FrameSeconds;
+        setInterval(function() { if(playing){seconds += 1; } timestamp = GetTime(Math.round(seconds))}, 1000);
+    })
+    
 
 </script>
 
@@ -33,12 +46,13 @@
             <!-- Song input -->
             <div>
                 <Label for="song" class="mb-2">Song Link/Name</Label>
-                <Input type="text" id="song" on:keydown={(e) => {
+                <Input type="text" id="song" autofocus on:keydown={(e) => {
                     if (e.key === "Enter") {
                         code = AddToQueueHTML(GuildId, token, host);
                         showModal = false;
                     }
-                }} required/>
+                }} 
+                required/>
             </div>
             <!-- Checkboxes -->
             <div class="flex gap-3">
@@ -73,7 +87,13 @@
                 <!-- Left side of the grid shows the current song -->
                 <div class="justify-self-center">
                     <!-- Thumbnail and pause/resume buttons -->
-                    <A href={json[0].link}><img alt="thumbnail" src={json[0].thumbnail} href={json.link} class="max-w-3xl"/></A>
+                    <div >
+                        <A href={json[0].link}><img alt="thumbnail" src={json[0].thumbnail} href={json.link} class="max-w-3xl"/></A>
+                        {#if timestamp != undefined}
+                        <P align="center"> {timestamp} / {json[0].duration} </P>
+                        {/if}
+                    </div>
+
 
                     <div class="mt-5 grid grid-cols-2 gap-2">
                         <!-- Pause -->
