@@ -17,6 +17,8 @@ const (
 	Clear
 	// Finished notification for the queue being finished
 	Finished
+	// Playing notification for a song starting to play
+	Playing
 )
 
 type Notification int8

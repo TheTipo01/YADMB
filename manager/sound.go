@@ -24,6 +24,8 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	_ = server.VC.SetSpeaking(true)
 	audioChannel := server.VC.GetAudioChannel()
 
+	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
+
 	for {
 		select {
 		case <-server.Pause:
