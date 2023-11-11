@@ -18,10 +18,10 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -trimpath -ldflags 
 
 FROM thetipo01/dca
 
-RUN apk add --no-cache \
-  ffmpeg \
-  yt-dlp \
-  gcompat
+RUN apk add --no-cache ffmpeg python3 gcompat
+
+RUN wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/bin/yt-dlp
+RUN chmod a+rx /usr/bin/yt-dlp
 
 COPY --from=build /yadmb/yadmb /usr/bin/
 
