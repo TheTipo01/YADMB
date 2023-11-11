@@ -1,5 +1,3 @@
-import { P } from "flowbite-svelte";
-
 // Function to add an object to the array
 export function AddObjectToArray(promise, objectToAdd) {
     return promise.then((array) => {
@@ -59,6 +57,14 @@ export function GetFrames(promise) {
     })
 }
 
+
+// Function to get the isPaused status from the promise
+export function GetPauseStatus(promise) {
+    return promise.then(array => {
+        return !array[0].isPaused;
+    })
+}
+
 // Function to get the GuildID from URL query
 export function GetGuildID() {
     let query = new URLSearchParams(window.location.search);
@@ -109,6 +115,5 @@ export function GetTime(seconds) {
     }
 
     return `00:${seconds}`;
-
 
 }

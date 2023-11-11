@@ -13,24 +13,35 @@
         GetGuildID, 
         GetToken, 
         GetHost,
+        GetPauseStatus,
+        GetFrames,
+        GetTime,
     } from "../lib/utilities"
     import {onMount} from "svelte";
     import {GetQueue} from "$lib/queue"
     import logo from "../assets/logo_yadmb.png"
 
     // variables
+    const FrameSeconds = 50.00067787;
     let GuildId = '';
     let token = '';
     let host = '';
     let activetab = "queue";
     let playing;
     let queue = null;
+    let seconds = 0;
+    let timestamp;
 
-    onMount(() => {
+    onMount(async () => {
         GuildId = GetGuildID();
         token = GetToken();
         host = GetHost();
         queue = GetQueue(GuildId, token, host);
+        playing = await GetPauseStatus(queue);
+
+        // Timestamp
+        if(seconds === 0) seconds = await GetFrames(queue) / FrameSeconds;
+        timestamp = GetTime(Math.floor(seconds));
 
         let websocket_url = `${host}/ws/${GuildId}?` + new URLSearchParams({"token": token}).toString();
         // If the host is in https, use wss instead of ws
@@ -64,10 +75,12 @@
                         queue = RemoveFirstObjectFromArray(queue);
                         queue = SetPause(queue, false);
                         playing = false;
+                        seconds = 0;
                         break;
                     case Notification.Clear: // Queue cleared
                         queue = ClearArray(queue);
                         queue = SetPause(queue, false);
+                        seconds = 0;
                         break;
                     case Notification.Resume:
                     case Notification.Pause: // Song paused or resumed
@@ -89,7 +102,7 @@
         
         start();
     });
-
+    setInterval(function() {if(playing){seconds += 1; timestamp = GetTime(seconds)}}, 1000)
 
 </script>
 <div class="flex justify-center">
@@ -104,8 +117,8 @@
             Queue
         </div>
         {#if activetab === "queue"}
-            {#if GuildId !== '' && token !== '' && host !== '' && queue != null}
-                <Queue GuildId={GuildId} token={token} host={host} queue={queue} playing={playing}/>
+            {#if GuildId !== '' && token !== '' && host !== '' && queue != null && timestamp != undefined}
+                <Queue GuildId={GuildId} token={token} host={host} queue={queue} timestamp = {timestamp}/>
             {/if}
         {/if}
     </TabItem>

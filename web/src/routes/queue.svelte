@@ -3,34 +3,22 @@
     import {A, Avatar, Button, Checkbox, Heading, Input, Label, Modal, P} from "flowbite-svelte";
     import {AddToQueueHTML, RemoveFromQueue} from "../lib/queue";
     import {ToggleSong} from "../lib/song";
-    import {GetTime, GetFrames} from "$lib/utilities"
     import PlaySolid from "flowbite-svelte-icons/PlaySolid.svelte";
     import PauseSolid from "flowbite-svelte-icons/PauseSolid.svelte";
     import Error from "./errors.svelte"
-	import { onMount } from "svelte";
 
     // props
     export let GuildId;
     export let token;
     export let host;
     export let queue;
-    export let playing;
+    export let timestamp;
 
 
     // variables
-    const FrameSeconds = 50.00067787;
     let code = queue;
     let showModal = false;
     let isPlaylist = false;
-    let seconds = 0;
-    let timestamp;
-    
-    // Playback time
-    onMount(async () => {
-        if(seconds === 0) seconds = await GetFrames(queue) / FrameSeconds;
-        setInterval(function() { if(playing){seconds += 1; } timestamp = GetTime(Math.round(seconds))}, 1000);
-    })
-    
 
 </script>
 
@@ -90,7 +78,9 @@
                     <div >
                         <A href={json[0].link}><img alt="thumbnail" src={json[0].thumbnail} href={json.link} class="max-w-3xl"/></A>
                         {#if timestamp != undefined}
-                        <P align="center"> {timestamp} / {json[0].duration} </P>
+                            <P align="center"> {timestamp} / {json[0].duration} </P>
+                        {:else}
+                            <P align="center"> Fetching... </P>
                         {/if}
                     </div>
 
