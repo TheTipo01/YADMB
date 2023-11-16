@@ -5,17 +5,17 @@
     import StarSolid from "flowbite-svelte-icons/StarSolid.svelte"
     import ListMusicSolid from "flowbite-svelte-icons/ListMusicSolid.svelte"
     import {
-        AddObjectToArray, 
-        ClearArray, 
-        RemoveFirstObjectFromArray, 
-        SetPause, 
+        AddObjectToArray,
+        ClearArray,
+        RemoveFirstObjectFromArray,
+        SetPause,
         TogglePause,
-        GetGuildID, 
-        GetToken, 
+        GetGuildID,
+        GetToken,
         GetHost,
         GetPauseStatus,
         GetFrames,
-        GetTime,
+        GetTime, AddObjectToArrayAsSecond,
     } from "../lib/utilities"
     import {onMount} from "svelte";
     import {GetQueue} from "$lib/queue"
@@ -64,6 +64,7 @@
                     Clear: 4,
                     Finished: 5,
                     Playing: 6,
+                    NewSongPriority: 7,
                 });
                 let signal = JSON.parse(e.data)
                 switch (signal.notification) {
@@ -89,6 +90,9 @@
                         break;
                     case Notification.Playing:
                         playing = true;
+                        break;
+                    case Notification.NewSongPriority:
+                        queue = AddObjectToArrayAsSecond(queue, signal.song);
                         break;
                 }
             }

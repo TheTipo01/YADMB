@@ -5,6 +5,13 @@ export function AddObjectToArray(promise, objectToAdd) {
     });
 }
 
+// Function to add an object to the array as the second element
+export function AddObjectToArrayAsSecond(promise, objectToAdd) {
+    return promise.then((array) => {
+        return [array[0], objectToAdd, ...array.slice(1)];
+    });
+}
+
 // Function to remove the first object from the array 
 export function RemoveFirstObjectFromArray(promise) {
     return promise.then((array) => {
