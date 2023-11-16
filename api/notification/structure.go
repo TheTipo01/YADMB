@@ -19,6 +19,8 @@ const (
 	Finished
 	// Playing notification for a song starting to play
 	Playing
+	// PrioritySong notification for a song being added to the queue with priority
+	PrioritySong
 )
 
 type Notification int8

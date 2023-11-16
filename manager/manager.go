@@ -38,7 +38,11 @@ func NewServer(guildID string, clients *Clients) *Server {
 
 // AddSong adds a song to the queue
 func (server *Server) AddSong(priority bool, el ...queue.Element) {
-	go notify(notification.NotificationMessage{Notification: notification.NewSongs, Songs: el, Guild: server.GuildID})
+	if priority {
+		go notify(notification.NotificationMessage{Notification: notification.PrioritySong, Songs: el, Guild: server.GuildID})
+	} else {
+		go notify(notification.NotificationMessage{Notification: notification.NewSongs, Songs: el, Guild: server.GuildID})
+	}
 
 	if priority {
 		server.Queue.AddElementsPriority(el...)
