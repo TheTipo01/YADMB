@@ -91,11 +91,9 @@ export function GetHost() {
 
 // Function to get the number of folders
 export function GetFolders(favorites) {
-    let nFolders = 1;
     let folders = [""];
     for(let i = 0; i < favorites.length; i++) {
         if(!folders.includes(favorites[i].folder)) {
-            nFolders++;
             folders.push(favorites[i].folder);
         }
     }
