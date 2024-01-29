@@ -60,6 +60,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 					el.Reader = bufio.NewReader(f)
 					el.Closer = f
 					server.Frames.Store(0)
+					go notify(notification.NotificationMessage{Notification: notification.LoopFinished, Guild: server.GuildID})
 					continue
 				} else {
 					cleanUp(server, el.Closer)
