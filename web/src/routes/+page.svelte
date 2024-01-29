@@ -65,6 +65,7 @@
                     Finished: 5,
                     Playing: 6,
                     NewSongPriority: 7,
+                    LoopFinished: 8,
                 });
                 let signal = JSON.parse(e.data)
                 switch (signal.notification) {
@@ -93,6 +94,9 @@
                         break;
                     case Notification.NewSongPriority:
                         queue = AddObjectToArrayAsSecond(queue, signal.song);
+                        break;
+                    case Notification.LoopFinished:
+                        seconds = 0;
                         break;
                 }
             }
