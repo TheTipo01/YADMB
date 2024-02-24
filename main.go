@@ -276,7 +276,8 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 
 func guildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
-	if m.User.ID == s.State.User.ID && m.CommunicationDisabledUntil != nil && server[m.GuildID].IsPlaying() {
+	if m.User.ID == s.State.User.ID && m.CommunicationDisabledUntil != nil &&
+		m.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID].IsPlaying() {
 		ClearAndExit(server[m.GuildID])
 	}
 }
