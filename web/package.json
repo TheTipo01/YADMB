@@ -16,7 +16,7 @@
 		"autoprefixer": "^10.4.19",
 		"eslint": "^8.57.0",
 		"eslint-config-prettier": "^8.10.0",
-		"eslint-plugin-svelte": "^2.39.0",
+		"eslint-plugin-svelte": "^2.40.0",
 		"flowbite": "^1.8.1",
 		"flowbite-svelte": "^0.44.24",
 		"flowbite-svelte-icons": "^0.4.5",
@@ -24,13 +24,13 @@
 		"postcss-load-config": "^4.0.2",
 		"prettier": "^2.8.8",
 		"prettier-plugin-svelte": "^2.10.1",
-		"svelte": "^4.2.17",
-		"tailwindcss": "^3.4.3",
+		"svelte": "^4.2.18",
+		"tailwindcss": "^3.4.4",
 		"vite": "^4.5.3"
 	},
 	"type": "module",
 	"dependencies": {
 		"svelte-preprocess": "^5.1.4",
-		"ws": "^8.17.0"
+		"ws": "^8.17.1"
 	}
 }
