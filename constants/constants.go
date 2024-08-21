@@ -69,9 +69,11 @@ const (
 	DjRoleEqual   = "DJ role is already that role!"
 
 	// Blacklist
-	BlacklistAdded   = "User added to the blacklist!"
-	BlacklistRemoved = "User removed from the blacklist!"
-	UserInBlacklist  = "User is in blacklist!"
+	BlacklistAdded       = "User added to the blacklist!"
+	BlacklistRemoved     = "User removed from the blacklist!"
+	UserInBlacklist      = "User is in blacklist!"
+	ServerInBlacklist    = "Server is in blacklist!"
+	ServerNotInWhitelist = "Server is not in whitelist!"
 )
 
 const (

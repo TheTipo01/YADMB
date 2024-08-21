@@ -24,6 +24,14 @@ clientsecret: ""
 # - clicking "Credentials" on the left bar, then "Create Credentials", then "API key"
 youtubeapikey: ""
 
+# If set to true, the bot will only respond to commands in the guilds listed below.
+# If set to false, the bot will respond to commands in all guilds, except the ones listed below.
+whitelist: true
+
+guildlist:
+    - 0000000000000000
+    - 1111111111111111
+
 
 # DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
 # DB Info, like username, password...

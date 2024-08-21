@@ -30,7 +30,7 @@ var (
 	owner string
 	// Discord bot token
 	token string
-	// Cache for the blacklist
+	// Cache for the user blacklist
 	blacklist map[string]bool
 	// Clients
 	clients manager.Clients
@@ -44,6 +44,10 @@ var (
 	origin string
 	// Server mutex
 	serverMutex sync.RWMutex
+	// If set to true, the bot will only respond to commands coming from guilds in the guild list
+	whitelist bool
+	// List of guilds the bot will respond to
+	guildList map[string]bool
 )
 
 func init() {
@@ -124,6 +128,13 @@ func init() {
 
 		server[k].DjMode = dj[k].Enabled
 		server[k].DjRole = dj[k].Role
+	}
+
+	// Load the whitelist
+	whitelist = cfg.WhiteList
+	guildList = make(map[string]bool)
+	for _, g := range cfg.GuildList {
+		guildList[g] = true
 	}
 
 	// Create folders used by the bot
@@ -214,6 +225,14 @@ func main() {
 		}
 	}
 
+	if lit.LogLevel == lit.LogDebug {
+		lit.Debug("Bot is connected to %d guilds.", len(dg.State.Guilds))
+
+		for _, g := range dg.State.Guilds {
+			lit.Debug("%s: %s", g.Name, g.ID)
+		}
+	}
+
 	// Wait here until CTRL-C or another term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
@@ -290,8 +309,28 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				constants.UserInBlacklist).
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
 		} else {
-			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-				h(s, i)
+			if whitelist {
+				// Whitelist mode: check if the guild is in the list
+				if guildList[i.GuildID] {
+					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+						h(s, i)
+					}
+				} else {
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
+						constants.ServerNotInWhitelist).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+				}
+			} else {
+				// Blacklist mode: check if the guild is not in the list
+				if !guildList[i.GuildID] {
+					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+						h(s, i)
+					}
+				} else {
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
+						constants.ServerInBlacklist).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+				}
 			}
 		}
 	} else {

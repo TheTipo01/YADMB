@@ -13,6 +13,8 @@ type Config struct {
 	Address      string     `fig:"address"`
 	Origin       string     `fig:"origin"`
 	ApiTokens    []apiToken `fig:"apitokens"`
+	WhiteList    bool       `fig:"whitelist"`
+	GuildList    []string   `fig:"guildlist"`
 }
 
 type apiToken struct {
