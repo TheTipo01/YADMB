@@ -26,7 +26,7 @@ youtubeapikey: ""
 
 # If set to true, the bot will only respond to commands in the guilds listed below.
 # If set to false, the bot will respond to commands in all guilds, except the ones listed below.
-whitelist: true
+whitelist: false
 
 guildlist:
     - 0000000000000000
