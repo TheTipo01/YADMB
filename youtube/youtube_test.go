@@ -34,7 +34,7 @@ func TestYouTube_GetPlaylist(t *testing.T) {
 		t.Fatal("playlist response is nil")
 	}
 
-	if result[0].URL != "https://www.youtube.com/watch?v=PvuYSybooLg" {
+	if result[0].ID != "PvuYSybooLg" {
 		t.Fatal("first video does not match")
 	}
 }
@@ -45,7 +45,7 @@ func TestYouTube_Search(t *testing.T) {
 		t.Fatal("search response is nil")
 	}
 
-	if result[0].URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" {
+	if result[0].ID != "dQw4w9WgXcQ" {
 		t.Fatal("first video does not match")
 	}
 }
