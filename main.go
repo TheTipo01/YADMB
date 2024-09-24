@@ -147,7 +147,7 @@ func init() {
 	// If yt-dlp is not terminated gracefully when downloading, it will leave a file called --Frag1
 	_ = os.Remove("--Frag1")
 
-	// Checks useful for knowing if every dependency
+	// Checks useful for knowing if every dependency exists
 	if manager.IsCommandNotAvailable("dca") {
 		lit.Error("Error: can't find dca!")
 	}
@@ -208,6 +208,7 @@ func main() {
 		lit.Error("Can't register commands, %s", err)
 	}
 
+	// Start the web API, if enabled
 	if webApi != nil {
 		go webApi.HandleNotifications()
 
@@ -225,6 +226,7 @@ func main() {
 		}
 	}
 
+	// Print guilds the bot is connected to
 	if lit.LogLevel == lit.LogDebug {
 		lit.Debug("Bot is connected to %d guilds.", len(dg.State.Guilds))
 
