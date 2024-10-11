@@ -32,8 +32,8 @@ devDependencies:
     specifier: ^8.10.0
     version: 8.10.0(eslint@8.57.1)
   eslint-plugin-svelte:
-    specifier: ^2.44.0
-    version: 2.44.0(eslint@8.57.1)(svelte@4.2.19)
+    specifier: ^2.44.1
+    version: 2.44.1(eslint@8.57.1)(svelte@4.2.19)
   flowbite:
     specifier: ^1.8.1
     version: 1.8.1
@@ -42,7 +42,7 @@ devDependencies:
     version: 0.44.24(svelte@4.2.19)
   flowbite-svelte-icons:
     specifier: ^0.4.5
-    version: 0.4.5(svelte@4.2.19)(tailwind-merge@2.5.2)(tailwindcss@3.4.13)
+    version: 0.4.5(svelte@4.2.19)(tailwind-merge@2.5.3)(tailwindcss@3.4.13)
   postcss:
     specifier: ^8.4.47
     version: 8.4.47
@@ -493,7 +493,7 @@ packages:
       devalue: 4.3.3
       esm-env: 1.0.0
       kleur: 4.1.5
-      magic-string: 0.30.11
+      magic-string: 0.30.12
       mrmime: 1.0.1
       sade: 1.8.1
       set-cookie-parser: 2.7.0
@@ -533,7 +533,7 @@ packages:
       debug: 4.3.7
       deepmerge: 4.3.1
       kleur: 4.1.5
-      magic-string: 0.30.11
+      magic-string: 0.30.12
       svelte: 4.2.19
       svelte-hmr: 0.15.3(svelte@4.2.19)
       vite: 4.5.5
@@ -621,8 +621,8 @@ packages:
       picomatch: 2.3.1
     dev: true
 
-  /apexcharts@3.53.0:
-    resolution: {integrity: sha512-QESZHZY3w9LPQ64PGh1gEdfjYjJ5Jp+Dfy0D/CLjsLOPTpXzdxwlNMqRj+vPbTcP0nAHgjWv1maDqcEq6u5olw==}
+  /apexcharts@3.54.0:
+    resolution: {integrity: sha512-ZgI/seScffjLpwNRX/gAhIkAhpCNWiTNsdICv7qxnF0xisI23XSsaENUKIcMlyP1rbe8ECgvybDnp7plZld89A==}
     dependencies:
       '@yr/monotone-cubic-spline': 1.0.3
       svg.draggable.js: 2.2.2
@@ -652,8 +652,8 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
     dependencies:
-      browserslist: 4.23.3
-      caniuse-lite: 1.0.30001663
+      browserslist: 4.24.0
+      caniuse-lite: 1.0.30001668
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.1.0
@@ -692,15 +692,15 @@ packages:
       fill-range: 7.1.1
     dev: true
 
-  /browserslist@4.23.3:
-    resolution: {integrity: sha512-btwCFJVjI4YWDNfau8RhZ+B1Q/VLoUITrm3RlP6y1tYGWIOa+InuYiRGXUBXo8nA1qKmHMyLB/iVQg5TT4eFoA==}
+  /browserslist@4.24.0:
+    resolution: {integrity: sha512-Rmb62sR1Zpjql25eSanFGEhAxcFwfA1K0GuQcLoaJBAcENegrQut3hYdhXFF1obQfiDyqIW/cLM5HSJ/9k884A==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001663
-      electron-to-chromium: 1.5.28
+      caniuse-lite: 1.0.30001668
+      electron-to-chromium: 1.5.36
       node-releases: 2.0.18
-      update-browserslist-db: 1.1.0(browserslist@4.23.3)
+      update-browserslist-db: 1.1.1(browserslist@4.24.0)
     dev: true
 
   /buffer-crc32@1.0.0:
@@ -718,8 +718,8 @@ packages:
     engines: {node: '>= 6'}
     dev: true
 
-  /caniuse-lite@1.0.30001663:
-    resolution: {integrity: sha512-o9C3X27GLKbLeTYZ6HBOLU1tsAcBZsLis28wrVzddShCS16RujjHp9GDHKZqrB3meE0YjhawvMFsGb/igqiPzA==}
+  /caniuse-lite@1.0.30001668:
+    resolution: {integrity: sha512-nWLrdxqCdblixUO+27JtGJJE/txpJlyUy5YN1u53wLZkP0emYCo5zgS6QYft7VUYR42LGgi/S5hdLZTrnyIddw==}
     dev: true
 
   /chalk@4.1.2:
@@ -849,8 +849,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /electron-to-chromium@1.5.28:
-    resolution: {integrity: sha512-VufdJl+rzaKZoYVUijN13QcXVF5dWPZANeFTLNy+OSpHdDL5ynXTF35+60RSBbaQYB1ae723lQXHCrf4pyLsMw==}
+  /electron-to-chromium@1.5.36:
+    resolution: {integrity: sha512-HYTX8tKge/VNp6FGO+f/uVDmUkq+cEfcxYhKf15Akc4M5yxt5YmorwlAitKWjWhWQnKcDRBAQKXkhqqXMqcrjw==}
     dev: true
 
   /emoji-regex@8.0.0:
@@ -924,8 +924,8 @@ packages:
       eslint: 8.57.1
     dev: true
 
-  /eslint-plugin-svelte@2.44.0(eslint@8.57.1)(svelte@4.2.19):
-    resolution: {integrity: sha512-wav4MOs02vBb1WjvTCYItwJCxMkuk2Z4p+K/eyjL0N/z7ahXLP+0LtQQjiKc2ezuif7GnZLbD1F3o1VHzSvdVg==}
+  /eslint-plugin-svelte@2.44.1(eslint@8.57.1)(svelte@4.2.19):
+    resolution: {integrity: sha512-w6wkoJPw1FJKFtM/2oln21rlu5+HTd2CSkkzhm32A+trNoW2EYQqTQAbDTU6k2GI/6Vh64rBHYQejqEgDld7fw==}
     engines: {node: ^14.17.0 || >=16.0.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0-0 || ^9.0.0-0
@@ -967,6 +967,7 @@ packages:
   /eslint@8.57.1:
     resolution: {integrity: sha512-ypowyDxpVSYpkXr9WPv2PAZCtNip1Mv5KTW0SCurXv/9iOpcrH9PaqUElksqEB6pChqHGDRCFTyrZlGhnLNGiA==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     dependencies:
       '@eslint-community/eslint-utils': 4.4.0(eslint@8.57.1)
@@ -1125,12 +1126,12 @@ packages:
     resolution: {integrity: sha512-CLVqzuoE2vkUvWYK/lJ6GzT0be5dlTbH3uuhVwyB67+PjqJWABm2wv68xhBf5BqjpBxvTSQ3mrmLHpPJ2tvrSQ==}
     dependencies:
       '@rollup/plugin-node-resolve': 15.3.0
-      flowbite: 2.5.1
+      flowbite: 2.5.2
     transitivePeerDependencies:
       - rollup
     dev: true
 
-  /flowbite-svelte-icons@0.4.5(svelte@4.2.19)(tailwind-merge@2.5.2)(tailwindcss@3.4.13):
+  /flowbite-svelte-icons@0.4.5(svelte@4.2.19)(tailwind-merge@2.5.3)(tailwindcss@3.4.13):
     resolution: {integrity: sha512-IBudEfw9B4UE2gCRMhbRnyE8p7qq7DDMauy0mPVIShzjaN3yVk2AmAHia1JRe9jUC98Wn7xNk/IdJlXeQj19Iw==}
     peerDependencies:
       svelte: ^3.54.0 || ^4.0.0
@@ -1138,7 +1139,7 @@ packages:
       tailwindcss: ^3.3.2
     dependencies:
       svelte: 4.2.19
-      tailwind-merge: 2.5.2
+      tailwind-merge: 2.5.3
       tailwindcss: 3.4.13
     dev: true
 
@@ -1149,10 +1150,10 @@ packages:
       svelte: ^4.0.0
     dependencies:
       '@floating-ui/dom': 1.6.11
-      apexcharts: 3.53.0
-      flowbite: 2.5.1
+      apexcharts: 3.54.0
+      flowbite: 2.5.2
       svelte: 4.2.19
-      tailwind-merge: 2.5.2
+      tailwind-merge: 2.5.3
     transitivePeerDependencies:
       - rollup
     dev: true
@@ -1164,8 +1165,8 @@ packages:
       mini-svg-data-uri: 1.4.4
     dev: true
 
-  /flowbite@2.5.1:
-    resolution: {integrity: sha512-7jP1jy9c3QP7y+KU9lc8ueMkTyUdMDvRP+lteSWgY5TigSZjf9K1kqZxmqjhbx2gBnFQxMl1GAjVThCa8cEpKA==}
+  /flowbite@2.5.2:
+    resolution: {integrity: sha512-kwFD3n8/YW4EG8GlY3Od9IoKND97kitO+/ejISHSqpn3vw2i5K/+ZI8Jm2V+KC4fGdnfi0XZ+TzYqQb4Q1LshA==}
     dependencies:
       '@popperjs/core': 2.11.8
       flowbite-datepicker: 1.3.0
@@ -1223,7 +1224,7 @@ packages:
       jackspeak: 3.4.3
       minimatch: 9.0.5
       minipass: 7.1.2
-      package-json-from-dist: 1.0.0
+      package-json-from-dist: 1.0.1
       path-scurry: 1.11.1
     dev: true
 
@@ -1445,8 +1446,8 @@ packages:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
     dev: true
 
-  /magic-string@0.30.11:
-    resolution: {integrity: sha512-+Wri9p0QHMy+545hKww7YAu5NyzF8iomPL/RQazugQ9+Ez4Ic3mERMd8ZTX5rfK944j+560ZJi8iAwgak1Ac7A==}
+  /magic-string@0.30.12:
+    resolution: {integrity: sha512-Ea8I3sQMVXr8JhN4z+H/d8zwo+tYDgHE9+5G4Wnrwhs0gaK9fXTKx0Tw5Xwsd/bCPTTZNRAdpyzvoeORe9LYpw==}
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
 
@@ -1595,8 +1596,8 @@ packages:
       p-limit: 3.1.0
     dev: true
 
-  /package-json-from-dist@1.0.0:
-    resolution: {integrity: sha512-dATvCeZN/8wQsGywez1mzHtTlP22H8OEfPrVMLNr4/eGa+ijtLn/6M5f0dY8UKNrC2O9UCU6SSoG3qRKnt7STw==}
+  /package-json-from-dist@1.0.1:
+    resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
     dev: true
 
   /parent-module@1.0.1:
@@ -2054,7 +2055,7 @@ packages:
     dependencies:
       '@types/pug': 2.0.10
       detect-indent: 6.1.0
-      magic-string: 0.30.11
+      magic-string: 0.30.12
       postcss: 8.4.47
       postcss-load-config: 4.0.2(postcss@8.4.47)
       sorcery: 0.11.1
@@ -2078,7 +2079,7 @@ packages:
       estree-walker: 3.0.3
       is-reference: 3.0.2
       locate-character: 3.0.0
-      magic-string: 0.30.11
+      magic-string: 0.30.12
       periscopic: 3.1.0
 
   /svg.draggable.js@2.2.2:
@@ -2135,8 +2136,8 @@ packages:
       svg.js: 2.7.1
     dev: true
 
-  /tailwind-merge@2.5.2:
-    resolution: {integrity: sha512-kjEBm+pvD+6eAwzJL2Bi+02/9LFLal1Gs61+QB7HvTfQQ0aXwC5LGT8PEt1gS0CWKktKe6ysPTAy3cBC5MeiIg==}
+  /tailwind-merge@2.5.3:
+    resolution: {integrity: sha512-d9ZolCAIzom1nf/5p4LdD5zvjmgSxY0BGgdSvmXIoMYAiPdAW/dSpP7joCDYFY7r/HkEa2qmPtkgsu0xjQeQtw==}
     dev: true
 
   /tailwindcss@3.4.13:
@@ -2229,13 +2230,13 @@ packages:
       '@fastify/busboy': 2.1.1
     dev: true
 
-  /update-browserslist-db@1.1.0(browserslist@4.23.3):
-    resolution: {integrity: sha512-EdRAaAyk2cUE1wOf2DkEhzxqOQvFOoRJFNS6NeyJ01Gp2beMRpBAINjM2iDXE3KCuKhwnvHIQCJm6ThL2Z+HzQ==}
+  /update-browserslist-db@1.1.1(browserslist@4.24.0):
+    resolution: {integrity: sha512-R8UzCaa9Az+38REPiJ1tXlImTJXlVfgHZsglwBD/k6nj76ctsH1E3q4doGrukiLQd3sGQYu56r5+lo5r94l29A==}
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
     dependencies:
-      browserslist: 4.23.3
+      browserslist: 4.24.0
       escalade: 3.2.0
       picocolors: 1.1.0
     dev: true
