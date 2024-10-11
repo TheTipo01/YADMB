@@ -21,7 +21,10 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	)
 
 	// Start speaking.
-	_ = server.VC.SetSpeaking(true)
+	err = server.VC.SetSpeaking(true)
+	if err != nil {
+		return Error, err
+	}
 	audioChannel := server.VC.GetAudioChannel()
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
@@ -56,7 +59,10 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 						_ = el.Closer.Close()
 					}
 
-					f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
+					f, err := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
+					if err != nil {
+						return Error, err
+					}
 					el.Reader = bufio.NewReader(f)
 					el.Closer = f
 					server.Frames.Store(0)
