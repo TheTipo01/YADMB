@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>YADMB - Web UI</title>
     %sveltekit.head%
+    <script>
+        (function() {
+            const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = prefersDarkScheme ? 'dark' : 'light';
+            document.documentElement.classList.add(initialTheme);
+
+            // Listen for changes in the user's preferred color scheme
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+                const newTheme = event.matches ? 'dark' : 'light';
+                document.documentElement.classList.remove('dark', 'light');
+                document.documentElement.classList.add(newTheme);
+            });
+        })();
+    </script>
 </head>
 <body data-sveltekit-preload-data="hover">
 <div style="display: contents">%sveltekit.body%</div>
