@@ -292,8 +292,13 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 
 			for j := 0; j < len(playlist.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := playlist.Tracks.Tracks[j]
-				p.Song, _ = searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, p.Clients.Youtube)
-				server.downloadAndPlay(p, false)
+
+				p.Song, err = searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, p.Clients.Youtube)
+				if err == nil {
+					server.downloadAndPlay(p, false)
+				} else {
+					go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+				}
 			}
 
 			server.WG.Done()
@@ -321,8 +326,13 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 
 			for j := 0; j < len(album.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := album.Tracks.Tracks[j]
-				p.Song, _ = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
-				server.downloadAndPlay(p, false)
+
+				p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
+				if err == nil {
+					server.downloadAndPlay(p, false)
+				} else {
+					go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+				}
 			}
 
 			server.WG.Done()
@@ -339,8 +349,12 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
 	if p.Clients.Spotify != nil {
 		if track, err := p.Clients.Spotify.GetTrack(id); err == nil {
-			p.Song, _ = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
-			server.downloadAndPlay(p, true)
+			p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
+			if err == nil {
+				server.downloadAndPlay(p, true)
+			} else {
+				go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+			}
 		} else {
 			lit.Error("Can't get info on a spotify track: %s", err)
 			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
