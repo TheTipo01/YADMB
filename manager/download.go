@@ -263,7 +263,8 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 			return youtubeBase + result[0].ID, nil
 		}
 	} else {
-		out, err := exec.Command("yt-dlp", "--get-id", "ytsearch:\""+query+"\"").CombinedOutput()
+		out, err := exec.Command("yt-dlp", "--get-id", "--quiet", "--ignore-errors", "--no-warnings",
+			"--default-search", "ytsearch", query).CombinedOutput()
 		if err == nil {
 			ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
