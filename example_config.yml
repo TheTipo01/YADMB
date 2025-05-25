@@ -27,11 +27,25 @@ youtubeapikey: ""
 # If set to true, the bot will only respond to commands in the guilds listed below.
 # If set to false, the bot will respond to commands in all guilds, except the ones listed below.
 whitelist: false
-
 guildlist:
     - 0000000000000000
     - 1111111111111111
 
+# Web server address, to access the web interface
+address: :8080
+# Origin, to satisfy CORS and allow the generation of the links
+origin: https://example.com
+
+# Long-lived API tokens, to access the API without having to log in every time.
+#apitokens:
+#  - userid: 0000000000000000
+#    token: correct-horse-battery-staple
+#    guildid: 0000000000000000
+#    textchannelid: 0000000000000000
+#  - userid: 1111111111111111
+#    token: correct-horse-battery-staple
+#    guildid: 0000000000000000
+#    textchannelid: 0000000000000000
 
 # DON'T TOUCH THIS IF YOU DON'T KNOW WHAT YOU ARE DOING:
 # DB Info, like username, password...
@@ -49,19 +63,3 @@ drivername: sqlite
 
 # Log level. Possible value are error, warning, informational and debug
 loglevel: informational
-
-# Web server address, to access the web interface
-address: :8080
-# Origin, to satisfy CORS and allow the generation of the links
-origin: https://example.com
-
-# Long-lived API tokens, to access the API without having to log in every time.
-#apitokens:
-#  - userid: 0000000000000000
-#    token: correct-horse-battery-staple
-#    guildid: 0000000000000000
-#    textchannelid: 0000000000000000
-#  - userid: 1111111111111111
-#    token: correct-horse-battery-staple
-#    guildid: 0000000000000000
-#    textchannelid: 0000000000000000

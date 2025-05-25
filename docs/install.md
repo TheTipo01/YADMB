@@ -34,9 +34,8 @@ Final things:
 ## Docker
 
 - Clone the repo
-- Modify the `example_config.yml`, by adding your discord bot token (
-  see [here](hosting.md) if you don't know how
-  to do it)
+- Modify the `example_config.yml`, by adding your discord bot token
+  (see [here](hosting.md) if you don't know how to do it)
 - Rename it in `config.yml` and move it in the `data` directory
 - Run `docker-compose up -d`
 - Enjoy your YADMB instance!

@@ -6,7 +6,7 @@ Yet Another Discord Music Bot - A music bot written in go
 
 # Features
 
-- Supports what [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports, plus spotify playlists (if you configure the
+- Supports what [yt-dlp](https://github.com/yt-dlp/yt-dlp) does, plus spotify playlists (if you configure the
   required tokens!)
 - Uses slash commands (see [Commands](https://thetipo01.github.io/YADMB/commands/) for a list of commands)
 - Save your favorite songs and playlists with custom commands
@@ -16,6 +16,7 @@ Yet Another Discord Music Bot - A music bot written in go
 - Stream songs from the internet, useful for radios
 - Blacklist users from using the bot
 - Allow only certain users to use the bot, with the DJ role
+- A nice web interface to control the bot
 
 # Requirements
 
@@ -25,5 +26,4 @@ Yet Another Discord Music Bot - A music bot written in go
 
 # Installation
 
-See
-the [wiki](https://thetipo01.github.io/YADMB)
+See the [wiki](https://thetipo01.github.io/YADMB/install.html)
