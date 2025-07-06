@@ -16,6 +16,8 @@ const (
 	tblLink      = "create table IF NOT EXISTS link ( songID varchar(200) not null references song, link varchar(500) not null constraint link_pk primary key );"
 	tblDJ        = "CREATE TABLE IF NOT EXISTS `dj` ( `guild` VARCHAR(20) NOT NULL, `role` VARCHAR(20) NULL, `enabled` TINYINT(1) NOT NULL DEFAULT '0', PRIMARY KEY (`guild`) );"
 	tblFavorites = "CREATE TABLE IF NOT EXISTS `favorites`( `userID` VARCHAR(20) NOT NULL, `name` VARCHAR(100) NOT NULL, `link` VARCHAR(200) NOT NULL, `folder` VARCHAR(100) NULL DEFAULT NULL, PRIMARY KEY (`userID`, `name`));"
+	tblSearch    = "create table if not exists search ( link varchar(500) not null, term text not null constraint search_pk primary key );"
+	tblPlaylist  = "create table if not exists playlist ( playlist varchar(500) not null, entry varchar(500) not null, number integer not null, constraint playlist_pk primary key (playlist, entry) );"
 )
 
 var db *sql.DB
@@ -32,7 +34,7 @@ func NewDatabase(dsn string) *database.Database {
 	}
 
 	// Create tables if they don't exist
-	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ, tblFavorites)
+	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ, tblFavorites, tblSearch, tblPlaylist)
 
 	c := common.NewCommon(db)
 
@@ -54,6 +56,12 @@ func NewDatabase(dsn string) *database.Database {
 		GetFavorites:        c.GetFavorites,
 		AddFavorite:         c.AddFavorite,
 		RemoveFavorite:      c.RemoveFavorite,
+		GetSearch:           c.GetSearch,
+		AddSearch:           c.AddSearch,
+		RemoveSearch:        c.RemoveSearch,
+		GetPlaylist:         c.GetPlaylist,
+		AddPlaylist:         c.AddPlaylist,
+		RemovePlaylist:      c.RemovePlaylist,
 	}
 }
 

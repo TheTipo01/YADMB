@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"github.com/TheTipo01/YADMB/constants"
+	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/sponsorblock"
@@ -165,6 +166,22 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 	u, _ := url.Parse(p.Song)
 	q := u.Query()
 	if id := q.Get("list"); id != "" {
+		// Check if the playlist is in the database
+		entries, err := p.Clients.Database.GetPlaylist(id)
+		if err == nil && len(entries) > 0 {
+			server.WG.Add(1)
+
+			go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://www.youtube.com/playlist?list="+id).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+
+			for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
+				p.Song = entries[j]
+				server.downloadAndPlay(p, false)
+			}
+
+			server.WG.Done()
+			return nil
+		}
+
 		result = p.Clients.Youtube.GetPlaylist(id)
 	} else {
 		if strings.Contains(p.Song, "youtube.com") {
@@ -187,6 +204,20 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 	}
 
 	elements := make([]queue.Element, 0, len(result))
+
+	if len(result) > 1 {
+		id := q.Get("list")
+
+		go func() {
+			for i := 0; i < len(result); i++ {
+				// Add the video as a playlist entry
+				err := p.Clients.Database.AddPlaylist(id, youtubeBase+result[i].ID, i)
+				if err != nil {
+					lit.Error("Error adding playlist to database: %s", err)
+				}
+			}
+		}()
+	}
 
 	for _, r := range result {
 		el = queue.Element{
@@ -256,10 +287,23 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 }
 
 // Searches a song from the query on YouTube
-func searchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
+func searchDownloadAndPlay(query string, yt *youtube.YouTube, db *database.Database) (string, error) {
+	// Check if it's in the database
+	link, err := db.GetSearch(query)
+	if err == nil && link != "" {
+		lit.Debug("Found song in database: %s, %s", query, link)
+		return link, nil
+	}
+
 	if yt != nil {
 		result := yt.Search(query, 1)
 		if len(result) > 0 {
+			err = db.AddSearch(query, youtubeBase+result[0].ID)
+			lit.Debug("Found song from YouTube API, adding to db %s, %s", query, youtubeBase+result[0].ID)
+			if err != nil {
+				lit.Error("Error adding search to database: %s", err)
+			}
+
 			return youtubeBase + result[0].ID, nil
 		}
 	} else {
@@ -269,6 +313,12 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 			ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
 			if ids[0] != "" {
+				err = db.AddSearch(query, youtubeBase+ids[0])
+				lit.Debug("Found song from yt-dlp, adding to db %s, %s", query, youtubeBase+ids[0])
+				if err != nil {
+					lit.Error("Error adding search to database: %s", err)
+				}
+
 				return youtubeBase + ids[0], nil
 			}
 		}
@@ -279,6 +329,21 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube) (string, error) {
 
 // Enqueues song from a spotify playlist, searching them on YouTube
 func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
+	// Check if we have the playlist in the database
+	if entries, err := p.Clients.Database.GetPlaylist(id.String()); err == nil && len(entries) > 0 {
+		server.WG.Add(1)
+
+		go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+
+		for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
+			p.Song = entries[j]
+			server.downloadAndPlay(p, false)
+		}
+
+		server.WG.Done()
+		return
+	}
+
 	if p.Clients.Spotify != nil {
 		if playlist, err := p.Clients.Spotify.GetPlaylist(id); err == nil {
 			server.WG.Add(1)
@@ -294,8 +359,13 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 			for j := 0; j < len(playlist.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := playlist.Tracks.Tracks[j]
 
-				p.Song, err = searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, p.Clients.Youtube)
+				p.Song, err = searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, p.Clients.Youtube, p.Clients.Database)
 				if err == nil {
+					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
+					if err != nil {
+						lit.Error("Error adding playlist to database: %s", err)
+					}
+
 					server.downloadAndPlay(p, false)
 				} else {
 					go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
@@ -313,6 +383,21 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 }
 
 func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
+	// Check if we have the album in the database
+	if entries, err := p.Clients.Database.GetPlaylist(id.String()); err == nil && len(entries) > 0 {
+		server.WG.Add(1)
+
+		go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+
+		for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
+			p.Song = entries[j]
+			server.downloadAndPlay(p, false)
+		}
+
+		server.WG.Done()
+		return
+	}
+
 	if p.Clients.Spotify != nil {
 		if album, err := p.Clients.Spotify.GetAlbum(id); err == nil {
 			server.WG.Add(1)
@@ -328,8 +413,13 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 			for j := 0; j < len(album.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := album.Tracks.Tracks[j]
 
-				p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
+				p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube, p.Clients.Database)
 				if err == nil {
+					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
+					if err != nil {
+						lit.Error("Error adding playlist to database: %s", err)
+					}
+
 					server.downloadAndPlay(p, false)
 				} else {
 					go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
@@ -348,10 +438,24 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 
 // Gets info about a spotify track and plays it, searching it on YouTube
 func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
+	// Check the database for the track
+	link, err := p.Clients.Database.GetSearch(id.String())
+	if err == nil && link != "" {
+		p.Song = link
+		server.downloadAndPlay(p, true)
+
+		return
+	}
+
 	if p.Clients.Spotify != nil {
 		if track, err := p.Clients.Spotify.GetTrack(id); err == nil {
-			p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube)
+			p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube, p.Clients.Database)
 			if err == nil {
+				err = p.Clients.Database.AddSearch(id.String(), p.Song)
+				if err != nil {
+					lit.Error("Error adding search to database: %s", err)
+				}
+
 				server.downloadAndPlay(p, true)
 			} else {
 				go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)

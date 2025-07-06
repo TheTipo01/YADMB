@@ -22,6 +22,12 @@ type Database struct {
 	GetFavorites        func(userID string) []Favorite
 	AddFavorite         func(userID string, favorite Favorite) error
 	RemoveFavorite      func(userID, name string) error
+	GetSearch           func(term string) (string, error)
+	AddSearch           func(term, link string) error
+	RemoveSearch        func(term string) error
+	GetPlaylist         func(playlist string) ([]string, error)
+	AddPlaylist         func(playlist, entry string, number int) error
+	RemovePlaylist      func(playlist string) error
 }
 
 // CustomCommand holds data about a custom command

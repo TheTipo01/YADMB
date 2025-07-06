@@ -22,7 +22,7 @@ type PlayEvent struct {
 	IsDeferred  chan struct{}
 }
 
-// Wrapper function for playing songs
+// Play is a wrapper function for playing songs
 func (server *Server) Play(p PlayEvent) {
 	if strings.Contains(p.Song, "spotify.com/") {
 		// Parse URL
@@ -54,7 +54,7 @@ func (server *Server) Play(p PlayEvent) {
 	} else {
 		var err error
 
-		p.Song, err = searchDownloadAndPlay(p.Song, p.Clients.Youtube)
+		p.Song, err = searchDownloadAndPlay(p.Song, p.Clients.Youtube, p.Clients.Database)
 		if err == nil {
 			server.downloadAndPlay(p, true)
 		} else {

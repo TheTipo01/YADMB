@@ -74,6 +74,9 @@ const (
 	UserInBlacklist      = "User is in blacklist!"
 	ServerInBlacklist    = "Server is in blacklist!"
 	ServerNotInWhitelist = "Server is not in whitelist!"
+
+	// Update
+	UpdateQueued = "Requested data will be updated next time the song is played!"
 )
 
 const (

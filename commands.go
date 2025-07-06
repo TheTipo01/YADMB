@@ -531,15 +531,26 @@ var (
 		"update": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			var (
 				options = i.ApplicationCommandData().Options
-				url     = options[0].Value.(string)
+				query   = options[0].Value.(string)
 				info    = options[1].Value.(bool)
 				song    = options[2].Value.(bool)
 			)
 
-			if manager.IsValidURL(url) {
-				if el, err := clients.Database.CheckInDb(url); err != nil {
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotCached).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
+			if manager.IsValidURL(query) {
+				if el, err := clients.Database.CheckInDb(query); err != nil {
+					// Check if it's a playlist
+					if entries, err := clients.Database.GetPlaylist(query); err == nil && len(entries) > 0 {
+						err := clients.Database.RemovePlaylist(query)
+						if err != nil {
+							lit.Error("Error while removing playlist from db: %s", err)
+						}
+
+						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SuccessfulTitle,
+							constants.UpdateQueued).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
+					} else {
+						embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.NotCached).
+							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
+					}
 				} else {
 					if info {
 						clients.Database.RemoveFromDB(el)
@@ -553,12 +564,23 @@ var (
 					}
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SuccessfulTitle,
-						"Requested data will be updated next time the song is played!").
+						constants.UpdateQueued).
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.InvalidURL).
-					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
+				// Check if it's in the search results
+				if search, err := clients.Database.GetSearch(query); err == nil && search != "" {
+					err := clients.Database.RemoveSearch(query)
+					if err != nil {
+						lit.Error("Error while removing search from db: %s", err)
+					}
+
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SuccessfulTitle,
+						constants.UpdateQueued).SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
+				} else {
+					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.InvalidURL).
+						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*5, nil)
+				}
 			}
 		},
 		"blacklist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {

@@ -183,6 +183,63 @@ func (c Common) RemoveFavorite(userID, name string) error {
 	return err
 }
 
+func (c Common) GetSearch(term string) (string, error) {
+	var link string
+
+	err := c.db.QueryRow("SELECT link FROM search WHERE term=?", term).Scan(&link)
+
+	return link, err
+}
+
+func (c Common) AddSearch(term, link string) error {
+	_, err := c.db.Exec("INSERT INTO search (term, link) VALUES (?, ?)", term, link)
+	return err
+}
+
+func (c Common) RemoveSearch(term string) error {
+	_, err := c.db.Exec("DELETE FROM search WHERE term=?", term)
+	return err
+}
+
+func (c Common) GetPlaylist(playlist string) ([]string, error) {
+	var (
+		entry   string
+		entries = make([]string, 0)
+	)
+
+	rows, err := c.db.Query("SELECT entry FROM playlist WHERE playlist=? ORDER BY number", playlist)
+	if err != nil {
+		return entries, err
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&entry)
+		if err != nil {
+			lit.Error("Error scanning rows from query, %s", err)
+			continue
+		}
+
+		entries = append(entries, entry)
+	}
+
+	return entries, err
+}
+
+func (c Common) AddPlaylist(playlist, entry string, number int) error {
+	_, err := c.db.Exec("INSERT INTO playlist (playlist, entry, number) VALUES (?, ?, ?)", playlist, entry, number)
+	if err != nil {
+		lit.Error("Error inserting into playlist, %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c Common) RemovePlaylist(playlist string) error {
+	_, err := c.db.Exec("DELETE FROM playlist WHERE playlist=?", playlist)
+	return err
+}
+
 func (c Common) Close() {
 	_ = c.db.Close()
 }
