@@ -14,13 +14,13 @@
 		"@sveltejs/adapter-static": "^2.0.3",
 		"@sveltejs/kit": "^1.30.4",
 		"autoprefixer": "^10.4.21",
-		"eslint": "^9.27.0",
+		"eslint": "^9.30.1",
 		"eslint-config-prettier": "^8.10.0",
 		"eslint-plugin-svelte": "^2.46.1",
 		"flowbite": "^1.8.1",
 		"flowbite-svelte": "^0.44.24",
 		"flowbite-svelte-icons": "^0.4.5",
-		"postcss": "^8.5.3",
+		"postcss": "^8.5.6",
 		"postcss-load-config": "^4.0.2",
 		"prettier": "^2.8.8",
 		"prettier-plugin-svelte": "^2.10.1",
@@ -31,7 +31,7 @@
 	"type": "module",
 	"dependencies": {
 		"svelte-preprocess": "^5.1.4",
-		"ws": "^8.18.2"
+		"ws": "^8.18.3"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
