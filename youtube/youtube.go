@@ -104,11 +104,10 @@ func (y *YouTube) getVideosDurations(id ...string) []float64 {
 }
 
 // Search returns the URL, title and thumbnail of the first maxResults of the given query
-func (y *YouTube) Search(query string, maxResults int64) []Video {
+func (y *YouTube) Search(query string, maxResults int64) ([]Video, error) {
 	response, err := y.client.Search.List([]string{"snippet"}).Q(query).Type("video").MaxResults(maxResults).Do()
 	if err != nil {
-		lit.Error("youtube Search: %s", err.Error())
-		return nil
+		return nil, err
 	}
 
 	result := make([]Video, 0, len(response.Items))
@@ -121,7 +120,7 @@ func (y *YouTube) Search(query string, maxResults int64) []Video {
 		})
 	}
 
-	return result
+	return result, nil
 }
 
 func getBestThumbnail(thumbnails *youtube.ThumbnailDetails) string {

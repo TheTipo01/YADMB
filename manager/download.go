@@ -296,8 +296,8 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube, db *database.Datab
 	}
 
 	if yt != nil {
-		result := yt.Search(query, 1)
-		if len(result) > 0 {
+		result, err := yt.Search(query, 1)
+		if err == nil && len(result) > 0 {
 			err = db.AddSearch(query, youtubeBase+result[0].ID)
 			lit.Debug("Found song from YouTube API, adding to db %s, %s", query, youtubeBase+result[0].ID)
 			if err != nil {
@@ -306,21 +306,22 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube, db *database.Datab
 
 			return youtubeBase + result[0].ID, nil
 		}
-	} else {
-		out, err := exec.Command("yt-dlp", "--get-id", "--quiet", "--ignore-errors", "--no-warnings",
-			"--default-search", "ytsearch", query).CombinedOutput()
-		if err == nil {
-			ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+	}
 
-			if ids[0] != "" {
-				err = db.AddSearch(query, youtubeBase+ids[0])
-				lit.Debug("Found song from yt-dlp, adding to db %s, %s", query, youtubeBase+ids[0])
-				if err != nil {
-					lit.Error("Error adding search to database: %s", err)
-				}
+	// yt-dlp is used as a fallback if the YouTube API doesn't return anything or if the YouTube client is not configured
+	out, err := exec.Command("yt-dlp", "--get-id", "--quiet", "--ignore-errors", "--no-warnings",
+		"--default-search", "ytsearch", query).CombinedOutput()
+	if err == nil {
+		ids := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 
-				return youtubeBase + ids[0], nil
+		if ids[0] != "" {
+			err = db.AddSearch(query, youtubeBase+ids[0])
+			lit.Debug("Found song from yt-dlp, adding to db %s, %s", query, youtubeBase+ids[0])
+			if err != nil {
+				lit.Error("Error adding search to database: %s", err)
 			}
+
+			return youtubeBase + ids[0], nil
 		}
 	}
 

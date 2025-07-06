@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.1
 
 require (
-	github.com/bwmarrin/discordgo v0.29.0
+	github.com/bwmarrin/discordgo v0.29.1-0.20250705141350-98dc13349786
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/dchest/uniuri v1.2.0
 	github.com/gin-contrib/cors v1.7.6
