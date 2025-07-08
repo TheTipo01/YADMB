@@ -22,9 +22,7 @@ func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, se
 }
 
 // QuitVC disconnects the bot from the voice channel after 1 minute if nothing is playing
-func QuitVC(server *Server) {
-	time.Sleep(1 * time.Minute)
-
+func (server *Server) QuitVC() {
 	if server.Queue.IsEmpty() {
 		server.VC.Disconnect()
 	}

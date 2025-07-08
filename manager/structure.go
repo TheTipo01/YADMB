@@ -53,6 +53,8 @@ type Server struct {
 	DjMode bool
 	// Clients used for interacting with the various APIs
 	Clients *Clients
+	// Timer used for quitting the voice channel
+	ChanQuitVC chan bool
 }
 
 // YtDLP structure for holding yt-dlp data

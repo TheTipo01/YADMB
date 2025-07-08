@@ -12,6 +12,7 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -20,20 +21,25 @@ var (
 
 // NewServer creates a new server manager
 func NewServer(guildID string, clients *Clients) *Server {
-	return &Server{
-		Queue:   queue.NewQueue(),
-		Custom:  make(map[string]*database.CustomCommand),
-		GuildID: guildID,
-		Pause:   make(chan struct{}),
-		Resume:  make(chan struct{}),
-		Skip:    make(chan SkipReason),
-		Started: atomic.Bool{},
-		Clear:   atomic.Bool{},
-		Paused:  atomic.Bool{},
-		WG:      &sync.WaitGroup{},
-		Clients: clients,
-		VC:      vc.NewVC(guildID),
+	var server = &Server{
+		Queue:      queue.NewQueue(),
+		Custom:     make(map[string]*database.CustomCommand),
+		GuildID:    guildID,
+		Pause:      make(chan struct{}),
+		Resume:     make(chan struct{}),
+		Skip:       make(chan SkipReason),
+		Started:    atomic.Bool{},
+		Clear:      atomic.Bool{},
+		Paused:     atomic.Bool{},
+		WG:         &sync.WaitGroup{},
+		Clients:    clients,
+		VC:         vc.NewVC(guildID),
+		ChanQuitVC: make(chan bool),
 	}
+
+	go server.handleQuitVC()
+
+	return server
 }
 
 // AddSong adds a song to the queue
@@ -105,7 +111,7 @@ func (server *Server) play() {
 
 	server.Started.Store(false)
 
-	go QuitVC(server)
+	server.ChanQuitVC <- true
 }
 
 // IsPlaying returns whether the bot is playing
@@ -130,6 +136,26 @@ func (server *Server) Clean() {
 		for _, el := range q {
 			if el.Closer != nil {
 				_ = el.Closer.Close()
+			}
+		}
+	}
+}
+
+func (server *Server) handleQuitVC() {
+	var c bool
+	var timer *time.Timer
+
+	for {
+		// Wait for a signal in the channel
+		c = <-server.ChanQuitVC
+		if c {
+			if timer == nil {
+				timer = time.AfterFunc(time.Minute, server.QuitVC)
+			}
+		} else {
+			if timer != nil {
+				timer.Stop()
+				timer = nil
 			}
 		}
 	}
