@@ -288,6 +288,11 @@ var (
 					el := server[i.GuildID].Queue.GetFirstElement()
 					server[i.GuildID].Skip <- manager.Skip
 					server[i.GuildID].Paused.Store(false)
+
+					if server[i.GuildID].Queue.IsEmpty() {
+						server[i.GuildID].ChanQuitVC <- true
+					}
+
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle,
 						el.Title+" - "+el.Duration+" added by "+el.User).
 						SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, i.Interaction, time.Second*5, nil)
