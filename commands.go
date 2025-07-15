@@ -668,7 +668,6 @@ var (
 			if vs := manager.FindUserVoiceState(s, i.GuildID, i.Member.User.ID); vs != nil {
 				url := i.ApplicationCommandData().Options[0].Value.(string)
 				if !strings.HasPrefix(url, "file") && manager.IsValidURL(url) {
-					c := make(chan struct{})
 					go embed.SendEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).
 						AddField(constants.EnqueuedTitle, url).SetColor(0x7289DA).MessageEmbed, i.Interaction, c, c)
 
@@ -676,7 +675,7 @@ var (
 					el := queue.Element{
 						ID:          url,
 						Title:       "Stream",
-						Duration:    "NaN",
+						Duration:    "",
 						Link:        url,
 						User:        i.Member.User.Username,
 						TextChannel: i.ChannelID,
