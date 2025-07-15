@@ -7,7 +7,7 @@ RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which 
 COPY . /yadmb
 
 WORKDIR /yadmb/web
-RUN . "$HOME/.shrc" && pnpm install
+RUN . "$HOME/.shrc" && pnpm install --force
 RUN . "$HOME/.shrc" && pnpm run build
 
 WORKDIR /yadmb
