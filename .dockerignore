@@ -1,5 +1,7 @@
-# Audio cache
 audio_cache
-
-# Database
 yadmb.db
+config.yml
+data
+web/node_modules
+web/build
+web/.svelte-kit

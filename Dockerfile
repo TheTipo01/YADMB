@@ -1,14 +1,12 @@
 FROM --platform=$BUILDPLATFORM golang:alpine AS build
 
-RUN apk add --no-cache git wget nodejs
-
-RUN wget -qO- https://get.pnpm.io/install.sh | ENV="$HOME/.shrc" SHELL="$(which sh)" sh -
+RUN apk add --no-cache git wget nodejs pnpm
 
 COPY . /yadmb
 
 WORKDIR /yadmb/web
-RUN . "$HOME/.shrc" && pnpm install --force
-RUN . "$HOME/.shrc" && pnpm run build
+RUN pnpm install
+RUN pnpm run build
 
 WORKDIR /yadmb
 ARG TARGETOS
