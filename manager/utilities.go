@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/TheTipo01/YADMB/api/notification"
+	"github.com/TheTipo01/YADMB/constants"
+	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
 	"math/rand"
@@ -13,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -185,6 +188,7 @@ func cleanURL(link string) string {
 
 	q.Del("utm_source")
 	q.Del("feature")
+	q.Del("si")
 
 	u.RawQuery = q.Encode()
 
@@ -193,4 +197,24 @@ func cleanURL(link string) string {
 
 func notify(n notification.NotificationMessage) {
 	Notifications <- n
+}
+
+// skipTo checks if the link has a time parameter and if so, skips to that time
+func skipTo(link string, el *queue.Element) {
+	u, _ := url.Parse(link)
+	q := u.Query()
+	checkTimeParameter(q, el)
+}
+
+func checkTimeParameter(q url.Values, el *queue.Element) {
+	if t := q.Get("t"); t != "" {
+		if number, err := strconv.Atoi(t); err == nil {
+			if el.Segments == nil {
+				el.Segments = make(map[int]bool, 2)
+			}
+
+			el.Segments[0] = true
+			el.Segments[int(float64(number)*constants.FrameSeconds)] = true
+		}
+	}
 }

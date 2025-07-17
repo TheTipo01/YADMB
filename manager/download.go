@@ -16,7 +16,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -44,6 +43,8 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			el.Closer = f
 			el.TextChannel = p.Interaction.ChannelID
 			el.Loop = p.Loop
+
+			skipTo(p.Song, &el)
 
 			if respond {
 				go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
@@ -113,6 +114,9 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			exist = true
 
 			el.Link = "https://youtu.be/" + ytDLP.ID
+
+			// If the url has a timestamp, we start from that point
+			skipTo(p.Song, &el)
 		case "generic":
 			// The generic extractor doesn't give out something unique, so we generate one from the link
 			el.ID = idGen(el.Link) + "-" + ytDLP.Extractor
@@ -275,16 +279,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 		}
 
 		// If the url has a timestamp, we start from that point
-		if t := q.Get("t"); t != "" {
-			if number, err := strconv.Atoi(t); err == nil {
-				if el.Segments == nil {
-					el.Segments = make(map[int]bool, 2)
-				}
-
-				el.Segments[0] = true
-				el.Segments[int(float64(number)*constants.FrameSeconds)] = true
-			}
-		}
+		checkTimeParameter(q, &el)
 
 		elements = append(elements, el)
 	}
