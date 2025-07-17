@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -271,6 +272,18 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
 			el.Reader = bufio.NewReader(f)
 			el.Closer = f
+		}
+
+		// If the url has a timestamp, we start from that point
+		if t := q.Get("t"); t != "" {
+			if number, err := strconv.Atoi(t); err == nil {
+				if el.Segments == nil {
+					el.Segments = make(map[int]bool, 2)
+				}
+
+				el.Segments[0] = true
+				el.Segments[int(float64(number)*constants.FrameSeconds)] = true
+			}
 		}
 
 		elements = append(elements, el)
