@@ -29,7 +29,7 @@ func GetSegments(videoID string) map[int]bool {
 	if resp.StatusCode == http.StatusOK {
 		var (
 			videos     SponsorBlock
-			segmentMap = make(map[int]bool)
+			segmentMap map[int]bool
 		)
 
 		err = json.NewDecoder(resp.Body).Decode(&videos)
@@ -41,6 +41,7 @@ func GetSegments(videoID string) map[int]bool {
 
 		for _, v := range videos {
 			if v.VideoID == videoID {
+				segmentMap = make(map[int]bool, len(v.Segments)*2)
 				for _, segment := range v.Segments {
 					if len(segment.Segment) == 2 {
 						segmentMap[int(segment.Segment[0]*frameSeconds)] = true

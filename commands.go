@@ -637,7 +637,7 @@ var (
 				} else {
 					server[i.GuildID].Queue.ModifyFirstElement(func(e *queue.Element) {
 						if e.Segments == nil {
-							e.Segments = make(map[int]bool)
+							e.Segments = make(map[int]bool, 2)
 						}
 
 						server[i.GuildID].Paused.Store(true)
