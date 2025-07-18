@@ -38,8 +38,8 @@ func DecodeSegments(segments string) map[int]bool {
 		return nil
 	}
 
-	mapSegments := make(map[int]bool)
 	splitted := strings.Split(segments, ",")
+	mapSegments := make(map[int]bool, len(splitted))
 
 	for _, s := range splitted {
 		frame, err := strconv.Atoi(s)

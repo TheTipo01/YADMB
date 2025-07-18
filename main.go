@@ -132,7 +132,7 @@ func init() {
 
 	// Load the whitelist
 	whitelist = cfg.WhiteList
-	guildList = make(map[string]bool)
+	guildList = make(map[string]bool, len(cfg.GuildList))
 	for _, g := range cfg.GuildList {
 		guildList[g] = true
 	}
