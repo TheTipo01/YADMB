@@ -17,8 +17,14 @@ const (
 // GetSegments returns a map for skipping certain frames of a song
 func GetSegments(videoID string) map[int]bool {
 	// Gets segments
-	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments/"+hash(videoID)+"?categories=[\"sponsor\",\"music_offtopic\"]", nil) // Sets timeout to one second, as sometime i
+	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments/"+hash(videoID), nil) // Sets timeout to one second, as sometime i
 	client := http.Client{Timeout: time.Second}
+
+	req.Header.Set("User-Agent", "github.com/TheTipo01/YADMB")
+
+	q := req.URL.Query()
+	q.Set("categories", "[\"sponsor\",\"music_offtopic\"]")
+	req.URL.RawQuery = q.Encode()
 
 	resp, err := client.Do(req)
 	if err != nil {
