@@ -139,10 +139,7 @@ func (server *Server) Clean() {
 			}
 		}
 
-		// Finally, if the queue is empty, we can quit from the voice channel
-		if server.Queue.IsEmpty() {
-			server.ChanQuitVC <- true
-		}
+		server.ChanQuitVC <- true
 	}
 }
 
