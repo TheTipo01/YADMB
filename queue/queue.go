@@ -134,3 +134,11 @@ func (q *Queue) ModifyFirstElement(f func(*Element)) {
 		f(&q.Queue[0])
 	}
 }
+
+// GetLength returns the length of the queue
+func (q *Queue) GetLength() int {
+	q.rw.RLock()
+	defer q.rw.RUnlock()
+
+	return len(q.Queue)
+}

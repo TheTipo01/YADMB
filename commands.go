@@ -289,7 +289,9 @@ var (
 					server[i.GuildID].Skip <- manager.Skip
 					server[i.GuildID].Paused.Store(false)
 
-					server[i.GuildID].ChanQuitVC <- true
+					if server[i.GuildID].Queue.GetLength() <= 1 {
+						server[i.GuildID].ChanQuitVC <- true
+					}
 
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.SkipTitle,
 						el.Title+" - "+el.Duration+" added by "+el.User).
