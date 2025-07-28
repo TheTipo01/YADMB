@@ -7,6 +7,7 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/bwmarrin/lit"
 	"io"
 	"os"
 )
@@ -26,6 +27,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 		return Error, err
 	}
 	audioChannel := server.VC.GetAudioChannel()
+	deadChannel := server.VC.GetDeadChannel()
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
@@ -44,6 +46,10 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 		case skipReason = <-server.Skip:
 			cleanUp(server, el.Closer)
 			return skipReason, nil
+		case <-deadChannel:
+			lit.Debug("Voice channel disconnected, stopping playback")
+			cleanUp(server, el.Closer)
+			return Error, errors.New("voice channel disconnected")
 		default:
 			if el.Segments[int(server.Frames.Load())] {
 				skip = !skip
@@ -93,7 +99,9 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			audioChannel <- InBuf
+			if !server.VC.ISVCDead() {
+				audioChannel <- InBuf
+			}
 		}
 	}
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"testing"
 )
 

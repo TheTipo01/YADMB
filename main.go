@@ -10,7 +10,7 @@ import (
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/bwmarrin/lit"
 	"github.com/gin-gonic/gin"
 	"github.com/kkyr/fig"

@@ -8,7 +8,7 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/bwmarrin/lit"
 	"math/rand"
 	"net/url"

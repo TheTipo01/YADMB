@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"time"
 )
 

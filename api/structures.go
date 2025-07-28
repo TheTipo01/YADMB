@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/gorilla/websocket"
 	"net/http"
 )

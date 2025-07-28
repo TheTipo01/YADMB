@@ -1,7 +1,7 @@
 package embed
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/bwmarrin/lit"
 	"time"
 )

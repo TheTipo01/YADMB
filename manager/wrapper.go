@@ -3,7 +3,7 @@ package manager
 import (
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/zmb3/spotify/v2"
 	"net/url"
 	"strings"

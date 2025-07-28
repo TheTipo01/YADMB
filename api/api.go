@@ -4,7 +4,7 @@ import (
 	"embed"
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/dchest/uniuri"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"

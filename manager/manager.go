@@ -7,7 +7,7 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/vc"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"io"
 	"os"
 	"sync"

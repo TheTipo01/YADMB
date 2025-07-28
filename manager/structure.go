@@ -6,7 +6,7 @@ import (
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/vc"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"sync"
 	"sync/atomic"
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/discordgo"
+	"github.com/TheTipo01/discordgo"
 	"github.com/bwmarrin/lit"
 	"os"
 	"sort"
