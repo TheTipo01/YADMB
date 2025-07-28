@@ -18,7 +18,8 @@ const (
 	tblDJ        = "CREATE TABLE IF NOT EXISTS `dj` ( `guild` VARCHAR(20) NOT NULL, `role` VARCHAR(20) NULL, `enabled` TINYINT(1) NOT NULL DEFAULT '0', PRIMARY KEY (`guild`));"
 	tblFavorites = "CREATE TABLE IF NOT EXISTS `favorites`( `userID` VARCHAR(20) NOT NULL, `name` VARCHAR(100) NOT NULL, `link` VARCHAR(200) NOT NULL, `folder` VARCHAR(100) NULL DEFAULT NULL, PRIMARY KEY (`userID`, `name`));"
 	tblSearch    = "create table if not exists search ( link varchar(500) not null, term varchar(6000) not null, constraint search_pk unique (term) using hash) collate = utf8mb4_bin;"
-	tblPlaylist  = "create table playlist ( playlist varchar(500) not null, entry varchar(500) not null, number int not null, constraint playlist_pk unique (playlist, entry) using hash ) collate = utf8mb4_bin; create index playlist_playlist_index on playlist (playlist);"
+	tblPlaylist  = "create table if not exists playlist ( playlist varchar(500) not null, entry varchar(500) not null, number int not null, constraint playlist_pk unique (playlist, entry) using hash ) collate = utf8mb4_bin;"
+	idxPlaylist  = "create index if not exists playlist_playlist_index on playlist (playlist);"
 )
 
 var db *sql.DB
@@ -35,7 +36,7 @@ func NewDatabase(dsn string) *database.Database {
 	}
 
 	// Create tables if they don't exist
-	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ, tblFavorites, tblSearch, tblPlaylist)
+	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ, tblFavorites, tblSearch, tblPlaylist, idxPlaylist)
 
 	db.SetConnMaxLifetime(time.Minute * 3)
 
