@@ -195,6 +195,10 @@ func main() {
 	// Initialize intents that we use
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
 
+	// Reconnect in case of connection loss
+	dg.ShouldReconnectOnError = true
+	dg.ShouldReconnectVoiceOnSessionError = true
+
 	// Open the websocket and begin listening.
 	err = dg.Open()
 	if err != nil {
