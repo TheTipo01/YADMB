@@ -18,7 +18,7 @@ func ExecQuery(db *sql.DB, query ...string) {
 }
 
 // EncodeSegments returns an encoded string of segments
-func EncodeSegments(segments map[int]bool) string {
+func EncodeSegments(segments map[int]struct{}) string {
 	if segments == nil {
 		return ""
 	}
@@ -33,18 +33,18 @@ func EncodeSegments(segments map[int]bool) string {
 }
 
 // DecodeSegments decodes segments into a map
-func DecodeSegments(segments string) map[int]bool {
+func DecodeSegments(segments string) map[int]struct{} {
 	if segments == "" {
 		return nil
 	}
 
 	splitted := strings.Split(segments, ",")
-	mapSegments := make(map[int]bool, len(splitted))
+	mapSegments := make(map[int]struct{}, len(splitted))
 
 	for _, s := range splitted {
 		frame, err := strconv.Atoi(s)
 		if err == nil {
-			mapSegments[frame] = true
+			mapSegments[frame] = struct{}{}
 		}
 	}
 

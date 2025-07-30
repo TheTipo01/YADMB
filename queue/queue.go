@@ -19,7 +19,7 @@ type Element struct {
 	// Link to the thumbnail of the video
 	Thumbnail string `json:"thumbnail"`
 	// Segments of the song to skip. Uses SponsorBlock API
-	Segments map[int]bool `json:"segments,omitempty"`
+	Segments map[int]struct{} `json:"segments,omitempty"`
 	// Reader to the song
 	Reader io.Reader `json:"-"`
 	// Closer to the song

@@ -609,7 +609,7 @@ var (
 							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
 					} else {
 						// Adding
-						blacklist[id] = true
+						blacklist[id] = struct{}{}
 
 						err := clients.Database.AddToBlacklist(id)
 						if err != nil {
@@ -637,14 +637,14 @@ var (
 				} else {
 					server[i.GuildID].Queue.ModifyFirstElement(func(e *queue.Element) {
 						if e.Segments == nil {
-							e.Segments = make(map[int]bool, 2)
+							e.Segments = make(map[int]struct{}, 2)
 						}
 
 						server[i.GuildID].Paused.Store(true)
 						server[i.GuildID].Pause <- struct{}{}
 
-						e.Segments[int(server[i.GuildID].Frames.Load()+1)] = true
-						e.Segments[int(t.Seconds()*constants.FrameSeconds)] = true
+						e.Segments[int(server[i.GuildID].Frames.Load()+1)] = struct{}{}
+						e.Segments[int(t.Seconds()*constants.FrameSeconds)] = struct{}{}
 
 						server[i.GuildID].Resume <- struct{}{}
 						server[i.GuildID].Paused.Store(false)

@@ -45,7 +45,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			cleanUp(server, el.Closer)
 			return skipReason, nil
 		default:
-			if el.Segments[int(server.Frames.Load())] {
+			if _, ok := el.Segments[int(server.Frames.Load())]; ok {
 				skip = !skip
 			}
 

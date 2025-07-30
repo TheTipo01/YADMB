@@ -16,7 +16,7 @@ type Database struct {
 	Close               func()
 	UpdateDJRole        func(guild string, role string) error
 	GetDJ               func() (map[string]DJ, error)
-	GetBlacklist        func() (map[string]bool, error)
+	GetBlacklist        func() (map[string]struct{}, error)
 	SetDJSettings       func(guild string, enabled bool) error
 	AddLinkDB           func(id, link string) error
 	GetFavorites        func(userID string) []Favorite

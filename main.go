@@ -31,7 +31,7 @@ var (
 	// Discord bot token
 	token string
 	// Cache for the user blacklist
-	blacklist map[string]bool
+	blacklist map[string]struct{}
 	// Clients
 	clients manager.Clients
 	// Web API
@@ -47,7 +47,7 @@ var (
 	// If set to true, the bot will only respond to commands coming from guilds in the guild list
 	whitelist bool
 	// List of guilds the bot will respond to
-	guildList map[string]bool
+	guildList map[string]struct{}
 )
 
 func init() {
@@ -132,9 +132,9 @@ func init() {
 
 	// Load the whitelist
 	whitelist = cfg.WhiteList
-	guildList = make(map[string]bool, len(cfg.GuildList))
+	guildList = make(map[string]struct{}, len(cfg.GuildList))
 	for _, g := range cfg.GuildList {
-		guildList[g] = true
+		guildList[g] = struct{}{}
 	}
 
 	// Create folders used by the bot
@@ -317,7 +317,7 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		} else {
 			if whitelist {
 				// Whitelist mode: check if the guild is in the list
-				if guildList[i.GuildID] {
+				if _, ok := guildList[i.GuildID]; ok {
 					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 						h(s, i)
 					}
@@ -328,7 +328,7 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				}
 			} else {
 				// Blacklist mode: check if the guild is not in the list
-				if !guildList[i.GuildID] {
+				if _, ok := guildList[i.GuildID]; !ok {
 					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 						h(s, i)
 					}

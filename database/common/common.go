@@ -126,8 +126,8 @@ func (c Common) GetDJ() (map[string]database.DJ, error) {
 	return roles, nil
 }
 
-func (c Common) GetBlacklist() (map[string]bool, error) {
-	ids := make(map[string]bool)
+func (c Common) GetBlacklist() (map[string]struct{}, error) {
+	ids := make(map[string]struct{})
 
 	rows, err := c.db.Query("SELECT id FROM blacklist")
 	if err != nil {
@@ -142,7 +142,7 @@ func (c Common) GetBlacklist() (map[string]bool, error) {
 			continue
 		}
 
-		ids[id] = true
+		ids[id] = struct{}{}
 	}
 
 	return ids, nil

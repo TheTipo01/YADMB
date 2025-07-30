@@ -210,11 +210,11 @@ func checkTimeParameter(q url.Values, el *queue.Element) {
 	if t := q.Get("t"); t != "" {
 		if number, err := strconv.Atoi(t); err == nil {
 			if el.Segments == nil {
-				el.Segments = make(map[int]bool, 2)
+				el.Segments = make(map[int]struct{}, 2)
 			}
 
-			el.Segments[0] = true
-			el.Segments[int(float64(number)*constants.FrameSeconds)] = true
+			el.Segments[0] = struct{}{}
+			el.Segments[int(float64(number)*constants.FrameSeconds)] = struct{}{}
 		}
 	}
 }
