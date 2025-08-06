@@ -31,7 +31,7 @@ var (
 	// Discord bot token
 	token string
 	// Cache for the user blacklist
-	blacklist map[string]struct{}
+	blacklist *sync.Map
 	// Clients
 	clients manager.Clients
 	// Web API
@@ -47,7 +47,7 @@ var (
 	// If set to true, the bot will only respond to commands coming from guilds in the guild list
 	whitelist bool
 	// List of guilds the bot will respond to
-	guildList map[string]struct{}
+	guildList *sync.Map
 )
 
 func init() {
@@ -132,9 +132,9 @@ func init() {
 
 	// Load the whitelist
 	whitelist = cfg.WhiteList
-	guildList = make(map[string]struct{}, len(cfg.GuildList))
+	guildList = &sync.Map{}
 	for _, g := range cfg.GuildList {
-		guildList[g] = struct{}{}
+		guildList.Store(g, struct{}{})
 	}
 
 	// Create folders used by the bot
@@ -310,14 +310,14 @@ func guildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
 func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Ignores commands from DM
 	if i.User == nil {
-		if _, ok := blacklist[i.Member.User.ID]; ok {
+		if _, ok := blacklist.Load(i.Member.User.ID); ok {
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 				constants.UserInBlacklist).
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
 		} else {
 			if whitelist {
 				// Whitelist mode: check if the guild is in the list
-				if _, ok := guildList[i.GuildID]; ok {
+				if _, ok = guildList.Load(i.GuildID); ok {
 					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 						h(s, i)
 					}
@@ -328,7 +328,7 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				}
 			} else {
 				// Blacklist mode: check if the guild is not in the list
-				if _, ok := guildList[i.GuildID]; !ok {
+				if _, ok = guildList.Load(i.GuildID); !ok {
 					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 						h(s, i)
 					}
@@ -340,7 +340,7 @@ func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			}
 		}
 	} else {
-		if _, ok := blacklist[i.User.ID]; ok {
+		if _, ok := blacklist.Load(i.User.ID); ok {
 			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 				constants.UserInBlacklist).
 				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)

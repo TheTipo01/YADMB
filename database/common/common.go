@@ -126,12 +126,12 @@ func (c Common) GetDJ() (map[string]database.DJ, error) {
 	return roles, nil
 }
 
-func (c Common) GetBlacklist() (map[string]struct{}, error) {
-	ids := make(map[string]struct{})
+func (c Common) GetBlacklist() (*sync.Map, error) {
+	var ids sync.Map
 
 	rows, err := c.db.Query("SELECT id FROM blacklist")
 	if err != nil {
-		return nil, err
+		return &ids, err
 	}
 
 	for rows.Next() {
@@ -142,10 +142,10 @@ func (c Common) GetBlacklist() (map[string]struct{}, error) {
 			continue
 		}
 
-		ids[id] = struct{}{}
+		ids.Store(id, struct{}{})
 	}
 
-	return ids, nil
+	return &ids, nil
 }
 
 func (c Common) GetFavorites(userID string) []database.Favorite {

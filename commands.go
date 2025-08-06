@@ -595,9 +595,9 @@ var (
 						"You are really trying to add yourself to the blacklist?").
 						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
 				} else {
-					if _, ok := blacklist[id]; ok {
+					if _, ok := blacklist.Load(id); ok {
 						// Removing from the blacklist
-						delete(blacklist, id)
+						blacklist.Delete(id)
 
 						err := clients.Database.RemoveFromBlacklist(id)
 						if err != nil {
@@ -609,7 +609,7 @@ var (
 							SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
 					} else {
 						// Adding
-						blacklist[id] = struct{}{}
+						blacklist.Store(id, struct{}{})
 
 						err := clients.Database.AddToBlacklist(id)
 						if err != nil {
