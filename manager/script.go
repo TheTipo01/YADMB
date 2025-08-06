@@ -1,11 +1,12 @@
 package manager
 
 import (
-	"github.com/TheTipo01/YADMB/constants"
-	"github.com/bwmarrin/lit"
 	"io"
 	"os/exec"
 	"strings"
+
+	"github.com/TheTipo01/YADMB/constants"
+	"github.com/bwmarrin/lit"
 )
 
 // CmdsStart starts all the exec.Cmd inside the slice

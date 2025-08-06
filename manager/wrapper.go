@@ -1,13 +1,14 @@
 package manager
 
 import (
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/bwmarrin/discordgo"
 	"github.com/zmb3/spotify/v2"
-	"net/url"
-	"strings"
-	"time"
 )
 
 // PlayEvent is the struct for playing songs

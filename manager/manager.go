@@ -2,17 +2,18 @@ package manager
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/vc"
 	"github.com/bwmarrin/discordgo"
-	"io"
-	"os"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 var (

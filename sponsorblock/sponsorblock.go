@@ -3,10 +3,11 @@ package sponsorblock
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/bwmarrin/lit"
-	"github.com/goccy/go-json"
 	"net/http"
 	"time"
+
+	"github.com/bwmarrin/lit"
+	"github.com/goccy/go-json"
 )
 
 const (

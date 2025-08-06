@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/binary"
 	"errors"
+	"io"
+	"os"
+
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
-	"io"
-	"os"
 )
 
 // Plays a song in DCA format

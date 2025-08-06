@@ -3,6 +3,13 @@ package manager
 import (
 	"bufio"
 	"errors"
+	"math/rand"
+	"net/url"
+	"os"
+	"os/exec"
+	"strings"
+	"time"
+
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
@@ -12,12 +19,6 @@ import (
 	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 	spotAPI "github.com/zmb3/spotify/v2"
-	"math/rand"
-	"net/url"
-	"os"
-	"os/exec"
-	"strings"
-	"time"
 )
 
 const youtubeBase = "https://www.youtube.com/watch?v="

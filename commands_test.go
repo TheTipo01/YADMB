@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"testing"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 // Checks if for every command there's a function to handle that

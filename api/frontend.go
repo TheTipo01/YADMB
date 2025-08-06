@@ -2,9 +2,10 @@ package api
 
 import (
 	"embed"
-	"github.com/gin-contrib/static"
 	"io/fs"
 	"net/http"
+
+	"github.com/gin-contrib/static"
 )
 
 type embedFileSystem struct {

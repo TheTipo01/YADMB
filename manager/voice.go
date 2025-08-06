@@ -1,10 +1,11 @@
 package manager
 
 import (
+	"time"
+
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/bwmarrin/discordgo"
-	"time"
 )
 
 // JoinVC joins the voice channel if not already joined, returns true if joined successfully

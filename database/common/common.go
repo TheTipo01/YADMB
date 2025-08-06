@@ -2,6 +2,8 @@ package common
 
 import (
 	"database/sql"
+	"sync"
+
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/lit"

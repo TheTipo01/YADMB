@@ -2,12 +2,13 @@ package mysql
 
 import (
 	"database/sql"
+	"time"
+
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/database/common"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/lit"
 	_ "github.com/go-sql-driver/mysql"
-	"time"
 )
 
 const (

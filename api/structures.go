@@ -1,11 +1,12 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/websocket"
-	"net/http"
 )
 
 type Api struct {

@@ -1,8 +1,9 @@
 package vc
 
 import (
-	"github.com/bwmarrin/discordgo"
 	"sync"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type VC struct {

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
-	"time"
 )
 
 func initializeServer(guild string) {

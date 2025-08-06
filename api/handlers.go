@@ -1,11 +1,12 @@
 package api
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strings"
 )
 
 func (a *Api) getQueue(c *gin.Context) {

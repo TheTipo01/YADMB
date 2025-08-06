@@ -1,18 +1,19 @@
 package manager
 
 import (
+	"sync"
+	"sync/atomic"
+
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/vc"
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/discordgo"
-	"sync"
-	"sync/atomic"
 )
 
 // SkipReason is used to determine why playSound returned
-type SkipReason int8
+type SkipReason uint8
 
 const (
 	Error SkipReason = iota

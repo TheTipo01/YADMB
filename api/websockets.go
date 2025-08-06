@@ -1,13 +1,14 @@
 package api
 
 import (
+	"net/http"
+	"sync/atomic"
+	"time"
+
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"net/http"
-	"sync/atomic"
-	"time"
 )
 
 const (

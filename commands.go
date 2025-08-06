@@ -2,6 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/TheTipo01/YADMB/api"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database"
@@ -10,11 +16,6 @@ import (
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (

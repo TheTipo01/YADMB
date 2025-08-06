@@ -1,9 +1,10 @@
 package embed
 
 import (
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
-	"time"
 )
 
 // SendEmbed sends an embed in a given text channel

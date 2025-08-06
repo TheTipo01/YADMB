@@ -5,11 +5,6 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
-	"github.com/TheTipo01/YADMB/api/notification"
-	"github.com/TheTipo01/YADMB/constants"
-	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/discordgo"
-	"github.com/bwmarrin/lit"
 	"math/rand"
 	"net/url"
 	"os"
@@ -17,6 +12,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/TheTipo01/YADMB/api/notification"
+	"github.com/TheTipo01/YADMB/constants"
+	"github.com/TheTipo01/YADMB/queue"
+	"github.com/bwmarrin/discordgo"
+	"github.com/bwmarrin/lit"
 )
 
 // filterPlaylist checks if the link is from YouTube: if yes, it removes the playlist parameter.

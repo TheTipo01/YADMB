@@ -2,6 +2,14 @@ package main
 
 import (
 	e "embed"
+	"os"
+	"os/signal"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
 	"github.com/TheTipo01/YADMB/api"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database/mysql"
@@ -14,13 +22,6 @@ import (
 	"github.com/bwmarrin/lit"
 	"github.com/gin-gonic/gin"
 	"github.com/kkyr/fig"
-	"os"
-	"os/signal"
-	"strconv"
-	"strings"
-	"sync"
-	"syscall"
-	"time"
 )
 
 var (

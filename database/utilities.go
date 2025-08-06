@@ -2,9 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"github.com/bwmarrin/lit"
 	"strconv"
 	"strings"
+
+	"github.com/bwmarrin/lit"
 )
 
 // ExecQuery executes a simple query given a DB

@@ -2,11 +2,12 @@ package youtube
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/lit"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
-	"strings"
-	"time"
 )
 
 type YouTube struct {

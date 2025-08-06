@@ -2,6 +2,8 @@ package api
 
 import (
 	"embed"
+	"net/http"
+
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/bwmarrin/discordgo"
@@ -10,7 +12,6 @@ import (
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"net/http"
 )
 
 func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {

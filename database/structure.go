@@ -1,6 +1,8 @@
 package database
 
 import (
+	"sync"
+
 	"github.com/TheTipo01/YADMB/queue"
 )
 
