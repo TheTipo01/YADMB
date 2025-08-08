@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	e "embed"
 	"os"
 	"os/signal"
@@ -18,8 +19,14 @@ import (
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/kkyr/fig"
 )
@@ -175,42 +182,44 @@ func main() {
 		return
 	}
 
-	// Create a new Discord session using the provided bot token.
-	dg, err := discordgo.New("Bot " + token)
-	if err != nil {
-		lit.Error("Error creating Discord session: %s", err)
-		return
-	}
+	client, _ := disgo.New(token,
+		bot.WithGatewayConfigOpts(
+			gateway.WithIntents(
+				gateway.IntentGuildVoiceStates,
+				gateway.IntentGuildMembers,
+				gateway.IntentsGuild,
+			),
+		),
+
+		bot.WithCacheConfigOpts(
+			cache.WithCaches(
+				cache.FlagGuilds|cache.FlagVoiceStates,
+			),
+		),
+
+		bot.WithEventListenerFunc(ready),
+		bot.WithEventListenerFunc(guildCreate),
+		bot.WithEventListenerFunc(guildDelete),
+		bot.WithEventListenerFunc(voiceStateUpdate),
+		bot.WithEventListenerFunc(guildMemberUpdate),
+		bot.WithEventListenerFunc(interactionCreate),
+	)
 
 	// Save the session
-	clients.Discord = dg
+	clients.Discord = &client
 
-	// Add events handler
-	dg.AddHandler(ready)
-	dg.AddHandler(guildCreate)
-	dg.AddHandler(guildDelete)
-	dg.AddHandler(voiceStateUpdate)
-	dg.AddHandler(guildMemberUpdate)
-	dg.AddHandler(interactionCreate)
+	defer client.Close(context.TODO())
 
-	// Initialize intents that we use
-	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuilds | discordgo.IntentsGuildVoiceStates)
-
-	// Reconnect in case of connection loss
-	dg.ShouldReconnectOnError = true
-	dg.ShouldReconnectVoiceOnSessionError = true
-
-	// Open the websocket and begin listening.
-	err = dg.Open()
-	if err != nil {
-		lit.Error("Error opening Discord session: %s", err)
+	if err := client.OpenGateway(context.TODO()); err != nil {
+		lit.Error("errors while connecting to gateway %s", err)
 		return
 	}
 
 	// Register commands
-	_, err = dg.ApplicationCommandBulkOverwrite(dg.State.User.ID, "", commands)
+	_, err := client.Rest().SetGlobalCommands(client.ApplicationID(), commands)
 	if err != nil {
-		lit.Error("Can't register commands, %s", err)
+		lit.Error("Error registering commands: %s", err)
+		return
 	}
 
 	// Start the web API, if enabled
@@ -225,7 +234,7 @@ func main() {
 					Guild:          t.Guild,
 					TextChannel:    t.TextChannel,
 				}
-				user, _ := dg.User(t.UserID)
+				user, _ := client.Rest().GetUser(snowflake.MustParse(t.UserID))
 				webApi.AddLongLivedToken(user, userInfo)
 			}
 		}
@@ -233,11 +242,11 @@ func main() {
 
 	// Print guilds the bot is connected to
 	if lit.LogLevel == lit.LogDebug {
-		lit.Debug("Bot is connected to %d guilds.", len(dg.State.Guilds))
+		lit.Debug("Bot is connected to %d guilds.", client.Caches().GuildsLen())
 
-		for _, g := range dg.State.Guilds {
+		client.Caches().GuildsForEach(func(g discord.Guild) {
 			lit.Debug("%s: %s", g.Name, g.ID)
-		}
+		})
 	}
 
 	// Wait here until CTRL-C or another term signal is received.
@@ -246,109 +255,98 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
-	// Cleanly close down the Discord session.
-	_ = dg.Close()
 	// And the DB connection
 	clients.Database.Close()
 }
 
-func ready(s *discordgo.Session, _ *discordgo.Ready) {
-	// Set the playing status.
-	err := s.UpdateGameStatus(0, "Serving "+strconv.Itoa(len(s.State.Guilds))+" guilds!")
-	if err != nil {
-		lit.Error("Can't set status, %s", err)
-	}
+func ready(e *events.Ready) {
+	setPresence(e.Client())
+
+	manager.BotName = e.User.Username
+}
+
+func setPresence(c bot.Client) {
+	_ = c.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(c.Caches().GuildsLen())+" guilds!"))
 }
 
 // Initialize Server structure
-func guildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
-	initializeServer(e.ID)
+func guildCreate(e *events.GuildReady) {
+	initializeServer(e.GuildID.String())
 
-	ready(s, nil)
+	setPresence(e.Client())
 }
 
-func guildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
-	if server[e.ID].IsPlaying() {
-		ClearAndExit(server[e.ID])
+func guildDelete(e *events.GuildLeave) {
+
+	if guild := e.GuildID.String(); server[guild].IsPlaying() {
+		ClearAndExit(server[guild])
 	}
 
 	// Update the status
-	ready(s, nil)
+	setPresence(e.Client())
 }
 
 // Update the voice channel when the bot is moved
-func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
-	// If the bot is moved to another channel
-	if v.UserID == s.State.User.ID && v.ChannelID == "" {
-		if server[v.GuildID].IsPlaying() {
-			// If the bot has been disconnected from the voice channel, reconnect it
-			err := server[v.GuildID].VC.Reconnect(s)
-			if err != nil {
-				lit.Error("Can't join voice channel, %s", err)
-			}
-		} else {
-			server[v.GuildID].VC.Disconnect()
-		}
-	}
-
+func voiceStateUpdate(v *events.GuildVoiceStateUpdate) {
 	// If the bot is alone in the voice channel, stop the music
-	if server[v.GuildID].VC.IsConnected() {
-		channel := server[v.GuildID].VC.GetChannelID()
-		if (v.ChannelID == channel || (v.BeforeUpdate != nil && v.BeforeUpdate.ChannelID == channel)) && countVoiceStates(s, v.GuildID, channel) == 0 {
-			go QuitIfEmptyVoiceChannel(server[v.GuildID])
+	if guildID := v.VoiceState.GuildID.String(); server[guildID].VC.IsConnected() {
+		channel := server[guildID].VC.GetChannelID()
+		if (v.VoiceState.ChannelID == channel || (v.OldVoiceState.ChannelID != nil && v.OldVoiceState.ChannelID == channel)) && countVoiceStates(v.Client(), v.VoiceState.GuildID, *channel) == 0 {
+			go QuitIfEmptyVoiceChannel(server[guildID])
 		}
 	}
 }
 
-func guildMemberUpdate(s *discordgo.Session, m *discordgo.GuildMemberUpdate) {
+func guildMemberUpdate(m *events.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
-	if m.User.ID == s.State.User.ID && m.CommunicationDisabledUntil != nil &&
-		m.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID].IsPlaying() {
-		ClearAndExit(server[m.GuildID])
+	if m.Member.User.ID == m.Client().ApplicationID() && m.Member.CommunicationDisabledUntil != nil &&
+		m.Member.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID.String()].IsPlaying() {
+		ClearAndExit(server[m.GuildID.String()])
 	}
 }
 
-func interactionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func interactionCreate(e *events.ApplicationCommandInteractionCreate) {
+	data := e.SlashCommandInteractionData()
 	// Ignores commands from DM
-	if i.User == nil {
-		if _, ok := blacklist.Load(i.Member.User.ID); ok {
-			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-				constants.UserInBlacklist).
-				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+	if e.Context() == discord.InteractionContextTypeGuild {
+		if _, ok := blacklist.Load(e.User().ID.String()); ok {
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				constants.UserInBlacklist, false).
+				SetColor(0x7289DA).Build(), e, time.Second*3, nil)
 		} else {
 			if whitelist {
 				// Whitelist mode: check if the guild is in the list
-				if _, ok = guildList.Load(i.GuildID); ok {
-					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-						h(s, i)
+				if _, ok = guildList.Load(e.GuildID().String()); ok {
+					if h, ok := commandHandlers[data.CommandName()]; ok {
+						h(e)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-						constants.ServerNotInWhitelist).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+						constants.ServerNotInWhitelist, false).
+						SetColor(0x7289DA).Build(), e, time.Second*3, nil)
 				}
 			} else {
 				// Blacklist mode: check if the guild is not in the list
-				if _, ok = guildList.Load(i.GuildID); !ok {
-					if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-						h(s, i)
+				if _, ok = guildList.Load(e.GuildID().String()); !ok {
+					if h, ok := commandHandlers[data.CommandName()]; ok {
+						h(e)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-						constants.ServerInBlacklist).
-						SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+						constants.ServerInBlacklist, false).
+						SetColor(0x7289DA).Build(), e, time.Second*3, nil)
 				}
 			}
 		}
 	} else {
-		if _, ok := blacklist.Load(i.User.ID); ok {
-			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-				constants.UserInBlacklist).
-				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, nil)
+		if _, ok := blacklist.Load(e.User().ID.String()); ok {
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				constants.UserInBlacklist, false).
+				SetColor(0x7289DA).Build(), e, time.Second*3, nil)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
-				constants.ErrorDM).
-				SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*15, nil)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				constants.ErrorDM, false).
+				SetColor(0x7289DA).Build(), e, time.Second*15, nil)
 		}
 	}
 }

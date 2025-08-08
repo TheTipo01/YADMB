@@ -16,8 +16,10 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 // filterPlaylist checks if the link is from YouTube: if yes, it removes the playlist parameter.
@@ -138,11 +140,12 @@ func ByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-func DeleteInteraction(s *discordgo.Session, i *discordgo.Interaction, c <-chan struct{}) {
+func DeleteInteraction(client bot.Client, i discord.Interaction, c <-chan struct{}) {
 	if c != nil {
 		<-c
 	}
-	err := s.InteractionResponseDelete(i)
+
+	err := client.Rest().DeleteInteractionResponse(i.ApplicationID(), i.Token())
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
@@ -173,9 +176,9 @@ func IsCommandNotAvailable(name string) bool {
 	return err != nil
 }
 
-func HasRole(roles []string, role string) bool {
+func HasRole(roles []snowflake.ID, role string) bool {
 	for _, r := range roles {
-		if r == role {
+		if r.String() == role {
 			return true
 		}
 	}

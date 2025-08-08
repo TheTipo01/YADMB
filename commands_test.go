@@ -3,14 +3,14 @@ package main
 import (
 	"testing"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
 )
 
 // Checks if for every command there's a function to handle that
 func TestCommands(t *testing.T) {
 	for _, c := range commands {
-		if commandHandlers[c.Name] == nil {
-			t.Errorf("Declared command %s in application command slice, but there's no handler.", c.Name)
+		if commandHandlers[c.CommandName()] == nil {
+			t.Errorf("Declared command %s in application command slice, but there's no handler.", c.CommandName())
 		}
 	}
 
@@ -21,9 +21,9 @@ func TestCommands(t *testing.T) {
 	}
 }
 
-func findCommandInCommandHandlers(commands []*discordgo.ApplicationCommand, el string) bool {
+func findCommandInCommandHandlers(commands []discord.ApplicationCommandCreate, el string) bool {
 	for _, c := range commands {
-		if c.Name == el {
+		if c.CommandName() == el {
 			return true
 		}
 	}

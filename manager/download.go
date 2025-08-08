@@ -17,6 +17,7 @@ import (
 	"github.com/TheTipo01/YADMB/sponsorblock"
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/bwmarrin/lit"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/goccy/go-json"
 	spotAPI "github.com/zmb3/spotify/v2"
 )
@@ -28,7 +29,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 	var c chan struct{}
 	if respond {
 		c = make(chan struct{})
-		go embed.SendEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, p.Song).SetColor(0x7289DA).MessageEmbed, p.Interaction, c, p.IsDeferred)
+		go embed.SendEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.EnqueuedTitle, p.Song, false).SetColor(0x7289DA).Build(), p.Event, c, p.IsDeferred)
 	}
 
 	p.Song = cleanURL(p.Song)
@@ -42,13 +43,13 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			el.User = p.Username
 			el.Reader = bufio.NewReader(f)
 			el.Closer = f
-			el.TextChannel = p.Interaction.ChannelID
+			el.TextChannel = p.Event.Channel().ID()
 			el.Loop = p.Loop
 
 			skipTo(p.Song, &el)
 
 			if respond {
-				go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
+				go DeleteInteraction(p.Event.Client(), p.Event, c)
 			}
 			server.AddSong(p.Priority, el)
 			return
@@ -67,11 +68,11 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 	infoJSON, err := getInfo(p.Song)
 	if err != nil {
 		if respond {
-			embed.ModifyInteractionAndDelete(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5)
+			embed.ModifyInteractionAndDelete(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5)
 		} else {
-			msg := embed.SendEmbed(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction.ChannelID)
+			msg := embed.SendEmbed(p.Event.Client(), discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, err.Error(), false).SetColor(0x7289DA).Build(), p.Event.Channel().ID())
 			time.Sleep(time.Second * 5)
-			_ = p.Clients.Discord.ChannelMessageDelete(msg.ChannelID, msg.ID)
+			_ = p.Event.Client().Rest().DeleteMessage(msg.ChannelID, msg.ID)
 		}
 		return
 	}
@@ -84,7 +85,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 	}
 
 	if respond {
-		go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
+		go DeleteInteraction(p.Event.Client(), p.Event, c)
 	}
 
 	elements := make([]queue.Element, 0, len(infoJSON))
@@ -99,7 +100,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			Link:        ytDLP.WebpageURL,
 			User:        p.Username,
 			Thumbnail:   ytDLP.Thumbnail,
-			TextChannel: p.Interaction.ChannelID,
+			TextChannel: p.Event.Channel().ID(),
 			Loop:        p.Loop,
 		}
 
@@ -177,7 +178,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 		if err == nil && len(entries) > 0 {
 			server.WG.Add(1)
 
-			go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://www.youtube.com/playlist?list="+id).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.EnqueuedTitle, "https://www.youtube.com/playlist?list="+id, false).SetColor(0x7289DA).Build(), p.Event, time.Second*3, p.IsDeferred)
 
 			for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
 				p.Song = entries[j]
@@ -206,7 +207,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 	}
 
 	if respond {
-		go DeleteInteraction(p.Clients.Discord, p.Interaction, c)
+		go DeleteInteraction(p.Event.Client(), p.Event, c)
 	}
 
 	elements := make([]queue.Element, 0, len(result))
@@ -232,7 +233,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 			Link:        youtubeBase + r.ID,
 			User:        p.Username,
 			Thumbnail:   r.Thumbnail,
-			TextChannel: p.Interaction.ChannelID,
+			TextChannel: p.Event.Channel().ID(),
 			Loop:        p.Loop,
 		}
 
@@ -343,7 +344,7 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 	if entries, err := p.Clients.Database.GetPlaylist(id.String()); err == nil && len(entries) > 0 {
 		server.WG.Add(1)
 
-		go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+		go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*3, p.IsDeferred)
 
 		for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
 			p.Song = entries[j]
@@ -358,7 +359,7 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 		if playlist, err := p.Clients.Spotify.GetPlaylist(id); err == nil {
 			server.WG.Add(1)
 
-			go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*3, p.IsDeferred)
 
 			if p.Random {
 				rand.Shuffle(len(playlist.Tracks.Tracks), func(i, j int) {
@@ -378,17 +379,17 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 
 					server.downloadAndPlay(p, false)
 				} else {
-					go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+					go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 				}
 			}
 
 			server.WG.Done()
 		} else {
 			lit.Error("Can't get info on a spotify playlist: %s", err)
-			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+		embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure, false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 	}
 }
 
@@ -397,7 +398,7 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 	if entries, err := p.Clients.Database.GetPlaylist(id.String()); err == nil && len(entries) > 0 {
 		server.WG.Add(1)
 
-		go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+		go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*3, p.IsDeferred)
 
 		for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
 			p.Song = entries[j]
@@ -412,7 +413,7 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 		if album, err := p.Clients.Spotify.GetAlbum(id); err == nil {
 			server.WG.Add(1)
 
-			go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*3, p.IsDeferred)
+			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*3, p.IsDeferred)
 
 			if p.Random {
 				rand.Shuffle(len(album.Tracks.Tracks), func(i, j int) {
@@ -432,17 +433,17 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 
 					server.downloadAndPlay(p, false)
 				} else {
-					go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+					go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 				}
 			}
 
 			server.WG.Done()
 		} else {
 			lit.Error("Can't get info on a spotify album: %s", err)
-			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+		embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure, false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 	}
 }
 
@@ -468,14 +469,14 @@ func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
 
 				server.downloadAndPlay(p, true)
 			} else {
-				go embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+				go embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 			}
 		} else {
 			lit.Error("Can't get info on a spotify track: %s", err)
-			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+		embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyNotConfigure, false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 	}
 }
 

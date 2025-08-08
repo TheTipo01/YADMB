@@ -13,19 +13,21 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/vc"
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 var (
 	Notifications = make(chan notification.NotificationMessage, 1)
+	BotName       string
 )
 
 // NewServer creates a new server manager
-func NewServer(guildID string, clients *Clients) *Server {
+func NewServer(guildID snowflake.ID, clients *Clients) *Server {
 	var server = &Server{
 		Queue:      queue.NewQueue(),
 		Custom:     make(map[string]*database.CustomCommand),
-		GuildID:    guildID,
+		GuildID:    guildID.String(),
 		Pause:      make(chan struct{}),
 		Resume:     make(chan struct{}),
 		Skip:       make(chan SkipReason),
@@ -63,17 +65,17 @@ func (server *Server) AddSong(priority bool, el ...queue.Element) {
 }
 
 func (server *Server) play() {
-	msg := make(chan *discordgo.Message)
+	msg := make(chan *discord.Message)
 
 	server.Paused.Store(false)
 
 	for el := server.Queue.GetFirstElement(); el != nil && !server.Clear.Load(); el = server.Queue.GetFirstElement() {
 		// Send "Now playing" message
 		go func() {
-			msg <- embed.SendEmbed(server.Clients.Discord, embed.NewEmbed().SetTitle(server.Clients.Discord.State.User.Username).
+			msg <- embed.SendEmbed(*server.Clients.Discord, discord.NewEmbedBuilder().SetTitle(BotName).
 				AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", el.Title,
-					el.Link, el.Duration, el.User)).
-				SetColor(0x7289DA).SetThumbnail(el.Thumbnail).MessageEmbed, el.TextChannel)
+					el.Link, el.Duration, el.User), false).
+				SetColor(0x7289DA).SetThumbnail(el.Thumbnail).Build(), el.TextChannel)
 		}()
 
 		if el.BeforePlay != nil {
@@ -96,7 +98,7 @@ func (server *Server) play() {
 		// Delete it after it has been played
 		go func() {
 			if message := <-msg; message != nil {
-				_ = server.Clients.Discord.ChannelMessageDelete(message.ChannelID, message.ID)
+				_ = (*server.Clients.Discord).Rest().DeleteMessage(message.ChannelID, message.ID)
 			}
 		}()
 

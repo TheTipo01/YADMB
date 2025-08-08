@@ -1,109 +1,75 @@
 package vc
 
 import (
+	"bytes"
+	"context"
 	"sync"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/voice"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type VC struct {
-	vc    *discordgo.VoiceConnection
-	guild string
-	rw    *sync.RWMutex
+	vc        voice.Conn
+	guild     snowflake.ID
+	connected bool
+	rw        *sync.RWMutex
 }
 
-func NewVC(guild string) *VC {
+func NewVC(guild snowflake.ID) *VC {
 	return &VC{
-		guild: guild,
-		rw:    &sync.RWMutex{},
+		guild:     guild,
+		connected: false,
+		rw:        &sync.RWMutex{},
 	}
 }
 
-func (v *VC) GetChannelID() string {
-	v.vc.RLock()
-	defer v.vc.RUnlock()
-
-	return v.vc.ChannelID
-}
-
-func (v *VC) Disconnect() {
-	if !v.isConnectionNil() {
-		v.rw.Lock()
-		defer v.rw.Unlock()
-
-		_ = v.vc.Disconnect()
-		v.vc = nil
-	}
-}
-
-func (v *VC) isConnectionNil() bool {
+func (v *VC) GetChannelID() *snowflake.ID {
 	v.rw.RLock()
 	defer v.rw.RUnlock()
 
-	return v.vc == nil
+	return v.vc.ChannelID()
 }
 
-func (v *VC) IsConnected() bool {
-	if v.isConnectionNil() {
-		return false
-	}
-
-	v.vc.RLock()
-	defer v.vc.RUnlock()
-
-	return v.vc.Ready
-}
-
-func (v *VC) Join(s *discordgo.Session, channelID string) error {
+func (v *VC) Disconnect() {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	vc, err := s.ChannelVoiceJoin(v.guild, channelID, false, true)
-	if err != nil {
-		return err
-	}
-
-	v.vc = vc
-
-	return nil
+	v.vc.Close(context.TODO())
+	v.connected = false
 }
 
-func (v *VC) Reconnect(s *discordgo.Session) error {
-	channel := v.GetChannelID()
-	if v.isConnectionNil() {
-		return v.Join(s, channel)
-	} else {
-		v.rw.Lock()
-		v.vc.Lock()
-		defer v.rw.Unlock()
-		defer v.vc.Unlock()
+func (v *VC) IsConnected() bool {
+	v.rw.RLock()
+	defer v.rw.RUnlock()
 
-		return v.vc.ChangeChannel(channel, false, true)
-	}
+	return v.connected
 }
 
-func (v *VC) GetAudioChannel() chan []byte {
-	if !v.isConnectionNil() {
-		return v.vc.OpusSend
-	} else {
-		return nil
-	}
-}
+func (v *VC) Join(c bot.Client, channelID snowflake.ID) error {
+	v.rw.Lock()
+	defer v.rw.Unlock()
 
-func (v *VC) ChangeChannel(s *discordgo.Session, id string) error {
-	var err error
-
-	if v.GetChannelID() != id {
-		v.rw.Lock()
-		defer v.rw.Unlock()
-
-		_ = v.vc.Disconnect()
-		v.vc, err = s.ChannelVoiceJoin(v.guild, id, false, true)
-	}
+	v.vc = c.VoiceManager().CreateConn(v.guild)
+	err := v.vc.Open(context.TODO(), channelID, false, false)
+	v.connected = true
 
 	return err
 }
 
-func (v *VC) SetSpeaking(speaking bool) error {
-	return v.vc.Speaking(speaking)
+func (v *VC) SetBuffer(buffer *bytes.Buffer) {
+	v.rw.Lock()
+	defer v.rw.Unlock()
+
+	if v.connected {
+		v.vc.SetOpusFrameProvider(voice.NewOpusReader(buffer))
+	}
+}
+
+func (v *VC) SetSpeaking(flag voice.SpeakingFlags) error {
+	v.rw.Lock()
+	defer v.rw.Unlock()
+
+	return v.vc.SetSpeaking(context.TODO(), flag)
 }

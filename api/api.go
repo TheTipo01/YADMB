@@ -6,8 +6,8 @@ import (
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/bwmarrin/discordgo"
 	"github.com/dchest/uniuri"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -36,7 +36,7 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 
 	a := Api{
 		servers:       servers,
-		tokensToUsers: make(map[string]*discordgo.User),
+		tokensToUsers: make(map[string]*discord.User),
 		userInfo:      make(map[string]*UserInfo),
 		owner:         owner,
 		clients:       clients,
@@ -70,12 +70,14 @@ func NewApi(servers map[string]*manager.Server, address, owner string, clients *
 
 // AddUser adds a user to the api, returning the token.
 // If the user is already in the api, it removes it and generates a new one.
-func (a *Api) AddUser(user *discordgo.User, userInfo UserInfo) string {
-	if u, ok := a.userInfo[user.ID]; ok {
+func (a *Api) AddUser(user *discord.User, userInfo UserInfo) string {
+	userID := user.ID.String()
+
+	if u, ok := a.userInfo[userID]; ok {
 		delete(a.tokensToUsers, u.token)
 
-		if a.userInfo[user.ID].LongLivedToken == "" {
-			delete(a.userInfo, user.ID)
+		if a.userInfo[userID].LongLivedToken == "" {
+			delete(a.userInfo, userID)
 		}
 	}
 
@@ -90,21 +92,22 @@ func (a *Api) AddUser(user *discordgo.User, userInfo UserInfo) string {
 
 	a.tokensToUsers[token] = user
 
-	if a.userInfo[user.ID] != nil {
-		userInfo.LongLivedToken = a.userInfo[user.ID].LongLivedToken
+	if a.userInfo[userID] != nil {
+		userInfo.LongLivedToken = a.userInfo[userID].LongLivedToken
 	}
 	userInfo.token = token
 
-	a.userInfo[user.ID] = &userInfo
+	a.userInfo[userID] = &userInfo
 
 	return token
 }
 
-func (a *Api) AddLongLivedToken(user *discordgo.User, userInfo UserInfo) {
+func (a *Api) AddLongLivedToken(user *discord.User, userInfo UserInfo) {
 	a.tokensToUsers[userInfo.LongLivedToken] = user
 
-	if a.userInfo[user.ID] != nil {
-		userInfo.token = a.userInfo[user.ID].token
+	userID := user.ID.String()
+	if a.userInfo[userID] != nil {
+		userInfo.token = a.userInfo[userID].token
 	}
-	a.userInfo[user.ID] = &userInfo
+	a.userInfo[userID] = &userInfo
 }

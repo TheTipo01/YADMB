@@ -5,7 +5,7 @@ import (
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/gorilla/websocket"
 )
 
@@ -13,7 +13,7 @@ type Api struct {
 	// Server managers
 	servers map[string]*manager.Server
 	// Map from token to users
-	tokensToUsers map[string]*discordgo.User
+	tokensToUsers map[string]*discord.User
 	// Map from userID to token
 	userInfo map[string]*UserInfo
 	// Bot owner
