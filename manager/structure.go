@@ -9,7 +9,7 @@ import (
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/vc"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/bot"
 )
 
 // SkipReason is used to determine why playSound returned
@@ -78,7 +78,7 @@ type RequestedFormats []struct {
 type Clients struct {
 	Spotify  *spotify.Spotify
 	Youtube  *youtube.YouTube
-	Discord  *discordgo.Session
+	Discord  *bot.Client
 	Database *database.Database
 }
 

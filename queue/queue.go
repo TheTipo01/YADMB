@@ -3,6 +3,8 @@ package queue
 import (
 	"io"
 	"sync"
+
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type Element struct {
@@ -27,7 +29,7 @@ type Element struct {
 	// Whether we are still downloading the song
 	Downloading bool `json:"-"`
 	// Interaction to edit
-	TextChannel string `json:"-"`
+	TextChannel snowflake.ID `json:"-"`
 	// Function to call before playing the song
 	BeforePlay func() `json:"-"`
 	// Function to call after playing the song

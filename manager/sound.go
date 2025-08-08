@@ -2,6 +2,7 @@ package manager
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/disgoorg/disgo/voice"
 )
 
 // Plays a song in DCA format
@@ -22,11 +24,12 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	)
 
 	// Start speaking.
-	err = server.VC.SetSpeaking(true)
+	err = server.VC.SetSpeaking(voice.SpeakingFlagMicrophone)
 	if err != nil {
 		return Error, err
 	}
-	audioChannel := server.VC.GetAudioChannel()
+	var buffer bytes.Buffer
+	server.VC.SetBuffer(&buffer)
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
@@ -94,13 +97,13 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			audioChannel <- InBuf
+			buffer.Write(InBuf)
 		}
 	}
 }
 
 func cleanUp(server *Server, closer io.Closer) {
-	_ = server.VC.SetSpeaking(false)
+	_ = server.VC.SetSpeaking(voice.SpeakingFlagNone)
 	server.Frames.Store(0)
 
 	if closer != nil {

@@ -3,38 +3,29 @@ package embed
 import (
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/bwmarrin/lit"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 // SendEmbed sends an embed in a given text channel
-func SendEmbed(s *discordgo.Session, embed *discordgo.MessageEmbed, txtChannel string) *discordgo.Message {
-	m, err := s.ChannelMessageSendEmbed(txtChannel, embed)
-	if err != nil {
-		lit.Error("MessageSendEmbed failed: %s", err)
-		return nil
-	}
+func SendEmbed(c bot.Client, embed discord.Embed, txtChannel snowflake.ID) *discord.Message {
+	m, _ := c.Rest().CreateMessage(txtChannel, discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
 
 	return m
 }
 
 // SendEmbedInteraction sends an embed as response to an interaction
-func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, c chan<- struct{}, isDeferred chan struct{}) {
-	// Silently return if the interaction is not valid
-	if i.ID == "" {
-		return
-	}
-
-	var (
-		sliceEmbed = []*discordgo.MessageEmbed{embed}
-		err        error
-	)
+func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, c chan<- struct{}, isDeferred chan struct{}) {
+	var err error
 
 	if isDeferred != nil {
 		<-isDeferred
-		_, err = s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
+		_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdateBuilder().SetEmbeds(embed).Build())
 	} else {
-		err = s.InteractionRespond(i, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Embeds: sliceEmbed}})
+		err = e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
 	}
 
 	if err != nil {
@@ -48,17 +39,12 @@ func SendEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i
 }
 
 // SendAndDeleteEmbedInteraction sends and deletes after three second an embed in a given channel
-func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration, isDeferred chan struct{}) {
-	// Silently return if the interaction is not valid
-	if i.ID == "" {
-		return
-	}
-
-	SendEmbedInteraction(s, embed, i, nil, isDeferred)
+func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, wait time.Duration, isDeferred chan struct{}) {
+	SendEmbedInteraction(embed, e, nil, isDeferred)
 
 	time.Sleep(wait)
 
-	err := s.InteractionResponseDelete(i)
+	err := e.Client().Rest().DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
@@ -66,9 +52,8 @@ func SendAndDeleteEmbedInteraction(s *discordgo.Session, embed *discordgo.Messag
 }
 
 // Modify an already sent interaction
-func ModifyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction) {
-	sliceEmbed := []*discordgo.MessageEmbed{embed}
-	_, err := s.InteractionResponseEdit(i, &discordgo.WebhookEdit{Embeds: &sliceEmbed})
+func ModifyInteraction(e *events.ApplicationCommandInteractionCreate, embed discord.Embed) {
+	_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdateBuilder().SetEmbeds(embed).Build())
 	if err != nil {
 		lit.Error("InteractionResponseEdit failed: %s", err)
 		return
@@ -76,24 +61,22 @@ func ModifyInteraction(s *discordgo.Session, embed *discordgo.MessageEmbed, i *d
 }
 
 // ModifyInteractionAndDelete modifies an already sent interaction and deletes it after the specified wait time
-func ModifyInteractionAndDelete(s *discordgo.Session, embed *discordgo.MessageEmbed, i *discordgo.Interaction, wait time.Duration) {
-	ModifyInteraction(s, embed, i)
+func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, wait time.Duration) {
+	ModifyInteraction(e, embed)
 
 	time.Sleep(wait)
 
-	err := s.InteractionResponseDelete(i)
+	err := e.Client().Rest().DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
 	}
 }
 
-func DeferResponse(s *discordgo.Session, i *discordgo.Interaction) chan struct{} {
+func DeferResponse(e *events.ApplicationCommandInteractionCreate) chan struct{} {
 	c := make(chan struct{})
 	go func() {
-		_ = s.InteractionRespond(i, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-		})
+		_ = e.DeferCreateMessage(false)
 		c <- struct{}{}
 	}()
 

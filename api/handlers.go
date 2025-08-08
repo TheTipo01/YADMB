@@ -6,6 +6,7 @@ import (
 
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/manager"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -66,7 +67,7 @@ func (a *Api) skip(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -93,7 +94,7 @@ func (a *Api) pause(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -118,7 +119,7 @@ func (a *Api) resume(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -143,7 +144,7 @@ func (a *Api) toggle(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, guild, u.ID) != nil {
+	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -172,7 +173,7 @@ func (a *Api) getFavorites(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, a.clients.Database.GetFavorites(u.ID))
+	c.JSON(http.StatusOK, a.clients.Database.GetFavorites(u.ID.String()))
 }
 
 func (a *Api) removeFavorite(c *gin.Context) {
@@ -184,7 +185,7 @@ func (a *Api) removeFavorite(c *gin.Context) {
 	}
 
 	name := c.Query("name")
-	err := a.clients.Database.RemoveFavorite(u.ID, name)
+	err := a.clients.Database.RemoveFavorite(u.ID.String(), name)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	} else {
@@ -204,7 +205,7 @@ func (a *Api) addFavorite(c *gin.Context) {
 	link := c.PostForm("link")
 	folder := c.PostForm("folder")
 
-	err := a.clients.Database.AddFavorite(u.ID, database.Favorite{Name: name, Link: link, Folder: folder})
+	err := a.clients.Database.AddFavorite(u.ID.String(), database.Favorite{Name: name, Link: link, Folder: folder})
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	} else {
