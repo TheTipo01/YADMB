@@ -1,13 +1,13 @@
 module github.com/TheTipo01/YADMB
 
-go 1.23.0
+go 1.24
 
-toolchain go1.24.1
+toolchain go1.24.6
 
 require (
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/dchest/uniuri v1.2.0
-	github.com/disgoorg/disgo v0.18.16
+	github.com/disgoorg/disgo v0.19.0-rc.1.0.20250804221850-bb32bd435eb0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/static v1.1.5
@@ -30,7 +30,8 @@ require (
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
-	github.com/disgoorg/json v1.2.0 // indirect
+	github.com/disgoorg/json/v2 v2.0.0 // indirect
+	github.com/disgoorg/omit v1.0.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	e "embed"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -186,7 +187,6 @@ func main() {
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(
 				gateway.IntentGuildVoiceStates,
-				gateway.IntentGuildMembers,
 				gateway.IntentsGuild,
 			),
 		),
@@ -203,10 +203,9 @@ func main() {
 		bot.WithEventListenerFunc(voiceStateUpdate),
 		bot.WithEventListenerFunc(guildMemberUpdate),
 		bot.WithEventListenerFunc(interactionCreate),
-	)
 
-	// Save the session
-	clients.Discord = &client
+		bot.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))),
+	)
 
 	defer client.Close(context.TODO())
 
@@ -216,7 +215,7 @@ func main() {
 	}
 
 	// Register commands
-	_, err := client.Rest().SetGlobalCommands(client.ApplicationID(), commands)
+	_, err := client.Rest.SetGlobalCommands(client.ApplicationID, commands)
 	if err != nil {
 		lit.Error("Error registering commands: %s", err)
 		return
@@ -234,7 +233,7 @@ func main() {
 					Guild:          t.Guild,
 					TextChannel:    t.TextChannel,
 				}
-				user, _ := client.Rest().GetUser(snowflake.MustParse(t.UserID))
+				user, _ := client.Rest.GetUser(snowflake.MustParse(t.UserID))
 				webApi.AddLongLivedToken(user, userInfo)
 			}
 		}
@@ -242,12 +241,16 @@ func main() {
 
 	// Print guilds the bot is connected to
 	if lit.LogLevel == lit.LogDebug {
-		lit.Debug("Bot is connected to %d guilds.", client.Caches().GuildsLen())
+		lit.Debug("Bot is connected to %d guilds.", client.Caches.GuildsLen())
 
-		client.Caches().GuildsForEach(func(g discord.Guild) {
-			lit.Debug("%s: %s", g.Name, g.ID)
-		})
+		for g := range client.Caches.Guilds() {
+			lit.Debug("Guild ID: %s, Name: %s", g.ID.String(), g.Name)
+		}
+
 	}
+
+	// Save the session
+	clients.Discord = client
 
 	// Wait here until CTRL-C or another term signal is received.
 	lit.Info("YADMB is now running. Press CTRL-C to exit.")
@@ -265,8 +268,8 @@ func ready(e *events.Ready) {
 	manager.BotName = e.User.Username
 }
 
-func setPresence(c bot.Client) {
-	_ = c.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(c.Caches().GuildsLen())+" guilds!"))
+func setPresence(c *bot.Client) {
+	_ = c.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(c.Caches.GuildsLen())+" guilds!"))
 }
 
 // Initialize Server structure
@@ -277,7 +280,6 @@ func guildCreate(e *events.GuildReady) {
 }
 
 func guildDelete(e *events.GuildLeave) {
-
 	if guild := e.GuildID.String(); server[guild].IsPlaying() {
 		ClearAndExit(server[guild])
 	}
@@ -299,7 +301,7 @@ func voiceStateUpdate(v *events.GuildVoiceStateUpdate) {
 
 func guildMemberUpdate(m *events.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
-	if m.Member.User.ID == m.Client().ApplicationID() && m.Member.CommunicationDisabledUntil != nil &&
+	if m.Member.User.ID == m.Client().ApplicationID && m.Member.CommunicationDisabledUntil != nil &&
 		m.Member.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID.String()].IsPlaying() {
 		ClearAndExit(server[m.GuildID.String()])
 	}

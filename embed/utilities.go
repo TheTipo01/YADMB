@@ -11,8 +11,8 @@ import (
 )
 
 // SendEmbed sends an embed in a given text channel
-func SendEmbed(c bot.Client, embed discord.Embed, txtChannel snowflake.ID) *discord.Message {
-	m, _ := c.Rest().CreateMessage(txtChannel, discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
+func SendEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake.ID) *discord.Message {
+	m, _ := c.Rest.CreateMessage(txtChannel, discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
 
 	return m
 }
@@ -23,7 +23,7 @@ func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInter
 
 	if isDeferred != nil {
 		<-isDeferred
-		_, err = e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdateBuilder().SetEmbeds(embed).Build())
+		_, err = e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdateBuilder().SetEmbeds(embed).Build())
 	} else {
 		err = e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
 	}
@@ -44,7 +44,7 @@ func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCom
 
 	time.Sleep(wait)
 
-	err := e.Client().Rest().DeleteInteractionResponse(e.ApplicationID(), e.Token())
+	err := e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
@@ -53,7 +53,7 @@ func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCom
 
 // Modify an already sent interaction
 func ModifyInteraction(e *events.ApplicationCommandInteractionCreate, embed discord.Embed) {
-	_, err := e.Client().Rest().UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdateBuilder().SetEmbeds(embed).Build())
+	_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdateBuilder().SetEmbeds(embed).Build())
 	if err != nil {
 		lit.Error("InteractionResponseEdit failed: %s", err)
 		return
@@ -66,7 +66,7 @@ func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationComman
 
 	time.Sleep(wait)
 
-	err := e.Client().Rest().DeleteInteractionResponse(e.ApplicationID(), e.Token())
+	err := e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return

@@ -524,7 +524,7 @@ var (
 			size, files := manager.FolderStats(constants.CachePath)
 
 			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.StatsTitle, "Called by "+e.Member().User.Username, false).
-				AddField("Latency", e.Client().Gateway().Latency().String(), false).AddField("Guilds", strconv.Itoa(e.Client().Caches().GuildsLen()), false).
+				AddField("Latency", e.Client().Gateway.Latency().String(), false).AddField("Guilds", strconv.Itoa(e.Client().Caches.GuildsLen()), false).
 				AddField("Cached song", strconv.Itoa(files)+", "+
 					manager.ByteCountSI(size), false).SetColor(0x7289DA).Build(), e, time.Second*15, nil)
 		},
@@ -771,13 +771,13 @@ var (
 				var action string
 
 				user := e.SlashCommandInteractionData().User("user")
-				member, _ := e.Client().Caches().Member(*e.GuildID(), user.ID)
+				member, _ := e.Client().Caches.Member(*e.GuildID(), user.ID)
 
 				if !manager.HasRole(member.RoleIDs, server[guildID].DjRole) {
-					err = e.Client().Rest().AddMemberRole(*e.GuildID(), user.ID, snowflake.MustParse(server[guildID].DjRole))
+					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, snowflake.MustParse(server[guildID].DjRole))
 					action = "added!"
 				} else {
-					err = e.Client().Rest().RemoveMemberRole(*e.GuildID(), user.ID, snowflake.MustParse(server[guildID].DjRole))
+					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, snowflake.MustParse(server[guildID].DjRole))
 					action = "removed!"
 				}
 

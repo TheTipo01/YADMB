@@ -5,7 +5,6 @@ import (
 
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/disgoorg/disgo/bot"
-	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
 )
 
@@ -18,13 +17,14 @@ func initializeServer(guild string) {
 	}
 }
 
-func countVoiceStates(s bot.Client, guild, channel snowflake.ID) int {
+func countVoiceStates(s *bot.Client, guild, channel snowflake.ID) int {
 	var count int
-	s.Caches().VoiceStatesForEach(guild, func(vs discord.VoiceState) {
-		if vs.ChannelID != nil && *vs.ChannelID == channel && vs.UserID != s.ApplicationID() {
+
+	for vs := range s.Caches.VoiceStates(guild) {
+		if vs.ChannelID != nil && *vs.ChannelID == channel && vs.UserID != s.ApplicationID {
 			count++
 		}
-	})
+	}
 
 	return count
 }
@@ -33,7 +33,7 @@ func countVoiceStates(s bot.Client, guild, channel snowflake.ID) int {
 func QuitIfEmptyVoiceChannel(server *manager.Server) {
 	time.Sleep(1 * time.Minute)
 
-	if server.VC.IsConnected() && countVoiceStates(*server.Clients.Discord, snowflake.MustParse(server.GuildID), snowflake.MustParse(server.VC.GetChannelID().String())) == 0 {
+	if server.VC.IsConnected() && countVoiceStates(server.Clients.Discord, snowflake.MustParse(server.GuildID), snowflake.MustParse(server.VC.GetChannelID().String())) == 0 {
 		ClearAndExit(server)
 	}
 }

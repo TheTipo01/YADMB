@@ -72,7 +72,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 		} else {
 			msg := embed.SendEmbed(p.Event.Client(), discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, err.Error(), false).SetColor(0x7289DA).Build(), p.Event.Channel().ID())
 			time.Sleep(time.Second * 5)
-			_ = p.Event.Client().Rest().DeleteMessage(msg.ChannelID, msg.ID)
+			_ = p.Event.Client().Rest.DeleteMessage(msg.ChannelID, msg.ID)
 		}
 		return
 	}

@@ -67,7 +67,7 @@ func (a *Api) skip(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -94,7 +94,7 @@ func (a *Api) pause(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -119,7 +119,7 @@ func (a *Api) resume(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -144,7 +144,7 @@ func (a *Api) toggle(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(*a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
