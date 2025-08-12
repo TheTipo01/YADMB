@@ -15,7 +15,7 @@ import (
 func JoinVC(e *events.ApplicationCommandInteractionCreate, channelID snowflake.ID, server *Server, isDeferred chan struct{}) bool {
 	if !server.VC.IsConnected() {
 		// Join the voice channel
-		err := server.VC.Join(e.Client(), channelID)
+		err := server.VC.Join(channelID, e.Client())
 		if err != nil {
 			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).
 				SetColor(0x7289DA).Build(), e, time.Second*5, isDeferred)
@@ -33,14 +33,12 @@ func (server *Server) QuitVC() {
 }
 
 // FindUserVoiceState finds user current voice channel
-func FindUserVoiceState(s bot.Client, guildID, userID snowflake.ID) *discord.VoiceState {
-	var userVC *discord.VoiceState
-	s.Caches().VoiceStatesForEach(guildID, func(vs discord.VoiceState) {
+func FindUserVoiceState(s *bot.Client, guildID, userID snowflake.ID) *discord.VoiceState {
+	for vs := range s.Caches.VoiceStates(guildID) {
 		if vs.UserID == userID {
-			userVC = &vs
-			return
+			return &vs
 		}
-	})
+	}
 
-	return userVC
+	return nil
 }

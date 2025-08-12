@@ -2,7 +2,6 @@ package manager
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -28,8 +27,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	if err != nil {
 		return Error, err
 	}
-	var buffer bytes.Buffer
-	server.VC.SetBuffer(&buffer)
+	conn := server.VC.GetUDP()
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
@@ -97,7 +95,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			buffer.Write(InBuf)
+			_, _ = conn.Write(InBuf)
 		}
 	}
 }

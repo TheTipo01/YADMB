@@ -1,7 +1,6 @@
 package vc
 
 import (
-	"bytes"
 	"context"
 	"sync"
 
@@ -47,24 +46,22 @@ func (v *VC) IsConnected() bool {
 	return v.connected
 }
 
-func (v *VC) Join(c bot.Client, channelID snowflake.ID) error {
+func (v *VC) Join(channelID snowflake.ID, c *bot.Client) error {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	v.vc = c.VoiceManager().CreateConn(v.guild)
-	err := v.vc.Open(context.TODO(), channelID, false, false)
+	v.vc = c.VoiceManager.CreateConn(v.guild)
+	err := v.vc.Open(context.TODO(), channelID, false, true)
 	v.connected = true
 
 	return err
 }
 
-func (v *VC) SetBuffer(buffer *bytes.Buffer) {
-	v.rw.Lock()
-	defer v.rw.Unlock()
+func (v *VC) GetUDP() voice.UDPConn {
+	v.rw.RLock()
+	defer v.rw.RUnlock()
 
-	if v.connected {
-		v.vc.SetOpusFrameProvider(voice.NewOpusReader(buffer))
-	}
+	return v.vc.UDP()
 }
 
 func (v *VC) SetSpeaking(flag voice.SpeakingFlags) error {

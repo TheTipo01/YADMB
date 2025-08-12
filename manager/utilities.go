@@ -140,12 +140,12 @@ func ByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-func DeleteInteraction(client bot.Client, i discord.Interaction, c <-chan struct{}) {
+func DeleteInteraction(client *bot.Client, i discord.Interaction, c <-chan struct{}) {
 	if c != nil {
 		<-c
 	}
 
-	err := client.Rest().DeleteInteractionResponse(i.ApplicationID(), i.Token())
+	err := client.Rest.DeleteInteractionResponse(i.ApplicationID(), i.Token())
 	if err != nil {
 		lit.Error("InteractionResponseDelete failed: %s", err)
 		return
