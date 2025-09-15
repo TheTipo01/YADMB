@@ -17,7 +17,7 @@ type Api struct {
 	// Map from userID to token
 	userInfo map[string]*UserInfo
 	// Bot owner
-	owner string
+	owner map[string]struct{}
 	// CLients for interacting with the various apis
 	clients *manager.Clients
 	// Websocket connections

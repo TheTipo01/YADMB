@@ -6,8 +6,10 @@
 token: ""
 
 # Owner id
-# Put here the id of the owner of the bot, so they can use commands like restart
-owner: ""
+# Put here the id of the owners of the bot, so they can use commands like restart
+owner:
+  - 0000000000000000
+  - 1111111111111111
 
 # Spotify Client ID and Client Secret, to support spotify playlists:
 # To get your client ID and secret you need to visit https://developer.spotify.com/dashboard/applications and log in or create a new account,

@@ -275,11 +275,11 @@ var (
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			_ = server[i.GuildID].PlayCommand(&clients, i, false, owner)
+			_ = server[i.GuildID].PlayCommand(&clients, i, false, owners)
 		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
 		"playlist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			_ = server[i.GuildID].PlayCommand(&clients, i, true, owner)
+			_ = server[i.GuildID].PlayCommand(&clients, i, true, owners)
 		},
 		// Skips the currently playing song
 		"skip": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -418,7 +418,7 @@ var (
 		// Restarts the bot
 		"restart": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// Check if the owner of the bot is the one who sent the command
-			if owner == i.Member.User.ID {
+			if _, isOwner := owners[i.Member.User.ID]; isOwner {
 				embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.RestartTitle, constants.Disconnected).
 					SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*1, nil)
 
@@ -489,7 +489,7 @@ var (
 		"custom": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			c := embed.DeferResponse(clients.Discord, i.Interaction)
 
-			if server[i.GuildID].DjModeCheck(clients.Discord, i, owner, nil) {
+			if server[i.GuildID].DjModeCheck(clients.Discord, i, owners, nil) {
 				return
 			}
 
@@ -590,7 +590,7 @@ var (
 			}
 		},
 		"blacklist": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if i.Member.User.ID == owner {
+			if _, isOwner := owners[i.Member.User.ID]; isOwner {
 				if id := i.ApplicationCommandData().Options[0].UserValue(nil).ID; id == i.Member.User.ID {
 					embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle,
 						"You are really trying to add yourself to the blacklist?").
@@ -662,7 +662,7 @@ var (
 		// Streams a song from the given URL, useful for radios
 		"stream": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			c := embed.DeferResponse(clients.Discord, i.Interaction)
-			if server[i.GuildID].DjModeCheck(s, i, owner, c) {
+			if server[i.GuildID].DjModeCheck(s, i, owners, c) {
 				return
 			}
 
@@ -709,7 +709,7 @@ var (
 		},
 		// Enables or disables DJ mode
 		"dj": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if i.Member.User.ID == owner {
+			if _, isOwner := owners[i.Member.User.ID]; isOwner {
 				if server[i.GuildID].DjMode {
 					server[i.GuildID].DjMode = false
 					err := clients.Database.SetDJSettings(i.GuildID, false)
@@ -737,7 +737,7 @@ var (
 		},
 		// Sets the DJ role
 		"djrole": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if i.Member.User.ID == owner {
+			if _, isOwner := owners[i.Member.User.ID]; isOwner {
 				role := i.ApplicationCommandData().Options[0].RoleValue(nil, "")
 				if role.ID != server[i.GuildID].DjRole {
 					server[i.GuildID].DjRole = role.ID
@@ -760,7 +760,7 @@ var (
 		},
 		// Adds or removes the DJ role from a user
 		"djroletoggle": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			if i.Member.User.ID == owner {
+			if _, isOwner := owners[i.Member.User.ID]; isOwner {
 				var err error
 				var action string
 

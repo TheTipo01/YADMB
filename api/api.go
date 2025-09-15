@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func NewApi(servers map[string]*manager.Server, address, owner string, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
+func NewApi(servers map[string]*manager.Server, address string, owner map[string]struct{}, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
 	r := gin.New()
 
 	conf := cors.DefaultConfig()

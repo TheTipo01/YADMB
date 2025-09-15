@@ -8,7 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCreate, playlist bool, owner string) (status PlayStatus) {
+func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCreate, playlist bool, owner map[string]struct{}) (status PlayStatus) {
 	c := embed.DeferResponse(clients.Discord, i.Interaction)
 
 	if server.DjModeCheck(clients.Discord, i, owner, c) {
@@ -71,8 +71,8 @@ func (server *Server) PlayCommand(clients *Clients, i *discordgo.InteractionCrea
 	return
 }
 
-func (server *Server) DjModeCheck(s *discordgo.Session, i *discordgo.InteractionCreate, owner string, isDeferred chan struct{}) bool {
-	if server.DjMode && i.Member.User.ID != owner && !HasRole(i.Member.Roles, server.DjRole) {
+func (server *Server) DjModeCheck(s *discordgo.Session, i *discordgo.InteractionCreate, owner map[string]struct{}, isDeferred chan struct{}) bool {
+	if _, isOwner := owner[i.Member.User.ID]; server.DjMode && isOwner && !HasRole(i.Member.Roles, server.DjRole) {
 		embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.DjNot).
 			SetColor(0x7289DA).MessageEmbed, i.Interaction, time.Second*3, isDeferred)
 		return true

@@ -27,8 +27,8 @@ import (
 var (
 	// Holds all the info about a server
 	server = make(map[string]*manager.Server)
-	// String for storing the owner of the bot
-	owner string
+	// String for storing the owners of the bot
+	owners map[string]struct{}
 	// Discord bot token
 	token string
 	// Cache for the user blacklist
@@ -64,7 +64,12 @@ func init() {
 
 	// Config file found
 	token = cfg.Token
-	owner = cfg.Owner
+
+	owners = make(map[string]struct{}, len(cfg.Owner))
+	for _, o := range cfg.Owner {
+		owners[o] = struct{}{}
+	}
+
 	longLivedTokens = cfg.ApiTokens
 	origin = cfg.Origin
 
@@ -89,7 +94,7 @@ func init() {
 
 	// Start the API, if enabled
 	if cfg.Address != "" {
-		webApi = api.NewApi(server, cfg.Address, owner, &clients, &buildFS, origin)
+		webApi = api.NewApi(server, cfg.Address, owners, &clients, &buildFS, origin)
 	}
 
 	// Initialize the database
