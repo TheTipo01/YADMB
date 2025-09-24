@@ -22,6 +22,7 @@ FROM alpine
 RUN apk add --no-cache ffmpeg
 RUN apk add --no-cache python3
 RUN apk add --no-cache gcompat
+RUN apk add --no-cache deno
 
 COPY --from=thetipo01/dca /usr/bin/dca /usr/bin/
 
