@@ -203,7 +203,6 @@ func main() {
 
 	// Reconnect in case of connection loss
 	dg.ShouldReconnectOnError = true
-	dg.ShouldReconnectVoiceOnSessionError = true
 
 	// Open the websocket and begin listening.
 	err = dg.Open()
