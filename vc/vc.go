@@ -1,9 +1,7 @@
 package vc
 
 import (
-	"context"
 	"sync"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -22,8 +20,10 @@ func NewVC(guild string) *VC {
 }
 
 func (v *VC) GetChannelID() string {
-	// TODO: actually return the channel ID
-	return ""
+	v.vc.RLock()
+	defer v.vc.RUnlock()
+
+	return v.vc.ChannelID
 }
 
 func (v *VC) Disconnect() {
@@ -31,8 +31,7 @@ func (v *VC) Disconnect() {
 		v.rw.Lock()
 		defer v.rw.Unlock()
 
-		_ = v.vc.Disconnect(context.Background())
-
+		_ = v.vc.Disconnect()
 		v.vc = nil
 	}
 }
@@ -49,24 +48,17 @@ func (v *VC) IsConnected() bool {
 		return false
 	}
 
-	return v.vc.Status == discordgo.VoiceConnectionStatusReady
-}
+	v.vc.RLock()
+	defer v.vc.RUnlock()
 
-func (v *VC) GetIsDeadChannel() <-chan struct{} {
-	return v.vc.Dead
-}
-
-func (v *VC) GetCond() *sync.Cond {
-	return v.vc.Cond
+	return v.vc.Ready
 }
 
 func (v *VC) Join(s *discordgo.Session, channelID string) error {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	vc, err := s.ChannelVoiceJoin(ctx, v.guild, channelID, false, true)
-	cancel()
+	vc, err := s.ChannelVoiceJoin(v.guild, channelID, false, true)
 	if err != nil {
 		return err
 	}
@@ -78,7 +70,16 @@ func (v *VC) Join(s *discordgo.Session, channelID string) error {
 
 func (v *VC) Reconnect(s *discordgo.Session) error {
 	channel := v.GetChannelID()
-	return v.Join(s, channel)
+	if v.isConnectionNil() {
+		return v.Join(s, channel)
+	} else {
+		v.rw.Lock()
+		v.vc.Lock()
+		defer v.rw.Unlock()
+		defer v.vc.Unlock()
+
+		return v.vc.ChangeChannel(channel, false, true)
+	}
 }
 
 func (v *VC) GetAudioChannel() chan []byte {
@@ -96,20 +97,11 @@ func (v *VC) ChangeChannel(s *discordgo.Session, id string) error {
 		v.rw.Lock()
 		defer v.rw.Unlock()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		v.vc.Disconnect(ctx)
-		cancel()
-
-		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		v.vc, err = s.ChannelVoiceJoin(ctx, v.guild, id, false, true)
-		cancel()
+		_ = v.vc.Disconnect()
+		v.vc, err = s.ChannelVoiceJoin(v.guild, id, false, true)
 	}
 
 	return err
-}
-
-func (v *VC) GetDeadChannel() <-chan struct{} {
-	return v.vc.Dead
 }
 
 func (v *VC) SetSpeaking(speaking bool) error {

@@ -27,7 +27,6 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 		return Error, err
 	}
 	audioChannel := server.VC.GetAudioChannel()
-	dead := server.VC.GetIsDeadChannel()
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
@@ -95,14 +94,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			// TODO: does not work, i don't understand if it's my fault or the library's
-			select {
-			case <-dead:
-				cleanUp(server, el.Closer)
-				return Error, errors.New("voice connection dead")
-			default:
-				audioChannel <- InBuf
-			}
+			audioChannel <- InBuf
 		}
 	}
 }
