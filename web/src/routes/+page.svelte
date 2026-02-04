@@ -112,8 +112,10 @@
     setInterval(function() {if(playing){seconds += 1; timestamp = GetTime(seconds)}}, 1000)
 
 </script>
+
+
 <div class="flex justify-center">
-    <Avatar src={logo} size="xl" class="mt-1"/>
+    <Avatar src={logo} size="xl" class="mt-1 "/>
 </div>
 
 
@@ -143,4 +145,3 @@
 </Tabs>
 <div>
 </div>
-

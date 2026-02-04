@@ -32,6 +32,7 @@
 	"type": "module",
 	"dependencies": {
 		"@tailwindcss/postcss": "^4.1.18",
+		"@tailwindcss/vite": "^4.1.18",
 		"svelte-preprocess": "^6.0.3",
 		"typescript": "^5.9.3",
 		"ws": "^8.19.0"
