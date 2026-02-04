@@ -120,22 +120,26 @@
 
 
 <Tabs style="underline">
-    <TabItem open active={activetab === "queue"} on:click={() => (activetab = "queue")}>
-        <div slot="title" class="flex items-center gap-2">
+    <TabItem title="Queue" open active={activetab === "queue"} onclick={() => (activetab = "queue")}>
+		{#snippet titleSlot()}
+        <div class="flex items-center gap-2">
             <ListMusicSolid/>
             Queue
         </div>
+		{/snippet}
         {#if activetab === "queue"}
             {#if GuildId !== '' && token !== '' && host !== '' && queue != null && timestamp != undefined}
                 <Queue GuildId={GuildId} token={token} host={host} queue={queue} timestamp = {timestamp}/>
             {/if}
         {/if}
     </TabItem>
-    <TabItem active={activetab === "favorites"} on:click={() => (activetab = "favorites")}>
-        <div slot="title" class="flex items-center gap-2">
+    <TabItem title="Favorites" active={activetab === "favorites"} onclick={() => (activetab = "favorites")}>
+		{#snippet titleSlot()}
+        <div class="flex items-center gap-2">
             <StarSolid/>
             Favorites
         </div>
+		{/snippet}
         {#if activetab === "favorites"}
             {#if token !== '' && host !== ''}
                 <Favorites GuildId={GuildId} token={token} host={host}/>

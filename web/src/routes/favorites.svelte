@@ -19,8 +19,8 @@
 </script>
 
 <!-- Modal Button -->
-<Button class="w-25 absolute right-9 bottom-5" on:click={() => (showModal = true)}>
-    Add to Favorites
+<Button class="w-25 absolute right-9 bottom-5" onclick={() => (showModal = true)}>
+	<P> Add to Favorites </P>
 </Button>
 
 <!-- Modal Component -->
@@ -30,7 +30,7 @@
         <div class="grid grid-rows-3">
             <div>
                 <Label for="name" class="mb-2">Song Name</Label>
-                <Input type="text" id="name" on:keydown={(e) => {
+                <Input type="text" id="name" onkeydown={(e) => {
                     if (e.key === "Enter") {
                         code = AddFavorite(token, host);
                         showModal = false;
@@ -40,7 +40,7 @@
             </div>
             <div>
                 <Label for="link" class="mt-2 mb-2">Song Link</Label>
-                <Input type="text" id="link" on:keydown={(e) => {
+                <Input type="text" id="link" onkeydown={(e) => {
                     if (e.key === "Enter") {
                         code = AddFavorite(token, host);
                         showModal = false;
@@ -50,7 +50,7 @@
             </div>
             <div>
                 <Label for="folder" class="mt-2 mb-2">Folder</Label>
-                <Input type="text" id="folder" on:keydown={(e) => {
+                <Input type="text" id="folder" onkeydown={(e) => {
                     if (e.key === "Enter") {
                         code = AddFavorite(token, host);
                         showModal = false;
@@ -61,8 +61,8 @@
     </form>
 
     <!-- Submit button -->
-    <svelte:fragment slot="footer">
-        <Button on:click={ async () => {
+    {#snippet footer()}
+        <Button onclick={ async () => {
             let result = await AddFavorite(token, host, favorites);
             switch(result) {
                 case Response.FAVORITE_TOKEN_ERROR:
@@ -77,7 +77,7 @@
             }
         }}>Add
         </Button>
-    </svelte:fragment>
+	{/snippet}
 </Modal>
 
 <Error response={code} />
@@ -91,9 +91,9 @@
             {#each GetFolders(favorite) as folder}
                 <!-- Folder Header -->
                 <AccordionItem>
-                    <span slot="header"> 
+					{#snippet header()}
                         {folder !== "" ? folder: "No Folder"}
-                    </span>
+					{/snippet}
                     <!-- Folder Content -->
                     <Table hoverable shadow>
                         <TableHead>
@@ -110,30 +110,36 @@
                         {#each favorite as song}
                             <TableBodyRow>
                                 {#if song.folder === folder}
-                                    <TableBodyCell align="center" class="w-1/2">{song.name}</TableBodyCell>
+                                    <TableBodyCell class="w-1/2"><P align="center">{song.name}</P></TableBodyCell>
                                     <TableBodyCell align="center" class="w-2/5"><A href={song.link}>{song.link}</A></TableBodyCell>
                                     <TableBodyCell
-                                    style="width: 5%; cursor: pointer"
-                                    align="center"
-                                    on:click={() => code = AddToQueue(GuildId, token, host, song.link, false, false, false, false)}>
-                                    <PlusOutline/> Add to Queue</TableBodyCell>
+                                    	onclick={() => code = AddToQueue(GuildId, token, host, song.link, false, false, false, false)}>
+										<div class="flex items-center justify-center cursor-pointer">
+                                    		<PlusOutline size="lg" align="center"/> 
+										</div>
+										<P> Add to Queue </P>
+									</TableBodyCell>
                                     <TableBodyCell 
-                                    style="width: 5%; cursor: pointer"
-                                    align="center"
-                                    on:click={ async () => {
-                                        let result = await RemoveFavorite(token, song.name, host);
-                                        switch(result) {
-                                            case Response.FAVORITE_TOKEN_ERROR:
-                                                code = Response.FAVORITE_TOKEN_ERROR;
-                                            case Response.FAVORITE_NOT_FOUND:
-                                                code = Response.FAVORITE_NOT_FOUND;
-                                                break;
-                                            default:
-                                                code = Response.SUCCESS;
-                                                favorites = RemoveObjectFromArray(favorites, song);
-                                        }
-                                    }}>
-                                        <TrashBinSolid />Remove</TableBodyCell>
+										onclick={ async () => {
+											let result = await RemoveFavorite(token, song.name, host);
+											switch(result) {
+												case Response.FAVORITE_TOKEN_ERROR:
+													code = Response.FAVORITE_TOKEN_ERROR;
+													break;
+												case Response.FAVORITE_NOT_FOUND:
+													code = Response.FAVORITE_NOT_FOUND;
+													break;
+												default:
+													code = Response.SUCCESS;
+													favorites = RemoveObjectFromArray(favorites, song);
+											}
+										}}>
+										<div class="flex items-center justify-center cursor-pointer">
+										<TrashBinSolid size="lg" />
+										</div>
+										<P> Remove </P>
+									</TableBodyCell>
+
                                 {/if}
                             </TableBodyRow>
                         {/each}
