@@ -7,5 +7,5 @@ export const theme = writable(initialTheme);
 
 // Listen for changes in the user's preferred color scheme
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
-    theme.set(event.matches ? 'dark' : 'light');
+	theme.set(event.matches ? 'dark' : 'light');
 });
