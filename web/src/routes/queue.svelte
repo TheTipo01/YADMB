@@ -8,17 +8,20 @@
     import Error from "./errors.svelte"
 
     // props
-    export let GuildId;
-    export let token;
-    export let host;
-    export let queue;
-    export let timestamp;
+    /** @type {{GuildId: any, token: any, host: any, queue: any, timestamp: any}} */
+    let {
+        GuildId,
+        token,
+        host,
+        queue,
+        timestamp
+    } = $props();
 
 
     // variables
-    let code = queue;
-    let showModal = false;
-    let isPlaylist = false;
+    let code = $state(queue);
+    let showModal = $state(false);
+    let isPlaylist = $state(false);
 
 </script>
 

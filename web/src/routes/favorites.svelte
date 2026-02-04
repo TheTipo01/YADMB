@@ -3,21 +3,19 @@
     import {AddFavorite, GetFavorites, RemoveFavorite} from "../lib/favorites";
     import {AddObjectToArray, RemoveObjectFromArray, GetFolders} from "../lib/utilities";
     import { Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
-    import TrashBinSolid from "flowbite-svelte-icons/TrashBinSolid.svelte";
-    import {PlusSolid} from "flowbite-svelte-icons";
-    import {AddToQueue} from "../lib/queue";
-    import {Response} from "$lib/error.js";
+    import { TrashBinSolid, PlusOutline } from "flowbite-svelte-icons";
+    import {AddToQueue} from "../lib/queue.js";
+    import {Response} from "../lib/error.js";
     import Error from "./errors.svelte"
 
     // props
-    export let GuildId;
-    export let token;
-    export let host;
+    /** @type {{GuildId: any, token: any, host: any}} */
+    let { GuildId, token, host } = $props();
 
     // variables
-    let favorites = GetFavorites(token, host);
-    let code = favorites;
-    let showModal = false;
+    let favorites = $state(GetFavorites(token, host));
+    let code = $state(favorites);
+    let showModal = $state(false);
 </script>
 
 <!-- Modal Button -->
@@ -94,7 +92,7 @@
                 <!-- Folder Header -->
                 <AccordionItem>
                     <span slot="header"> 
-                        {folder != "" ? folder: "No Folder"} 
+                        {folder !== "" ? folder: "No Folder"}
                     </span>
                     <!-- Folder Content -->
                     <Table hoverable shadow>
@@ -118,7 +116,7 @@
                                     style="width: 5%; cursor: pointer"
                                     align="center"
                                     on:click={() => code = AddToQueue(GuildId, token, host, song.link, false, false, false, false)}>
-                                    <PlusSolid/> Add to Queue</TableBodyCell>
+                                    <PlusOutline/> Add to Queue</TableBodyCell>
                                     <TableBodyCell 
                                     style="width: 5%; cursor: pointer"
                                     align="center"

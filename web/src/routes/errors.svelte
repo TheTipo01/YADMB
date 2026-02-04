@@ -1,15 +1,15 @@
 <script>
     import {Toast} from "flowbite-svelte";
-    import {get_message, Response} from "../lib/error"
-    import CheckCircleSolid from "flowbite-svelte-icons/CheckCircleSolid.svelte"
-    import CloseCircleSolid from "flowbite-svelte-icons/CloseCircleSolid.svelte"
+    import {get_message, Response} from "../lib/error.js"
+    import {CheckCircleSolid, CloseCircleSolid} from "flowbite-svelte-icons"
 
     // autohide variable
-    let open = true;
+    let open = $state(true);
     setTimeout(() => {open = false}, 7000);
 
     // props
-    export let response;
+    /** @type {{response: any}} */
+    let { response } = $props();
 
 </script>
 

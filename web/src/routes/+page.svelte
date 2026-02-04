@@ -2,8 +2,6 @@
     import Queue from "./queue.svelte";
     import Favorites from "./favorites.svelte"
     import {Avatar, TabItem, Tabs} from "flowbite-svelte"
-    import StarSolid from "flowbite-svelte-icons/StarSolid.svelte"
-    import ListMusicSolid from "flowbite-svelte-icons/ListMusicSolid.svelte"
     import {
         AddObjectToArray,
         ClearArray,
@@ -16,21 +14,22 @@
         GetPauseStatus,
         GetFrames,
         GetTime, AddObjectToArrayAsSecond,
-    } from "../lib/utilities"
+    } from "../lib/utilities.js"
     import {onMount} from "svelte";
-    import {GetQueue} from "$lib/queue"
+    import {GetQueue} from "../lib/queue.js"
     import logo from "../assets/logo_yadmb.png"
+    import {ListMusicSolid, StarSolid} from "flowbite-svelte-icons"
 
     // variables
     const FrameSeconds = 50.00067787;
-    let GuildId = '';
-    let token = '';
-    let host = '';
-    let activetab = "queue";
+    let GuildId = $state('');
+    let token = $state('');
+    let host = $state('');
+    let activetab = $state("queue");
     let playing;
-    let queue = null;
+    let queue = $state(null);
     let seconds = 0;
-    let timestamp;
+    let timestamp = $state();
 
     onMount(async () => {
         GuildId = GetGuildID();
@@ -114,7 +113,7 @@
 
 </script>
 <div class="flex justify-center">
-    <Avatar src="{logo}" size="xl" class="mt-1"/>
+    <Avatar src={logo} size="xl" class="mt-1"/>
 </div>
 
 
