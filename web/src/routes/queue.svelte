@@ -39,7 +39,7 @@
 
 <!-- Modal Button -->
 <Button class="w-25 absolute right-9 bottom-5" onclick={() => (showModal = true)}>
-	Add to Queue
+	<P align="center">Add to Queue</P>
 </Button>
 
 <!-- Modal component -->
@@ -153,7 +153,7 @@
 						>
 						<P>Requested by {queueData[0].user}</P>
 						<Button onclick={() => (code = RemoveFromQueue(GuildId, token, false, host))}
-							>Skip song</Button
+							><P align="center">Skip song</P></Button
 						>
 					</div>
 				</div>
@@ -161,7 +161,7 @@
 				<!-- Clear button -->
 				<div class="justify-self-start">
 					<Button align="right" onclick={() => (code = RemoveFromQueue(GuildId, token, true, host))}
-						>Clear Queue</Button
+						><P align="center">Clear Queue</P></Button
 					>
 				</div>
 			</div>

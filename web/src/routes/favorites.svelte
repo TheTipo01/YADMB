@@ -27,7 +27,7 @@
 
 <!-- Modal Button -->
 <Button class="w-25 absolute right-9 bottom-5" onclick={() => (showModal = true)}>
-	<P>Add to Favorites</P>
+	<P align="center">Add to Favorites</P>
 </Button>
 
 <!-- Modal Component -->
@@ -151,7 +151,7 @@
 											<div class="flex items-center justify-center cursor-pointer">
 												<PlusOutline size="lg" align="center" />
 											</div>
-											<P>Add to Queue</P>
+											<P align="center">Add to Queue</P>
 										</TableBodyCell>
 										<TableBodyCell
 											onclick={async () => {
@@ -172,7 +172,7 @@
 											<div class="flex items-center justify-center cursor-pointer">
 												<TrashBinSolid size="lg" />
 											</div>
-											<P>Remove</P>
+											<P align="center">Remove</P>
 										</TableBodyCell>
 									{/if}
 								</TableBodyRow>
