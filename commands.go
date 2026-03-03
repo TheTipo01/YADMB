@@ -254,11 +254,11 @@ var (
 	commandHandlers = map[string]func(e *events.ApplicationCommandInteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(e *events.ApplicationCommandInteractionCreate) {
-			_ = server[e.GuildID().String()].PlayCommand(&clients, e, false, owner)
+			_ = server[e.GuildID().String()].PlayCommand(&clients, e, false, owners)
 		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
 		"playlist": func(e *events.ApplicationCommandInteractionCreate) {
-			_ = server[e.GuildID().String()].PlayCommand(&clients, e, true, owner)
+			_ = server[e.GuildID().String()].PlayCommand(&clients, e, true, owners)
 		},
 		// Skips the currently playing song
 		"skip": func(e *events.ApplicationCommandInteractionCreate) {
@@ -407,7 +407,7 @@ var (
 		// Restarts the bot
 		"restart": func(e *events.ApplicationCommandInteractionCreate) {
 			// Check if the owner of the bot is the one who sent the command
-			if owner == e.Member().User.ID.String() {
+			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.RestartTitle, constants.Disconnected, false).
 					SetColor(0x7289DA).Build(), e, time.Second*1, nil)
 
@@ -482,7 +482,7 @@ var (
 
 			c := embed.DeferResponse(e)
 
-			if server[guildID].DjModeCheck(e, owner, nil) {
+			if server[guildID].DjModeCheck(e, owners, nil) {
 				return
 			}
 
@@ -585,7 +585,7 @@ var (
 			}
 		},
 		"blacklist": func(e *events.ApplicationCommandInteractionCreate) {
-			if e.Member().User.ID.String() == owner {
+			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
 				if id := e.SlashCommandInteractionData().User("user").ID; id == e.Member().User.ID {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
 						"You are really trying to add yourself to the blacklist?", false).
@@ -661,7 +661,7 @@ var (
 			guildID := e.GuildID().String()
 
 			c := embed.DeferResponse(e)
-			if server[guildID].DjModeCheck(e, owner, c) {
+			if server[guildID].DjModeCheck(e, owners, c) {
 				return
 			}
 
@@ -711,7 +711,7 @@ var (
 		"dj": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := e.GuildID().String()
 
-			if e.Member().User.ID.String() == owner {
+			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
 				if server[guildID].DjMode {
 					server[guildID].DjMode = false
 					err := clients.Database.SetDJSettings(guildID, false)
@@ -741,7 +741,7 @@ var (
 		"djrole": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := e.GuildID().String()
 
-			if e.Member().User.ID.String() == owner {
+			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
 				role := e.SlashCommandInteractionData().Role("role")
 				if role.ID.String() != server[guildID].DjRole {
 					server[guildID].DjRole = role.ID.String()
@@ -766,7 +766,7 @@ var (
 		"djroletoggle": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := e.GuildID().String()
 
-			if e.Member().User.ID.String() == owner {
+			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
 				var err error
 				var action string
 
@@ -805,7 +805,7 @@ var (
 				embed := discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).SetColor(0x7289DA).Build()
 
 				// Send the response as ephemeral
-				_ = e.CreateMessage(discord.NewMessageCreateBuilder().SetEmbeds(embed).SetEphemeral(true).Build())
+				_ = e.CreateMessage(discord.NewMessageCreateV2().AddEmbeds(embed).AddFlags(discord.MessageFlagEphemeral))
 			} else {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
 					SetColor(0x7289DA).Build(), e, time.Second*5, nil)

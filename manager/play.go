@@ -9,7 +9,7 @@ import (
 	"github.com/disgoorg/disgo/events"
 )
 
-func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommandInteractionCreate, playlist bool, owner string) (status PlayStatus) {
+func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommandInteractionCreate, playlist bool, owner map[string]struct{}) (status PlayStatus) {
 	c := embed.DeferResponse(e)
 
 	if server.DjModeCheck(e, owner, c) {
@@ -64,8 +64,8 @@ func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommand
 	return
 }
 
-func (server *Server) DjModeCheck(e *events.ApplicationCommandInteractionCreate, owner string, isDeferred chan struct{}) bool {
-	if server.DjMode && e.Member().User.ID.String() != owner && !HasRole(e.Member().RoleIDs, server.DjRole) {
+func (server *Server) DjModeCheck(e *events.ApplicationCommandInteractionCreate, owner map[string]struct{}, isDeferred chan struct{}) bool {
+	if _, isOwner := owner[e.Member().User.ID.String()]; server.DjMode && isOwner && !HasRole(e.Member().RoleIDs, server.DjRole) {
 		embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
 			SetColor(0x7289DA).Build(), e, time.Second*3, isDeferred)
 		return true
