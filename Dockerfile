@@ -21,7 +21,7 @@ COPY --from=thetipo01/dca /usr/bin/dca /usr/bin/
 RUN wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/bin/yt-dlp && chmod a+rx /usr/bin/yt-dlp
 
 COPY --from=build /yadmb/yadmb /usr/bin/
-COPY --from=build /root/.local/lib/pkgconfig /root/.local/lib/pkgconfig
+COPY --from=build /root/.local/lib /root/.local/lib
 ENV PKG_CONFIG_PATH="/root/.local/lib/pkgconfig"
 
 CMD ["yadmb"]

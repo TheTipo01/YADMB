@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	e "embed"
-	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -212,8 +211,6 @@ func main() {
 		bot.WithEventListenerFunc(interactionCreate),
 
 		bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(golibdave.NewSession)),
-
-		bot.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))),
 	)
 
 	defer client.Close(context.TODO())
