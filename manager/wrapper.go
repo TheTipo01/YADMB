@@ -7,20 +7,21 @@ import (
 
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
 	"github.com/zmb3/spotify/v2"
 )
 
 // PlayEvent is the struct for playing songs
 type PlayEvent struct {
-	Username    string
-	Song        string
-	Clients     *Clients
-	Interaction *discordgo.Interaction
-	Random      bool
-	Loop        bool
-	Priority    bool
-	IsDeferred  chan struct{}
+	Username   string
+	Song       string
+	Clients    *Clients
+	Event      *events.ApplicationCommandInteractionCreate
+	Random     bool
+	Loop       bool
+	Priority   bool
+	IsDeferred chan struct{}
 }
 
 // Play is a wrapper function for playing songs
@@ -61,8 +62,8 @@ func (server *Server) Play(p PlayEvent) {
 		if err == nil {
 			server.downloadAndPlay(p, true)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(p.Clients.Discord, embed.NewEmbed().SetTitle(p.Clients.Discord.State.User.Username).
-				AddField(constants.ErrorTitle, err.Error()).SetColor(0x7289DA).MessageEmbed, p.Interaction, time.Second*5, p.IsDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).
+				AddField(constants.ErrorTitle, err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
 		}
 	}
 }

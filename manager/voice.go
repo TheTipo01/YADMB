@@ -5,17 +5,20 @@ import (
 
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 // JoinVC joins the voice channel if not already joined, returns true if joined successfully
-func JoinVC(i *discordgo.Interaction, channelID string, s *discordgo.Session, server *Server, isDeferred chan struct{}) bool {
+func JoinVC(e *events.ApplicationCommandInteractionCreate, channelID snowflake.ID, server *Server, isDeferred chan struct{}) bool {
 	if !server.VC.IsConnected() {
 		// Join the voice channel
-		err := server.VC.Join(s, channelID)
+		err := server.VC.Join(channelID, e.Client())
 		if err != nil {
-			embed.SendAndDeleteEmbedInteraction(s, embed.NewEmbed().SetTitle(s.State.User.Username).AddField(constants.ErrorTitle, constants.CantJoinVC).
-				SetColor(0x7289DA).MessageEmbed, i, time.Second*5, isDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).
+				SetColor(0x7289DA).Build(), e, time.Second*5, isDeferred)
 			return false
 		}
 	}
@@ -30,13 +33,10 @@ func (server *Server) QuitVC() {
 }
 
 // FindUserVoiceState finds user current voice channel
-func FindUserVoiceState(s *discordgo.Session, guildID, userID string) *discordgo.VoiceState {
-	g, err := s.State.Guild(guildID)
-	if err == nil {
-		for _, vs := range g.VoiceStates {
-			if vs.UserID == userID {
-				return vs
-			}
+func FindUserVoiceState(s *bot.Client, guildID, userID snowflake.ID) *discord.VoiceState {
+	for vs := range s.Caches.VoiceStates(guildID) {
+		if vs.UserID == userID {
+			return &vs
 		}
 	}
 

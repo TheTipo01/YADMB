@@ -27,8 +27,16 @@ We only need to install DCA
 go get -u github.com/bwmarrin/dca/cmd/dca
 ```
 
+libdave is now required, you can use the script over at [disgoorg/godave](https://github.com/disgoorg/godave/) to quickly install the required libraries
+```Bash
+wget https://raw.githubusercontent.com/disgoorg/godave/refs/heads/master/scripts/libdave_install.sh
+chmod +x libdave_install.sh
+./libdave_install.sh v1.1.0
+```
+
 Final things:
 - add `dca` to your path, you can do that by creating a symlink of that executable to your `/usr/bin` directory (`ln -s /home/thetipo01/go/bin/dca /usr/bin/dca`)
+- make sure your PKG_CONFIG_PATH has been correctly updated with the new libdave library
 - modify the `example_config.yml`, adding all required tokens and renaming it to `config.yml`
 - for info about creating and adding the bot, see the following [page](hosting.md)
 ## Docker

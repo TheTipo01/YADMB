@@ -6,10 +6,12 @@ import (
 	"errors"
 	"io"
 	"os"
+	"time"
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/disgoorg/disgo/voice"
 )
 
 // Plays a song in DCA format
@@ -22,15 +24,18 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	)
 
 	// Start speaking.
-	err = server.VC.SetSpeaking(true)
+	err = server.VC.SetSpeaking(voice.SpeakingFlagMicrophone)
 	if err != nil {
 		return Error, err
 	}
-	audioChannel := server.VC.GetAudioChannel()
+	conn := server.VC.GetUDP()
+
+	ticker := time.NewTicker(time.Millisecond * 20)
+	defer ticker.Stop()
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
-	for {
+	for ; true; <-ticker.C {
 		select {
 		case <-server.Pause:
 			go notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
@@ -94,13 +99,16 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			audioChannel <- InBuf
+			_, _ = conn.Write(InBuf)
 		}
 	}
+
+	cleanUp(server, el.Closer)
+	return Finished, nil
 }
 
 func cleanUp(server *Server, closer io.Closer) {
-	_ = server.VC.SetSpeaking(false)
+	_ = server.VC.SetSpeaking(voice.SpeakingFlagNone)
 	server.Frames.Store(0)
 
 	if closer != nil {

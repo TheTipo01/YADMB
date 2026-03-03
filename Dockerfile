@@ -1,9 +1,6 @@
-FROM --platform=$BUILDPLATFORM golang:alpine AS build
+FROM ghcr.io/thetipo01/godave-musl:latest AS build
 
-RUN apk add --no-cache git
-RUN apk add --no-cache wget
-RUN apk add --no-cache nodejs
-RUN apk add --no-cache pnpm
+RUN apk add --no-cache git wget nodejs pnpm
 
 COPY . /yadmb
 
@@ -12,22 +9,19 @@ RUN pnpm install
 RUN pnpm run build
 
 WORKDIR /yadmb
-ARG TARGETOS
-ARG TARGETARCH
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go mod download
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o yadmb
+RUN go mod download
+RUN go build -trimpath -ldflags "-s -w" -o yadmb
 
 FROM alpine
 
-RUN apk add --no-cache ffmpeg
-RUN apk add --no-cache python3
-RUN apk add --no-cache gcompat
-RUN apk add --no-cache deno
+RUN apk add --no-cache ffmpeg python3 gcompat deno
 
 COPY --from=thetipo01/dca /usr/bin/dca /usr/bin/
 
 RUN wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/bin/yt-dlp && chmod a+rx /usr/bin/yt-dlp
 
 COPY --from=build /yadmb/yadmb /usr/bin/
+COPY --from=build /root/.local/lib /root/.local/lib
+ENV PKG_CONFIG_PATH="/root/.local/lib/pkgconfig"
 
 CMD ["yadmb"]
