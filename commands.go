@@ -254,11 +254,11 @@ var (
 	commandHandlers = map[string]func(e *events.ApplicationCommandInteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(e *events.ApplicationCommandInteractionCreate) {
-			_ = server[e.GuildID().String()].PlayCommand(&clients, e, false, owners)
+			go server[e.GuildID().String()].PlayCommand(&clients, e, false, owners)
 		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
 		"playlist": func(e *events.ApplicationCommandInteractionCreate) {
-			_ = server[e.GuildID().String()].PlayCommand(&clients, e, true, owners)
+			go server[e.GuildID().String()].PlayCommand(&clients, e, true, owners)
 		},
 		// Skips the currently playing song
 		"skip": func(e *events.ApplicationCommandInteractionCreate) {

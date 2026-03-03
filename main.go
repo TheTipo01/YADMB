@@ -27,6 +27,8 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/voice"
+	"github.com/disgoorg/godave/golibdave"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/kkyr/fig"
@@ -205,9 +207,11 @@ func main() {
 		bot.WithEventListenerFunc(ready),
 		bot.WithEventListenerFunc(guildCreate),
 		bot.WithEventListenerFunc(guildDelete),
-		bot.WithEventListenerFunc(voiceStateUpdate),
+		//bot.WithEventListenerFunc(voiceStateUpdate),
 		bot.WithEventListenerFunc(guildMemberUpdate),
 		bot.WithEventListenerFunc(interactionCreate),
+
+		bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(golibdave.NewSession)),
 
 		bot.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))),
 	)

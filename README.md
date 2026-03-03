@@ -23,6 +23,7 @@ Yet Another Discord Music Bot - A music bot written in go
 - [DCA](https://github.com/bwmarrin/dca/tree/master/cmd/dca)
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg](https://ffmpeg.org/download.html)
+- [libdave](https://github.com/disgoorg/godave/#libdave-installation)
 
 # Installation
 

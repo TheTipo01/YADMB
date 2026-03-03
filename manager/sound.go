@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"time"
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
@@ -29,9 +30,12 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	}
 	conn := server.VC.GetUDP()
 
+	ticker := time.NewTicker(time.Millisecond * 20)
+	defer ticker.Stop()
+
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
-	for {
+	for ; true; <-ticker.C {
 		select {
 		case <-server.Pause:
 			go notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
@@ -98,6 +102,9 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			_, _ = conn.Write(InBuf)
 		}
 	}
+
+	cleanUp(server, el.Closer)
+	return Finished, nil
 }
 
 func cleanUp(server *Server, closer io.Closer) {

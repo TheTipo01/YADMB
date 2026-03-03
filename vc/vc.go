@@ -50,8 +50,11 @@ func (v *VC) Join(channelID snowflake.ID, c *bot.Client) error {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
+	ctx := context.Background()
+	context.AfterFunc(ctx, func() { v.connected = false; v.vc = nil })
+
 	v.vc = c.VoiceManager.CreateConn(v.guild)
-	err := v.vc.Open(context.TODO(), channelID, false, true)
+	err := v.vc.Open(ctx, channelID, false, true)
 	v.connected = true
 
 	return err
