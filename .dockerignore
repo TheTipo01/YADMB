@@ -7,3 +7,5 @@ web/build
 web/.svelte-kit
 web/.idea
 .git
+Dockerfile
+docs

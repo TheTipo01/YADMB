@@ -7,24 +7,32 @@ WORKDIR /web
 RUN pnpm install
 RUN pnpm run build
 
-FROM ghcr.io/thetipo01/godave-musl:latest AS build
+FROM golang:trixie AS build
+
+RUN apt-get update && apt-get install build-essential unzip curl git make cmake -y
 
 COPY . /yadmb
 
 WORKDIR /yadmb
 RUN go mod download
 
+RUN wget https://raw.githubusercontent.com/disgoorg/godave/refs/heads/master/scripts/libdave_install.sh && chmod +x libdave_install.sh
+ENV SHELL=/bin/sh
+RUN ./libdave_install.sh v1.1.0
+
 COPY --from=web-build /web/build /yadmb/web/build
 
-RUN go build -trimpath -ldflags "-s -w" -o yadmb
+ENV PKG_CONFIG_PATH="/root/.local/lib/pkgconfig"
+RUN go build -trimpath -ldflags '-s -w' -o yadmb
 
-FROM alpine
+FROM debian:trixie-slim
 
-RUN apk add --no-cache ffmpeg python3 gcompat deno
+RUN apt-get update && apt-get install ffmpeg python3 curl ca-certificates unzip -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://deno.land/install.sh | sh
 
 COPY --from=ghcr.io/thetipo01/dca:latest /usr/bin/dca /usr/bin/
 
-RUN wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/bin/yt-dlp && chmod a+rx /usr/bin/yt-dlp
+RUN curl -o /usr/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp && chmod a+rx /usr/bin/yt-dlp
 
 COPY --from=build /yadmb/yadmb /usr/bin/
 COPY --from=build /root/.local/lib /root/.local/lib
