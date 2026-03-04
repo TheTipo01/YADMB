@@ -53,4 +53,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG_CONFIG_PATH: /root/.local/lib/pkgconfig
+          PKG_CONFIG_PATH: $HOME/.local/lib/pkgconfig
