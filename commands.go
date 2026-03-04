@@ -805,7 +805,7 @@ var (
 				embed := discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).SetColor(0x7289DA).Build()
 
 				// Send the response as ephemeral
-				_ = e.CreateMessage(discord.NewMessageCreateV2().AddEmbeds(embed).AddFlags(discord.MessageFlagEphemeral))
+				_ = e.CreateMessage(discord.NewMessageCreate().AddEmbeds(embed).AddFlags(discord.MessageFlagEphemeral))
 			} else {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
 					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
