@@ -45,6 +45,7 @@ jobs:
           wget https://raw.githubusercontent.com/disgoorg/godave/refs/heads/master/scripts/libdave_install.sh
           chmod +x libdave_install.sh
           ./libdave_install.sh v1.1.0
+          rm libdave_install.sh
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
         with:
