@@ -22,7 +22,7 @@ FROM alpine
 
 RUN apk add --no-cache ffmpeg python3 gcompat deno
 
-COPY --from=thetipo01/dca /usr/bin/dca /usr/bin/
+COPY --from=ghcr.io/thetipo01/dca:latest /usr/bin/dca /usr/bin/
 
 RUN wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/bin/yt-dlp && chmod a+rx /usr/bin/yt-dlp
 
