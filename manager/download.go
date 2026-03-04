@@ -43,12 +43,12 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			el.User = p.Username
 			el.Reader = bufio.NewReader(f)
 			el.Closer = f
-			el.TextChannel = p.Event.Channel().ID()
+			el.TextChannel = p.TextChannel
 			el.Loop = p.Loop
 
 			skipTo(p.Song, &el)
 
-			if respond {
+			if respond && p.Event != nil {
 				go DeleteInteraction(p.Event.Client(), p.Event, c)
 			}
 			server.AddSong(p.Priority, el)
@@ -206,7 +206,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 		return errors.New("no video found")
 	}
 
-	if respond {
+	if respond && p.Event != nil {
 		go DeleteInteraction(p.Event.Client(), p.Event, c)
 	}
 
@@ -233,7 +233,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 			Link:        youtubeBase + r.ID,
 			User:        p.Username,
 			Thumbnail:   r.Thumbnail,
-			TextChannel: p.Event.Channel().ID(),
+			TextChannel: p.TextChannel,
 			Loop:        p.Loop,
 		}
 

@@ -13,7 +13,7 @@ type Api struct {
 	// Server managers
 	servers map[string]*manager.Server
 	// Map from token to users
-	tokensToUsers map[string]*discord.User
+	tokensToUsers map[string]*discord.Member
 	// Map from userID to token
 	userInfo map[string]*UserInfo
 	// Bot owner

@@ -482,8 +482,9 @@ var (
 
 			c := embed.DeferResponse(e)
 
-			if server[guildID].DjModeCheck(e, owners, nil) {
-				return
+			if server[guildID].DjModeCheck(e.Member().Member, owners) {
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
+					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
 			}
 
 			options := e.SlashCommandInteractionData()
@@ -661,8 +662,9 @@ var (
 			guildID := e.GuildID().String()
 
 			c := embed.DeferResponse(e)
-			if server[guildID].DjModeCheck(e, owners, c) {
-				return
+			if server[guildID].DjModeCheck(e.Member().Member, owners) {
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
+					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
 			}
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
@@ -801,7 +803,7 @@ var (
 			guildID := e.GuildID().String()
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
-				token := webApi.AddUser(&e.Member().User, api.UserInfo{Guild: guildID, TextChannel: e.Channel().String()})
+				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().String()})
 				embed := discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).SetColor(0x7289DA).Build()
 
 				// Send the response as ephemeral

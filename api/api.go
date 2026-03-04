@@ -36,7 +36,7 @@ func NewApi(servers map[string]*manager.Server, address string, owner map[string
 
 	a := Api{
 		servers:       servers,
-		tokensToUsers: make(map[string]*discord.User),
+		tokensToUsers: make(map[string]*discord.Member),
 		userInfo:      make(map[string]*UserInfo),
 		owner:         owner,
 		clients:       clients,
@@ -70,8 +70,8 @@ func NewApi(servers map[string]*manager.Server, address string, owner map[string
 
 // AddUser adds a user to the api, returning the token.
 // If the user is already in the api, it removes it and generates a new one.
-func (a *Api) AddUser(user *discord.User, userInfo UserInfo) string {
-	userID := user.ID.String()
+func (a *Api) AddUser(user *discord.Member, userInfo UserInfo) string {
+	userID := user.User.ID.String()
 
 	if u, ok := a.userInfo[userID]; ok {
 		delete(a.tokensToUsers, u.token)
@@ -102,10 +102,10 @@ func (a *Api) AddUser(user *discord.User, userInfo UserInfo) string {
 	return token
 }
 
-func (a *Api) AddLongLivedToken(user *discord.User, userInfo UserInfo) {
+func (a *Api) AddLongLivedToken(user *discord.Member, userInfo UserInfo) {
 	a.tokensToUsers[userInfo.LongLivedToken] = user
 
-	userID := user.ID.String()
+	userID := user.User.ID.String()
 	if a.userInfo[userID] != nil {
 		userInfo.token = a.userInfo[userID].token
 	}

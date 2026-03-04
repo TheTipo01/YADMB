@@ -239,7 +239,7 @@ func main() {
 					Guild:          t.Guild,
 					TextChannel:    t.TextChannel,
 				}
-				user, _ := client.Rest.GetUser(snowflake.MustParse(t.UserID))
+				user, _ := client.Rest.GetMember(snowflake.MustParse(t.Guild), snowflake.MustParse(t.UserID))
 				webApi.AddLongLivedToken(user, userInfo)
 			}
 		}

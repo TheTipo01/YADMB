@@ -9,19 +9,21 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/zmb3/spotify/v2"
 )
 
 // PlayEvent is the struct for playing songs
 type PlayEvent struct {
-	Username   string
-	Song       string
-	Clients    *Clients
-	Event      *events.ApplicationCommandInteractionCreate
-	Random     bool
-	Loop       bool
-	Priority   bool
-	IsDeferred chan struct{}
+	Username    string
+	Song        string
+	Clients     *Clients
+	Event       *events.ApplicationCommandInteractionCreate
+	Random      bool
+	Loop        bool
+	Priority    bool
+	IsDeferred  chan struct{}
+	TextChannel snowflake.ID
 }
 
 // Play is a wrapper function for playing songs

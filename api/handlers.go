@@ -44,9 +44,44 @@ func (a *Api) addToQueue(c *gin.Context) {
 	loop := stringToBool(c.PostForm("loop"))
 	priority := stringToBool(c.PostForm("priority"))
 
-	i := a.interactionGenerator(u, song, playlist, shuffle, loop, priority, guild)
+	status := manager.NotInVC
 
-	switch a.servers[guild].PlayCommand(a.clients, i, playlist, a.owner) {
+	if a.servers[guild].DjModeCheck(*u, a.owner) {
+		status = manager.DjMode
+	} else {
+		if !a.servers[guild].VC.IsConnected() {
+			if vs := manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.User.ID); vs != nil {
+				if a.servers[guild].VC.Join(*vs.ChannelID, a.clients.Discord) == nil {
+					status = manager.Success
+				}
+			}
+		} else {
+			status = manager.Success
+		}
+
+		var err error
+		if !playlist {
+			song, err = manager.FilterPlaylist(song)
+		}
+
+		if err == nil {
+			a.servers[guild].Play(manager.PlayEvent{
+				Username:    u.User.Username,
+				Song:        song,
+				Clients:     a.clients,
+				Event:       nil,
+				Random:      shuffle,
+				Loop:        loop,
+				Priority:    priority,
+				IsDeferred:  nil,
+				TextChannel: snowflake.MustParse(a.userInfo[u.User.ID.String()].TextChannel),
+			})
+		} else {
+			status = manager.Playlist
+		}
+	}
+
+	switch status {
 	case manager.Success:
 		c.Status(http.StatusOK)
 	case manager.NotInVC:
@@ -67,7 +102,7 @@ func (a *Api) skip(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.User.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -94,7 +129,7 @@ func (a *Api) pause(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.User.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -119,7 +154,7 @@ func (a *Api) resume(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.User.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -144,7 +179,7 @@ func (a *Api) toggle(c *gin.Context) {
 		return
 	}
 
-	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.ID) != nil {
+	if manager.FindUserVoiceState(a.clients.Discord, snowflake.MustParse(guild), u.User.ID) != nil {
 		if !a.servers[guild].IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
@@ -173,7 +208,7 @@ func (a *Api) getFavorites(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, a.clients.Database.GetFavorites(u.ID.String()))
+	c.JSON(http.StatusOK, a.clients.Database.GetFavorites(u.User.ID.String()))
 }
 
 func (a *Api) removeFavorite(c *gin.Context) {
@@ -185,7 +220,7 @@ func (a *Api) removeFavorite(c *gin.Context) {
 	}
 
 	name := c.Query("name")
-	err := a.clients.Database.RemoveFavorite(u.ID.String(), name)
+	err := a.clients.Database.RemoveFavorite(u.User.ID.String(), name)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	} else {
@@ -205,7 +240,7 @@ func (a *Api) addFavorite(c *gin.Context) {
 	link := c.PostForm("link")
 	folder := c.PostForm("folder")
 
-	err := a.clients.Database.AddFavorite(u.ID.String(), database.Favorite{Name: name, Link: link, Folder: folder})
+	err := a.clients.Database.AddFavorite(u.User.ID.String(), database.Favorite{Name: name, Link: link, Folder: folder})
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	} else {

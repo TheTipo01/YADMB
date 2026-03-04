@@ -19,6 +19,10 @@ func SendEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake.ID) *dis
 
 // SendEmbedInteraction sends an embed as response to an interaction
 func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, c chan<- struct{}, isDeferred chan struct{}) {
+	if e == nil {
+		return
+	}
+
 	var err error
 
 	if isDeferred != nil {
@@ -40,6 +44,10 @@ func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInter
 
 // SendAndDeleteEmbedInteraction sends and deletes after three second an embed in a given channel
 func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, wait time.Duration, isDeferred chan struct{}) {
+	if e == nil {
+		return
+	}
+
 	SendEmbedInteraction(embed, e, nil, isDeferred)
 
 	time.Sleep(wait)
@@ -53,6 +61,10 @@ func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCom
 
 // Modify an already sent interaction
 func ModifyInteraction(e *events.ApplicationCommandInteractionCreate, embed discord.Embed) {
+	if e == nil {
+		return
+	}
+
 	_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdate().AddEmbeds(embed))
 	if err != nil {
 		lit.Error("InteractionResponseEdit failed: %s", err)
@@ -62,6 +74,10 @@ func ModifyInteraction(e *events.ApplicationCommandInteractionCreate, embed disc
 
 // ModifyInteractionAndDelete modifies an already sent interaction and deletes it after the specified wait time
 func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, wait time.Duration) {
+	if e == nil {
+		return
+	}
+
 	ModifyInteraction(e, embed)
 
 	time.Sleep(wait)
@@ -75,10 +91,15 @@ func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationComman
 
 func DeferResponse(e *events.ApplicationCommandInteractionCreate) chan struct{} {
 	c := make(chan struct{})
-	go func() {
-		_ = e.DeferCreateMessage(false)
+
+	if e != nil {
+		go func() {
+			_ = e.DeferCreateMessage(false)
+			c <- struct{}{}
+		}()
+	} else {
 		c <- struct{}{}
-	}()
+	}
 
 	return c
 }

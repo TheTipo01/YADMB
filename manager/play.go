@@ -12,7 +12,7 @@ import (
 func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommandInteractionCreate, playlist bool, owner map[string]struct{}) (status PlayStatus) {
 	c := embed.DeferResponse(e)
 
-	if server.DjModeCheck(e, owner, c) {
+	if server.DjModeCheck(e.Member().Member, owner) {
 		return DjMode
 	}
 
@@ -32,19 +32,20 @@ func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommand
 			var err error
 			link = options.String("link")
 			if !playlist {
-				link, err = filterPlaylist(link)
+				link, err = FilterPlaylist(link)
 			}
 
 			if err == nil {
 				server.Play(PlayEvent{
-					Username:   e.Member().User.Username,
-					Song:       link,
-					Clients:    clients,
-					Event:      e,
-					Random:     shuffle,
-					Loop:       loop,
-					Priority:   priority,
-					IsDeferred: c,
+					Username:    e.Member().User.Username,
+					Song:        link,
+					Clients:     clients,
+					Event:       e,
+					Random:      shuffle,
+					Loop:        loop,
+					Priority:    priority,
+					IsDeferred:  c,
+					TextChannel: e.Channel().ID(),
 				})
 
 				status = Success
@@ -64,10 +65,8 @@ func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommand
 	return
 }
 
-func (server *Server) DjModeCheck(e *events.ApplicationCommandInteractionCreate, owner map[string]struct{}, isDeferred chan struct{}) bool {
-	if _, isOwner := owner[e.Member().User.ID.String()]; server.DjMode && isOwner && !HasRole(e.Member().RoleIDs, server.DjRole) {
-		embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
-			SetColor(0x7289DA).Build(), e, time.Second*3, isDeferred)
+func (server *Server) DjModeCheck(member discord.Member, owner map[string]struct{}) bool {
+	if _, isOwner := owner[member.User.ID.String()]; server.DjMode && isOwner && !HasRole(member.RoleIDs, server.DjRole) {
 		return true
 	}
 	return false

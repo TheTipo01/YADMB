@@ -22,13 +22,13 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-// filterPlaylist checks if the link is from YouTube: if yes, it removes the playlist parameter.
+// FilterPlaylist checks if the link is from YouTube: if yes, it removes the playlist parameter.
 // And if it doesn't contain an ID for the video, it returns an error.
-func filterPlaylist(link string) (string, error) {
+func FilterPlaylist(link string) (string, error) {
 	if com, be := strings.Contains(link, "youtube.com"), strings.Contains(link, "youtu.be"); com || be {
 		u, err := url.Parse(link)
 		if err != nil {
-			lit.Error("filterPlaylist failed: %s", err)
+			lit.Error("FilterPlaylist failed: %s", err)
 			return "", err
 		}
 
