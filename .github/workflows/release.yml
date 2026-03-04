@@ -40,7 +40,6 @@ jobs:
       - name: Download and run libdave installation script
         env:
           SHELL: /bin/sh
-          PKG_CONFIG_PATH: /root/.local/lib/pkgconfig
         run: |
           wget https://raw.githubusercontent.com/disgoorg/godave/refs/heads/master/scripts/libdave_install.sh
           chmod +x libdave_install.sh
@@ -48,6 +47,8 @@ jobs:
           rm libdave_install.sh
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
+        env:
+          PKG_CONFIG_PATH: /root/.local/lib/pkgconfig
         with:
           distribution: goreleaser
           version: '~> v2'
