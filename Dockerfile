@@ -1,15 +1,21 @@
-FROM ghcr.io/thetipo01/godave-musl:latest AS build
+FROM --platform=$BUILDPLATFORM node:alpine AS web-build
 
-RUN apk add --no-cache git wget nodejs pnpm
+RUN apk add --no-cache pnpm
+COPY web /web
 
-COPY . /yadmb
-
-WORKDIR /yadmb/web
+WORKDIR /web
 RUN pnpm install
 RUN pnpm run build
 
+FROM ghcr.io/thetipo01/godave-musl:latest AS build
+
+COPY . /yadmb
+
 WORKDIR /yadmb
 RUN go mod download
+
+COPY --from=web-build /web/build /yadmb/web/build
+
 RUN go build -trimpath -ldflags "-s -w" -o yadmb
 
 FROM alpine
