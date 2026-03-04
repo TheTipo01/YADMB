@@ -58,6 +58,8 @@ var (
 	whitelist bool
 	// List of guilds the bot will respond to
 	guildList *sync.Map
+	// Channel used to notify the presence updater that the guild count has changed
+	guildCountChan = make(chan struct{})
 )
 
 func init() {
@@ -181,6 +183,8 @@ func init() {
 			lit.Error("youtube: couldn't get client: %s", err)
 		}
 	}
+
+	go presenceUpdater()
 }
 
 func main() {
@@ -268,21 +272,41 @@ func main() {
 	clients.Database.Close()
 }
 
-func ready(e *events.Ready) {
-	setPresence(e.Client())
+// presenceUpdater updates the bot presence every time the guild count changes, with a debounce of 500ms to avoid making too many requests
+func presenceUpdater() {
+	debounceTimer := time.NewTimer(0)
+	debounceTimer.Stop()
 
-	manager.BotName = e.User.Username
+	for {
+		select {
+		case <-guildCountChan:
+			debounceTimer.Reset(500 * time.Millisecond)
+		case <-debounceTimer.C:
+			if clients.Discord != nil {
+				_ = clients.Discord.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(clients.Discord.Caches.GuildsLen())+" guilds!"))
+			}
+		}
+	}
 }
 
-func setPresence(c *bot.Client) {
-	_ = c.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(c.Caches.GuildsLen())+" guilds!"))
+func notifyGuildCountChange() {
+	select {
+	case guildCountChan <- struct{}{}:
+	default:
+	}
+}
+
+func ready(e *events.Ready) {
+	notifyGuildCountChange()
+
+	manager.BotName = e.User.Username
 }
 
 // Initialize Server structure
 func guildCreate(e *events.GuildReady) {
 	initializeServer(e.GuildID.String())
 
-	setPresence(e.Client())
+	notifyGuildCountChange()
 }
 
 func guildDelete(e *events.GuildLeave) {
@@ -291,7 +315,7 @@ func guildDelete(e *events.GuildLeave) {
 	}
 
 	// Update the status
-	setPresence(e.Client())
+	notifyGuildCountChange()
 }
 
 // Update the voice channel when the bot is moved
