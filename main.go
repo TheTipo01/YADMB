@@ -350,7 +350,7 @@ func interactionCreate(e *events.ApplicationCommandInteractionCreate) {
 				// Whitelist mode: check if the guild is in the list
 				if _, ok = guildList.Load(e.GuildID().String()); ok {
 					if h, ok := commandHandlers[data.CommandName()]; ok {
-						h(e)
+						go h(e)
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
@@ -361,7 +361,7 @@ func interactionCreate(e *events.ApplicationCommandInteractionCreate) {
 				// Blacklist mode: check if the guild is not in the list
 				if _, ok = guildList.Load(e.GuildID().String()); !ok {
 					if h, ok := commandHandlers[data.CommandName()]; ok {
-						h(e)
+						go h(e)
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
