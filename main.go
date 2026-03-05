@@ -243,8 +243,12 @@ func main() {
 					Guild:          t.Guild,
 					TextChannel:    t.TextChannel,
 				}
-				user, _ := client.Rest.GetMember(snowflake.MustParse(t.Guild), snowflake.MustParse(t.UserID))
-				webApi.AddLongLivedToken(user, userInfo)
+				user, err := client.Rest.GetMember(snowflake.MustParse(t.Guild), snowflake.MustParse(t.UserID))
+				if err != nil {
+					lit.Error("Error loading long lived token for user %s in guild %s: %s", t.UserID, t.Guild, err)
+				} else {
+					webApi.AddLongLivedToken(user, userInfo)
+				}
 			}
 		}
 	}
