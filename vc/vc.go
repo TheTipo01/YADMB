@@ -35,8 +35,11 @@ func (v *VC) Disconnect() {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	v.vc.Close(context.TODO())
-	v.connected = false
+	if v.vc != nil {
+		v.vc.Close(context.TODO())
+		v.vc = nil
+		v.connected = false
+	}
 }
 
 func (v *VC) IsConnected() bool {
@@ -50,11 +53,12 @@ func (v *VC) Join(channelID snowflake.ID, c *bot.Client) error {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	ctx := context.Background()
-	context.AfterFunc(ctx, func() { v.connected = false; v.vc = nil })
+	if v.vc == nil {
+		v.vc = c.VoiceManager.CreateConn(v.guild)
+	}
 
-	v.vc = c.VoiceManager.CreateConn(v.guild)
-	err := v.vc.Open(ctx, channelID, false, true)
+	err := v.vc.Open(context.TODO(), channelID, false, true)
+
 	v.connected = true
 
 	return err

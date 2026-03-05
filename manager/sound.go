@@ -99,7 +99,12 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
-			_, _ = conn.Write(InBuf)
+			_, err = conn.Write(InBuf)
+			if err != nil {
+				cleanUp(server, el.Closer)
+				server.VC.Disconnect()
+				return Error, err
+			}
 		}
 	}
 
