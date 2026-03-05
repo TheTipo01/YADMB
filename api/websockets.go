@@ -7,6 +7,7 @@ import (
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
@@ -24,7 +25,11 @@ const (
 
 func (a *Api) websocketHandler(c *gin.Context) {
 	token := c.Query("token")
-	guild := c.Param("guild")
+	guild, err := snowflake.Parse(c.Param("guild"))
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+	}
+
 	_, authorized := a.checkAuthorizationAndGuild(token, guild)
 	if !authorized {
 		c.AbortWithStatus(http.StatusUnauthorized)

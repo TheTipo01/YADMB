@@ -4,26 +4,27 @@ import (
 	"sync"
 
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type Database struct {
 	AddToDb             func(el queue.Element, exist bool)
 	CheckInDb           func(link string) (queue.Element, error)
-	AddCommand          func(command string, song string, guild string, loop bool) error
-	RemoveCustom        func(command string, guild string) error
+	AddCommand          func(command string, song string, guild snowflake.ID, loop bool) error
+	RemoveCustom        func(command string, guild snowflake.ID) error
 	RemoveFromDB        func(el queue.Element)
-	GetCustomCommands   func() (map[string]map[string]*CustomCommand, error)
-	AddToBlacklist      func(id string) error
-	RemoveFromBlacklist func(id string) error
+	GetCustomCommands   func() (map[snowflake.ID]map[string]*CustomCommand, error)
+	AddToBlacklist      func(id snowflake.ID) error
+	RemoveFromBlacklist func(id snowflake.ID) error
 	Close               func()
-	UpdateDJRole        func(guild string, role string) error
-	GetDJ               func() (map[string]DJ, error)
+	UpdateDJRole        func(guild snowflake.ID, role snowflake.ID) error
+	GetDJ               func() (map[snowflake.ID]DJ, error)
 	GetBlacklist        func() (*sync.Map, error)
-	SetDJSettings       func(guild string, enabled bool) error
+	SetDJSettings       func(guild snowflake.ID, enabled bool) error
 	AddLinkDB           func(id, link string) error
-	GetFavorites        func(userID string) []Favorite
-	AddFavorite         func(userID string, favorite Favorite) error
-	RemoveFavorite      func(userID, name string) error
+	GetFavorites        func(userID snowflake.ID) []Favorite
+	AddFavorite         func(userID snowflake.ID, favorite Favorite) error
+	RemoveFavorite      func(userID snowflake.ID, name string) error
 	GetSearch           func(term string) (string, error)
 	AddSearch           func(term, link string) error
 	RemoveSearch        func(term string) error
@@ -40,7 +41,7 @@ type CustomCommand struct {
 
 type DJ struct {
 	Enabled bool
-	Role    string
+	Role    snowflake.ID
 }
 
 type Favorite struct {

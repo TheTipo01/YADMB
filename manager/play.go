@@ -7,9 +7,10 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 )
 
-func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommandInteractionCreate, playlist bool, owner map[string]struct{}) (status PlayStatus) {
+func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommandInteractionCreate, playlist bool, owner map[snowflake.ID]struct{}) (status PlayStatus) {
 	c := embed.DeferResponse(e)
 
 	if server.DjModeCheck(e.Member().Member, owner) {
@@ -65,8 +66,8 @@ func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommand
 	return
 }
 
-func (server *Server) DjModeCheck(member discord.Member, owner map[string]struct{}) bool {
-	if _, isOwner := owner[member.User.ID.String()]; server.DjMode && isOwner && !HasRole(member.RoleIDs, server.DjRole) {
+func (server *Server) DjModeCheck(member discord.Member, owner map[snowflake.ID]struct{}) bool {
+	if _, isOwner := owner[member.User.ID]; server.DjMode && isOwner && !HasRole(member.RoleIDs, server.DjRole) {
 		return true
 	}
 	return false

@@ -2,6 +2,7 @@ package notification
 
 import (
 	"github.com/TheTipo01/YADMB/queue"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 const (
@@ -30,5 +31,5 @@ type Notification int8
 type NotificationMessage struct {
 	Notification Notification    `json:"notification"`
 	Songs        []queue.Element `json:"song,omitempty"`
-	Guild        string          `json:"-"`
+	Guild        snowflake.ID    `json:"-"`
 }

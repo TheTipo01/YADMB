@@ -8,13 +8,14 @@ import (
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/dchest/uniuri"
 	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-func NewApi(servers map[string]*manager.Server, address string, owner map[string]struct{}, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
+func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[snowflake.ID]struct{}, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
 	r := gin.New()
 
 	conf := cors.DefaultConfig()
@@ -37,7 +38,7 @@ func NewApi(servers map[string]*manager.Server, address string, owner map[string
 	a := Api{
 		servers:       servers,
 		tokensToUsers: make(map[string]*discord.Member),
-		userInfo:      make(map[string]*UserInfo),
+		userInfo:      make(map[snowflake.ID]*UserInfo),
 		owner:         owner,
 		clients:       clients,
 		notifier:      notification.NewNotifier(),
@@ -71,7 +72,7 @@ func NewApi(servers map[string]*manager.Server, address string, owner map[string
 // AddUser adds a user to the api, returning the token.
 // If the user is already in the api, it removes it and generates a new one.
 func (a *Api) AddUser(user *discord.Member, userInfo UserInfo) string {
-	userID := user.User.ID.String()
+	userID := user.User.ID
 
 	if u, ok := a.userInfo[userID]; ok {
 		delete(a.tokensToUsers, u.token)
@@ -105,7 +106,7 @@ func (a *Api) AddUser(user *discord.Member, userInfo UserInfo) string {
 func (a *Api) AddLongLivedToken(user *discord.Member, userInfo UserInfo) {
 	a.tokensToUsers[userInfo.LongLivedToken] = user
 
-	userID := user.User.ID.String()
+	userID := user.User.ID
 	if a.userInfo[userID] != nil {
 		userInfo.token = a.userInfo[userID].token
 	}

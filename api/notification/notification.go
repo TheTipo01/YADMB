@@ -2,23 +2,25 @@ package notification
 
 import (
 	"sync"
+
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type Notifier struct {
-	channels map[string][]chan<- NotificationMessage
+	channels map[snowflake.ID][]chan<- NotificationMessage
 	mutex    *sync.RWMutex
 }
 
 // NewNotifier creates a new notifier instance
 func NewNotifier() *Notifier {
 	return &Notifier{
-		channels: make(map[string][]chan<- NotificationMessage),
+		channels: make(map[snowflake.ID][]chan<- NotificationMessage),
 		mutex:    &sync.RWMutex{},
 	}
 }
 
 // AddChannel adds a channel to the notifier for the given guild
-func (n *Notifier) AddChannel(channel chan<- NotificationMessage, guild string) {
+func (n *Notifier) AddChannel(channel chan<- NotificationMessage, guild snowflake.ID) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
@@ -26,7 +28,7 @@ func (n *Notifier) AddChannel(channel chan<- NotificationMessage, guild string) 
 }
 
 // RemoveChannel removes a channel from the notifier, closing it in the process and returning true if it was found
-func (n *Notifier) RemoveChannel(channel chan<- NotificationMessage, guild string) bool {
+func (n *Notifier) RemoveChannel(channel chan<- NotificationMessage, guild snowflake.ID) bool {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 
@@ -42,7 +44,7 @@ func (n *Notifier) RemoveChannel(channel chan<- NotificationMessage, guild strin
 }
 
 // Notify sends a notification to all channels in the notifier for the given guild (if any)
-func (n *Notifier) Notify(guild string, message NotificationMessage) {
+func (n *Notifier) Notify(guild snowflake.ID, message NotificationMessage) {
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
 

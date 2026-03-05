@@ -176,9 +176,9 @@ func IsCommandNotAvailable(name string) bool {
 	return err != nil
 }
 
-func HasRole(roles []snowflake.ID, role string) bool {
+func HasRole(roles []snowflake.ID, role snowflake.ID) bool {
 	for _, r := range roles {
-		if r.String() == role {
+		if r == role {
 			return true
 		}
 	}

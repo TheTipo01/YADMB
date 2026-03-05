@@ -17,7 +17,6 @@ import (
 	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
-	"github.com/disgoorg/snowflake/v2"
 )
 
 var (
@@ -254,15 +253,15 @@ var (
 	commandHandlers = map[string]func(e *events.ApplicationCommandInteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(e *events.ApplicationCommandInteractionCreate) {
-			go server[e.GuildID().String()].PlayCommand(&clients, e, false, owners)
+			go server[*e.GuildID()].PlayCommand(&clients, e, false, owners)
 		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
 		"playlist": func(e *events.ApplicationCommandInteractionCreate) {
-			go server[e.GuildID().String()].PlayCommand(&clients, e, true, owners)
+			go server[*e.GuildID()].PlayCommand(&clients, e, true, owners)
 		},
 		// Skips the currently playing song
 		"skip": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
@@ -290,7 +289,7 @@ var (
 
 		// Clears the entire queue
 		"clear": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
@@ -309,7 +308,7 @@ var (
 		},
 		"queue": func(e *events.ApplicationCommandInteractionCreate) {
 			const maxQueue = 10
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			if server[guildID].IsPlaying() {
 				el := server[guildID].Queue.GetAllQueue()
@@ -342,7 +341,7 @@ var (
 			}
 		},
 		"pause": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
 				if server[guildID].IsPlaying() {
@@ -364,7 +363,7 @@ var (
 			}
 		},
 		"resume": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
 				if server[guildID].IsPlaying() {
@@ -386,7 +385,7 @@ var (
 			}
 		},
 		"disconnect": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 			c := embed.DeferResponse(e)
 
 			// Check if user is not in a voice channel
@@ -407,7 +406,7 @@ var (
 		// Restarts the bot
 		"restart": func(e *events.ApplicationCommandInteractionCreate) {
 			// Check if the owner of the bot is the one who sent the command
-			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
+			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.RestartTitle, constants.Disconnected, false).
 					SetColor(0x7289DA).Build(), e, time.Second*1, nil)
 
@@ -420,14 +419,14 @@ var (
 		// Creates a custom command to play a song or playlist
 		"addcustom": func(e *events.ApplicationCommandInteractionCreate) {
 			options := e.SlashCommandInteractionData()
-			command := strings.ToLower(options.String("command"))
-			song := options.String("song")
+			command := strings.ToLower(options.String("custom-command"))
+			link := options.String("link")
 			loop := options.Bool("loop")
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			if server[guildID].Custom[command] == nil {
-				err := clients.Database.AddCommand(command, song, guildID, loop)
-				server[guildID].Custom[command] = &database.CustomCommand{Link: song, Loop: loop}
+				err := clients.Database.AddCommand(command, link, guildID, loop)
+				server[guildID].Custom[command] = &database.CustomCommand{Link: link, Loop: loop}
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
@@ -443,9 +442,9 @@ var (
 		},
 		// Removes a custom command from the DB
 		"rmcustom": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
-			if command := e.SlashCommandInteractionData().String("command"); server[guildID].Custom[command] != nil {
+			if command := e.SlashCommandInteractionData().String("custom-command"); server[guildID].Custom[command] != nil {
 				err := clients.Database.RemoveCustom(command, guildID)
 				delete(server[guildID].Custom, command)
 
@@ -463,7 +462,7 @@ var (
 		},
 		// Lists all custom commands for the current server
 		"listcustom": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			commands := make([]string, 0, len(server[guildID].Custom))
 
@@ -478,7 +477,7 @@ var (
 		},
 		// Calls a custom command
 		"custom": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			c := embed.DeferResponse(e)
 
@@ -496,14 +495,15 @@ var (
 				if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
 					if manager.JoinVC(e, *vs.ChannelID, server[guildID], c) {
 						p := manager.PlayEvent{
-							Username:   e.Member().User.Username,
-							Song:       server[guildID].Custom[command].Link,
-							Clients:    &clients,
-							Event:      e,
-							Random:     false,
-							Loop:       server[guildID].Custom[command].Loop,
-							Priority:   false,
-							IsDeferred: c,
+							Username:    e.Member().User.Username,
+							Song:        server[guildID].Custom[command].Link,
+							Clients:     &clients,
+							Event:       e,
+							Random:      false,
+							Loop:        server[guildID].Custom[command].Loop,
+							Priority:    false,
+							IsDeferred:  c,
+							TextChannel: e.Channel().ID(),
 						}
 
 						if priority, ok := options.OptBool("priority"); ok {
@@ -533,16 +533,16 @@ var (
 		"update": func(e *events.ApplicationCommandInteractionCreate) {
 			var (
 				options = e.SlashCommandInteractionData()
-				query   = options.String("query")
+				link    = options.String("link")
 				info    = options.Bool("info")
 				song    = options.Bool("song")
 			)
 
-			if manager.IsValidURL(query) {
-				if el, err := clients.Database.CheckInDb(query); err != nil {
+			if manager.IsValidURL(link) {
+				if el, err := clients.Database.CheckInDb(link); err != nil {
 					// Check if it's a playlist
-					if entries, err := clients.Database.GetPlaylist(query); err == nil && len(entries) > 0 {
-						err := clients.Database.RemovePlaylist(query)
+					if entries, err := clients.Database.GetPlaylist(link); err == nil && len(entries) > 0 {
+						err := clients.Database.RemovePlaylist(link)
 						if err != nil {
 							lit.Error("Error while removing playlist from db: %s", err)
 						}
@@ -571,8 +571,8 @@ var (
 				}
 			} else {
 				// Check if it's in the search results
-				if search, err := clients.Database.GetSearch(query); err == nil && search != "" {
-					err := clients.Database.RemoveSearch(query)
+				if search, err := clients.Database.GetSearch(link); err == nil && search != "" {
+					err := clients.Database.RemoveSearch(link)
 					if err != nil {
 						lit.Error("Error while removing search from db: %s", err)
 					}
@@ -586,7 +586,7 @@ var (
 			}
 		},
 		"blacklist": func(e *events.ApplicationCommandInteractionCreate) {
-			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
+			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				if id := e.SlashCommandInteractionData().User("user").ID; id == e.Member().User.ID {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
 						"You are really trying to add yourself to the blacklist?", false).
@@ -596,7 +596,7 @@ var (
 						// Removing from the blacklist
 						blacklist.Delete(id)
 
-						err := clients.Database.RemoveFromBlacklist(id.String())
+						err := clients.Database.RemoveFromBlacklist(id)
 						if err != nil {
 							lit.Error("Error while deleting from blacklist, %s", err)
 						}
@@ -608,7 +608,7 @@ var (
 						// Adding
 						blacklist.Store(id, struct{}{})
 
-						err := clients.Database.AddToBlacklist(id.String())
+						err := clients.Database.AddToBlacklist(id)
 						if err != nil {
 							lit.Error("Error while inserting from blacklist, %s", err)
 						}
@@ -626,7 +626,7 @@ var (
 		},
 		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
 		"goto": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			if server[guildID].IsPlaying() {
 				t, err := time.ParseDuration(e.SlashCommandInteractionData().String("time"))
@@ -659,7 +659,7 @@ var (
 		},
 		// Streams a song from the given URL, useful for radios
 		"stream": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			c := embed.DeferResponse(e)
 			if server[guildID].DjModeCheck(e.Member().Member, owners) {
@@ -711,9 +711,9 @@ var (
 		},
 		// Enables or disables DJ mode
 		"dj": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
-			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
+			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				if server[guildID].DjMode {
 					server[guildID].DjMode = false
 					err := clients.Database.SetDJSettings(guildID, false)
@@ -741,13 +741,13 @@ var (
 		},
 		// Sets the DJ role
 		"djrole": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
-			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
+			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				role := e.SlashCommandInteractionData().Role("role")
-				if role.ID.String() != server[guildID].DjRole {
-					server[guildID].DjRole = role.ID.String()
-					err := clients.Database.UpdateDJRole(guildID, role.ID.String())
+				if role.ID != server[guildID].DjRole {
+					server[guildID].DjRole = role.ID
+					err := clients.Database.UpdateDJRole(guildID, role.ID)
 					if err != nil {
 						lit.Error("Error updating DJ role: %s", err.Error())
 					}
@@ -766,9 +766,9 @@ var (
 		},
 		// Adds or removes the DJ role from a user
 		"djroletoggle": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
-			if _, isOwner := owners[e.Member().User.ID.String()]; isOwner {
+			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				var err error
 				var action string
 
@@ -776,10 +776,10 @@ var (
 				member, _ := e.Client().Caches.Member(*e.GuildID(), user.ID)
 
 				if !manager.HasRole(member.RoleIDs, server[guildID].DjRole) {
-					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, snowflake.MustParse(server[guildID].DjRole))
+					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, server[guildID].DjRole)
 					action = "added!"
 				} else {
-					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, snowflake.MustParse(server[guildID].DjRole))
+					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, server[guildID].DjRole)
 					action = "removed!"
 				}
 
@@ -800,10 +800,10 @@ var (
 		},
 		// Generates a link to the web UI
 		"webui": func(e *events.ApplicationCommandInteractionCreate) {
-			guildID := e.GuildID().String()
+			guildID := *e.GuildID()
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
-				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().String()})
+				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().ID()})
 				embed := discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).SetColor(0x7289DA).Build()
 
 				// Send the response as ephemeral

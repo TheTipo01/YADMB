@@ -27,7 +27,7 @@ func NewServer(guildID snowflake.ID, clients *Clients) *Server {
 	var server = &Server{
 		Queue:      queue.NewQueue(),
 		Custom:     make(map[string]*database.CustomCommand),
-		GuildID:    guildID.String(),
+		GuildID:    guildID,
 		Pause:      make(chan struct{}),
 		Resume:     make(chan struct{}),
 		Skip:       make(chan SkipReason),

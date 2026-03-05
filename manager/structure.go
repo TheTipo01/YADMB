@@ -10,6 +10,7 @@ import (
 	"github.com/TheTipo01/YADMB/vc"
 	"github.com/TheTipo01/YADMB/youtube"
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 // SkipReason is used to determine why playSound returned
@@ -39,7 +40,7 @@ type Server struct {
 	// Whether to clear the queue
 	Clear atomic.Bool
 	// Guild ID
-	GuildID string
+	GuildID snowflake.ID
 	// Whether the bot is paused
 	Paused atomic.Bool
 	// Channel for pausing
@@ -49,7 +50,7 @@ type Server struct {
 	// Wait group for waiting for spotify to finish before lowering the clear flag
 	WG *sync.WaitGroup
 	// Role ID for the DJ role
-	DjRole string
+	DjRole snowflake.ID
 	// Whether the DJ mode is enabled
 	DjMode bool
 	// Clients used for interacting with the various APIs

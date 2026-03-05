@@ -35,9 +35,9 @@ import (
 
 var (
 	// Holds all the info about a server
-	server = make(map[string]*manager.Server)
+	server = make(map[snowflake.ID]*manager.Server)
 	// String for storing the owners of the bot
-	owners map[string]struct{}
+	owners map[snowflake.ID]struct{}
 	// Discord bot token
 	token string
 	// Cache for the user blacklist
@@ -76,7 +76,7 @@ func init() {
 	// Config file found
 	token = cfg.Token
 
-	owners = make(map[string]struct{}, len(cfg.Owner))
+	owners = make(map[snowflake.ID]struct{}, len(cfg.Owner))
 	for _, o := range cfg.Owner {
 		owners[o] = struct{}{}
 	}
@@ -243,7 +243,7 @@ func main() {
 					Guild:          t.Guild,
 					TextChannel:    t.TextChannel,
 				}
-				user, err := client.Rest.GetMember(snowflake.MustParse(t.Guild), snowflake.MustParse(t.UserID))
+				user, err := client.Rest.GetMember(t.Guild, t.UserID)
 				if err != nil {
 					lit.Error("Error loading long lived token for user %s in guild %s: %s", t.UserID, t.Guild, err)
 				} else {
@@ -308,14 +308,14 @@ func ready(e *events.Ready) {
 
 // Initialize Server structure
 func guildCreate(e *events.GuildReady) {
-	initializeServer(e.GuildID.String())
+	initializeServer(e.GuildID)
 
 	notifyGuildCountChange()
 }
 
 func guildDelete(e *events.GuildLeave) {
-	if guild := e.GuildID.String(); server[guild].IsPlaying() {
-		ClearAndExit(server[guild])
+	if server[e.GuildID].IsPlaying() {
+		ClearAndExit(server[e.GuildID])
 	}
 
 	// Update the status
@@ -325,10 +325,10 @@ func guildDelete(e *events.GuildLeave) {
 // Update the voice channel when the bot is moved
 func voiceStateUpdate(v *events.GuildVoiceStateUpdate) {
 	// If the bot is alone in the voice channel, stop the music
-	if guildID := v.VoiceState.GuildID.String(); server[guildID].VC.IsConnected() {
-		channel := server[guildID].VC.GetChannelID()
+	if server[v.VoiceState.GuildID].VC.IsConnected() {
+		channel := server[v.VoiceState.GuildID].VC.GetChannelID()
 		if (v.VoiceState.ChannelID == channel || (v.OldVoiceState.ChannelID != nil && v.OldVoiceState.ChannelID == channel)) && countVoiceStates(v.Client(), v.VoiceState.GuildID, *channel) == 0 {
-			go QuitIfEmptyVoiceChannel(server[guildID])
+			go QuitIfEmptyVoiceChannel(server[v.VoiceState.GuildID])
 		}
 	}
 }
@@ -336,8 +336,8 @@ func voiceStateUpdate(v *events.GuildVoiceStateUpdate) {
 func guildMemberUpdate(m *events.GuildMemberUpdate) {
 	// If we've been timed out, stop the music
 	if m.Member.User.ID == m.Client().ApplicationID && m.Member.CommunicationDisabledUntil != nil &&
-		m.Member.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID.String()].IsPlaying() {
-		ClearAndExit(server[m.GuildID.String()])
+		m.Member.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID].IsPlaying() {
+		ClearAndExit(server[m.GuildID])
 	}
 }
 

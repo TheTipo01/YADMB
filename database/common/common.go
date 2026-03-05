@@ -7,6 +7,7 @@ import (
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/lit"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 type Common struct {
@@ -35,14 +36,14 @@ func (c Common) CheckInDb(link string) (queue.Element, error) {
 }
 
 // AddCommand adds a custom command to DB and to the command map
-func (c Common) AddCommand(command string, song string, guild string, loop bool) error {
+func (c Common) AddCommand(command string, song string, guild snowflake.ID, loop bool) error {
 	// Else, we add it to the database
 	_, err := c.db.Exec("INSERT INTO customCommands (`guild`, `command`, `song`, `loop`) VALUES(?, ?, ?, ?)", guild, command, song, loop)
 	return err
 }
 
 // RemoveCustom removes a custom command from the DB and from the command map
-func (c Common) RemoveCustom(command string, guild string) error {
+func (c Common) RemoveCustom(command string, guild snowflake.ID) error {
 	_, err := c.db.Exec("DELETE FROM customCommands WHERE guild=? AND command=?", guild, command)
 	if err != nil {
 		lit.Error("Error removing from the database, %s", err)
@@ -52,11 +53,11 @@ func (c Common) RemoveCustom(command string, guild string) error {
 }
 
 // GetCustomCommands loads custom command from the database
-func (c Common) GetCustomCommands() (map[string]map[string]*database.CustomCommand, error) {
+func (c Common) GetCustomCommands() (map[snowflake.ID]map[string]*database.CustomCommand, error) {
 	var (
 		command, song, guild string
 		loop                 bool
-		commands             = make(map[string]map[string]*database.CustomCommand)
+		commands             = make(map[snowflake.ID]map[string]*database.CustomCommand)
 	)
 
 	rows, err := c.db.Query("SELECT * FROM customCommands")
@@ -71,11 +72,13 @@ func (c Common) GetCustomCommands() (map[string]map[string]*database.CustomComma
 			continue
 		}
 
-		if commands[guild] == nil {
-			commands[guild] = make(map[string]*database.CustomCommand)
+		parsedGuild := snowflake.MustParse(guild)
+
+		if commands[parsedGuild] == nil {
+			commands[parsedGuild] = make(map[string]*database.CustomCommand)
 		}
 
-		commands[guild][command] = &database.CustomCommand{Link: song, Loop: loop}
+		commands[parsedGuild][command] = &database.CustomCommand{Link: song, Loop: loop}
 	}
 
 	return commands, nil
@@ -94,18 +97,18 @@ func (c Common) RemoveFromDB(el queue.Element) {
 	}
 }
 
-func (c Common) AddToBlacklist(id string) error {
+func (c Common) AddToBlacklist(id snowflake.ID) error {
 	_, err := c.db.Exec("INSERT INTO blacklist (id) VALUES(?)", id)
 	return err
 }
 
-func (c Common) RemoveFromBlacklist(id string) error {
+func (c Common) RemoveFromBlacklist(id snowflake.ID) error {
 	_, err := c.db.Exec("DELETE FROM blacklist WHERE id=?", id)
 	return err
 }
 
-func (c Common) GetDJ() (map[string]database.DJ, error) {
-	roles := make(map[string]database.DJ)
+func (c Common) GetDJ() (map[snowflake.ID]database.DJ, error) {
+	roles := make(map[snowflake.ID]database.DJ)
 
 	rows, err := c.db.Query("SELECT guild, role, enabled FROM dj")
 	if err != nil {
@@ -122,7 +125,7 @@ func (c Common) GetDJ() (map[string]database.DJ, error) {
 			continue
 		}
 
-		roles[guild] = database.DJ{Role: role, Enabled: enabled}
+		roles[snowflake.MustParse(guild)] = database.DJ{Role: snowflake.MustParse(role), Enabled: enabled}
 	}
 
 	return roles, nil
@@ -150,7 +153,7 @@ func (c Common) GetBlacklist() (*sync.Map, error) {
 	return &ids, nil
 }
 
-func (c Common) GetFavorites(userID string) []database.Favorite {
+func (c Common) GetFavorites(userID snowflake.ID) []database.Favorite {
 	var (
 		name, link, folder string
 		favorites          = make([]database.Favorite, 0)
@@ -175,12 +178,12 @@ func (c Common) GetFavorites(userID string) []database.Favorite {
 	return favorites
 }
 
-func (c Common) AddFavorite(userID string, favorite database.Favorite) error {
+func (c Common) AddFavorite(userID snowflake.ID, favorite database.Favorite) error {
 	_, err := c.db.Exec("INSERT INTO favorites (userID, name, link, folder) VALUES (?, ?, ?, ?)", userID, favorite.Name, favorite.Link, favorite.Folder)
 	return err
 }
 
-func (c Common) RemoveFavorite(userID, name string) error {
+func (c Common) RemoveFavorite(userID snowflake.ID, name string) error {
 	_, err := c.db.Exec("DELETE FROM favorites WHERE userID=? AND name=?", userID, name)
 	return err
 }

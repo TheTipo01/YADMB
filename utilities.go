@@ -8,12 +8,12 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-func initializeServer(guild string) {
+func initializeServer(guild snowflake.ID) {
 	serverMutex.Lock()
 	defer serverMutex.Unlock()
 
 	if _, ok := server[guild]; !ok {
-		server[guild] = manager.NewServer(snowflake.MustParse(guild), &clients)
+		server[guild] = manager.NewServer(guild, &clients)
 	}
 }
 
@@ -33,7 +33,7 @@ func countVoiceStates(s *bot.Client, guild, channel snowflake.ID) int {
 func QuitIfEmptyVoiceChannel(server *manager.Server) {
 	time.Sleep(1 * time.Minute)
 
-	if server.VC.IsConnected() && countVoiceStates(server.Clients.Discord, snowflake.MustParse(server.GuildID), snowflake.MustParse(server.VC.GetChannelID().String())) == 0 {
+	if server.VC.IsConnected() && countVoiceStates(server.Clients.Discord, server.GuildID, *server.VC.GetChannelID()) == 0 {
 		ClearAndExit(server)
 	}
 }

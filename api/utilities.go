@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 func stringToBool(s string) bool {
@@ -28,13 +29,13 @@ func (a *Api) checkAuthorization(token string) (*discord.Member, bool) {
 	return u, true
 }
 
-func (a *Api) checkAuthorizationAndGuild(token, guild string) (*discord.Member, bool) {
+func (a *Api) checkAuthorizationAndGuild(token string, guild snowflake.ID) (*discord.Member, bool) {
 	u, ok := a.checkAuthorization(token)
 	if !ok {
 		return nil, false
 	}
 
-	if a.userInfo[a.tokensToUsers[token].User.ID.String()].Guild != guild {
+	if a.userInfo[a.tokensToUsers[token].User.ID].Guild != guild {
 		return nil, false
 	}
 	return u, true

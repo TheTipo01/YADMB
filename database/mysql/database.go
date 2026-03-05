@@ -8,6 +8,7 @@ import (
 	"github.com/TheTipo01/YADMB/database/common"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/bwmarrin/lit"
+	"github.com/disgoorg/snowflake/v2"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -94,12 +95,12 @@ func addLinkDB(id, link string) error {
 	return err
 }
 
-func setDJSettings(guild string, enabled bool) error {
+func setDJSettings(guild snowflake.ID, enabled bool) error {
 	_, err := db.Exec("INSERT INTO dj (guild, enabled) VALUES (?, ?) ON DUPLICATE KEY UPDATE enabled = ?", guild, enabled, enabled)
 	return err
 }
 
-func updateDJRole(guild string, role string) error {
+func updateDJRole(guild snowflake.ID, role snowflake.ID) error {
 	_, err := db.Exec("INSERT INTO dj (guild, role) VALUES (?, ?) ON DUPLICATE KEY UPDATE role = ?", guild, role, role)
 	return err
 }

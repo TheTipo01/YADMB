@@ -6,18 +6,19 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
 )
 
 type Api struct {
 	// Server managers
-	servers map[string]*manager.Server
+	servers map[snowflake.ID]*manager.Server
 	// Map from token to users
 	tokensToUsers map[string]*discord.Member
 	// Map from userID to token
-	userInfo map[string]*UserInfo
+	userInfo map[snowflake.ID]*UserInfo
 	// Bot owner
-	owner map[string]struct{}
+	owner map[snowflake.ID]struct{}
 	// CLients for interacting with the various apis
 	clients *manager.Clients
 	// Websocket connections
@@ -30,6 +31,6 @@ type Api struct {
 type UserInfo struct {
 	token          string
 	LongLivedToken string
-	Guild          string
-	TextChannel    string
+	Guild          snowflake.ID
+	TextChannel    snowflake.ID
 }
