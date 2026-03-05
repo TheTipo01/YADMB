@@ -5,7 +5,8 @@ go 1.25.0
 require (
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/dchest/uniuri v1.2.0
-	github.com/disgoorg/disgo v0.19.2
+	github.com/disgoorg/disgo v0.19.3-0.20260228005422-3fe98a0d9536
+	github.com/disgoorg/godave/golibdave v0.1.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/static v1.1.5
@@ -31,7 +32,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/disgoorg/godave v0.1.0 // indirect
-	github.com/disgoorg/godave/golibdave v0.1.0 // indirect
 	github.com/disgoorg/godave/libdave v0.1.0 // indirect
 	github.com/disgoorg/json/v2 v2.0.0 // indirect
 	github.com/disgoorg/omit v1.0.0 // indirect
