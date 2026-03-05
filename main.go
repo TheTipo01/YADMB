@@ -197,7 +197,7 @@ func main() {
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(
 				gateway.IntentGuildVoiceStates,
-				gateway.IntentsGuild,
+				gateway.IntentGuilds,
 			),
 		),
 
