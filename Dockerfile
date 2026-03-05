@@ -9,7 +9,7 @@ RUN pnpm run build
 
 FROM golang:trixie AS build
 
-RUN apt-get update && apt-get install build-essential unzip curl git make cmake -y
+RUN apt-get update && apt-get install unzip -y
 
 COPY . /yadmb
 
