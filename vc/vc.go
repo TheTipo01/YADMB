@@ -71,9 +71,9 @@ func (v *VC) GetUDP() voice.UDPConn {
 	return v.vc.UDP()
 }
 
-func (v *VC) SetSpeaking(flag voice.SpeakingFlags) error {
+func (v *VC) SetOpusFrameProvider(provider voice.OpusFrameProvider) {
 	v.rw.Lock()
 	defer v.rw.Unlock()
 
-	return v.vc.SetSpeaking(context.TODO(), flag)
+	v.vc.SetOpusFrameProvider(provider)
 }
