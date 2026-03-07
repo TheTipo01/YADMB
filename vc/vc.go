@@ -37,7 +37,6 @@ func (v *VC) Disconnect() {
 
 	if v.vc != nil {
 		v.vc.Close(context.TODO())
-		v.vc = nil
 		v.connected = false
 	}
 }

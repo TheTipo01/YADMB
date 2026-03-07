@@ -34,11 +34,11 @@ func (server *Server) QuitVC() {
 
 // FindUserVoiceState finds user current voice channel
 func FindUserVoiceState(s *bot.Client, guildID, userID snowflake.ID) *discord.VoiceState {
-	for vs := range s.Caches.VoiceStates(guildID) {
-		if vs.UserID == userID {
-			return &vs
-		}
+	v, found := s.Caches.VoiceState(guildID, userID)
+
+	if !found {
+		return nil
 	}
 
-	return nil
+	return &v
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	e "embed"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -193,6 +194,11 @@ func main() {
 		return
 	}
 
+	logger := slog.Default()
+	if lit.LogLevel == lit.LogDebug {
+		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	}
+
 	client, _ := disgo.New(token,
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(
@@ -203,7 +209,7 @@ func main() {
 
 		bot.WithCacheConfigOpts(
 			cache.WithCaches(
-				cache.FlagGuilds|cache.FlagVoiceStates,
+				cache.FlagVoiceStates,
 			),
 		),
 
@@ -215,6 +221,8 @@ func main() {
 		bot.WithEventListenerFunc(interactionCreate),
 
 		bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(golibdave.NewSession)),
+
+		bot.WithLogger(logger),
 	)
 
 	defer client.Close(context.TODO())
@@ -255,10 +263,10 @@ func main() {
 
 	// Print guilds the bot is connected to
 	if lit.LogLevel == lit.LogDebug {
-		lit.Debug("Bot is connected to %d guilds.", client.Caches.GuildsLen())
+		lit.Debug("Bot is connected to %d guilds.", len(server))
 
-		for g := range client.Caches.Guilds() {
-			lit.Debug("Guild ID: %s, Name: %s", g.ID.String(), g.Name)
+		for id := range server {
+			lit.Debug("Guild ID: %s", id.String())
 		}
 
 	}
@@ -287,7 +295,7 @@ func presenceUpdater() {
 			debounceTimer.Reset(500 * time.Millisecond)
 		case <-debounceTimer.C:
 			if clients.Discord != nil {
-				_ = clients.Discord.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(clients.Discord.Caches.GuildsLen())+" guilds!"))
+				_ = clients.Discord.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(len(server))+" guilds!"))
 			}
 		}
 	}
