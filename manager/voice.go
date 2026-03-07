@@ -17,8 +17,8 @@ func JoinVC(e *events.ApplicationCommandInteractionCreate, channelID snowflake.I
 		// Join the voice channel
 		err := server.VC.Join(channelID, e.Client())
 		if err != nil {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).
-				SetColor(0x7289DA).Build(), e, time.Second*5, isDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).
+				WithColor(0x7289DA), e, time.Second*5, isDeferred)
 			return false
 		}
 	}

@@ -72,10 +72,10 @@ func (server *Server) play() {
 	for el := server.Queue.GetFirstElement(); el != nil && !server.Clear.Load(); el = server.Queue.GetFirstElement() {
 		// Send "Now playing" message
 		go func() {
-			msg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbedBuilder().SetTitle(BotName).
+			msg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
 				AddField("Now playing", fmt.Sprintf("[%s](%s) - %s added by %s", el.Title,
 					el.Link, el.Duration, el.User), false).
-				SetColor(0x7289DA).SetThumbnail(el.Thumbnail).Build(), el.TextChannel)
+				WithColor(0x7289DA).WithThumbnail(el.Thumbnail), el.TextChannel)
 		}()
 
 		if el.BeforePlay != nil {

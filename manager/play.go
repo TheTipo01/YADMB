@@ -51,15 +51,15 @@ func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommand
 
 				status = Success
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle,
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle,
 					"Playlist detected, but playlist command not used.", false).
-					SetColor(0x7289DA).Build(), e, time.Second*10, c)
+					WithColor(0x7289DA), e, time.Second*10, c)
 				status = Playlist
 			}
 		}
 	} else {
-		embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-			SetColor(0x7289DA).Build(), e, time.Second*5, c)
+		embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+			WithColor(0x7289DA), e, time.Second*5, c)
 		status = NotInVC
 	}
 

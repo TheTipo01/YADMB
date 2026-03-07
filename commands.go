@@ -274,16 +274,16 @@ var (
 						server[guildID].ChanQuitVC <- true
 					}
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SkipTitle,
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SkipTitle,
 						el.Title+" - "+el.Duration+" added by "+el.User, false).
-						SetColor(0x7289DA).SetThumbnail(el.Thumbnail).Build(), e, time.Second*5, nil)
+						WithColor(0x7289DA).WithThumbnail(el.Thumbnail), e, time.Second*5, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SkipTitle, constants.QueueEmpty, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SkipTitle, constants.QueueEmpty, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 
@@ -295,15 +295,15 @@ var (
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
 				if server[guildID].IsPlaying() {
 					go server[guildID].Clean()
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueCleared, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueCleared, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		"queue": func(e *events.ApplicationCommandInteractionCreate) {
@@ -312,7 +312,7 @@ var (
 
 			if server[guildID].IsPlaying() {
 				el := server[guildID].Queue.GetAllQueue()
-				builder := discord.NewEmbedBuilder().SetTitle(manager.BotName).SetDescription(constants.QueueTitle).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
+				builder := discord.NewEmbed().WithTitle(manager.BotName).WithDescription(constants.QueueTitle).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
 					manager.FormatDuration(float64(server[guildID].Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User), false)
 
 				var nEl int
@@ -333,11 +333,11 @@ var (
 				}
 
 				// Send embed
-				embed.SendAndDeleteEmbedInteraction(builder.SetColor(0x7289DA).Build(), e, time.Second*20, nil)
+				embed.SendAndDeleteEmbedInteraction(builder.WithColor(0x7289DA), e, time.Second*20, nil)
 			} else {
 				// Queue is empty
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		"pause": func(e *events.ApplicationCommandInteractionCreate) {
@@ -347,19 +347,19 @@ var (
 				if server[guildID].IsPlaying() {
 					if server[guildID].Paused.CompareAndSwap(false, true) {
 						server[guildID].Pause <- struct{}{}
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.PauseTitle, constants.Paused, false).
-							SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.Paused, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
 					} else {
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.PauseTitle, constants.AlreadyPaused, false).
-							SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.AlreadyPaused, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.PauseTitle, constants.QueueEmpty, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.QueueEmpty, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		"resume": func(e *events.ApplicationCommandInteractionCreate) {
@@ -369,19 +369,19 @@ var (
 				if server[guildID].IsPlaying() {
 					if server[guildID].Paused.CompareAndSwap(true, false) {
 						server[guildID].Resume <- struct{}{}
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ResumeTitle, constants.Resumed, false).
-							SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ResumeTitle, constants.Resumed, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
 					} else {
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ResumeTitle, constants.AlreadyResumed, false).
-							SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ResumeTitle, constants.AlreadyResumed, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ResumeTitle, constants.QueueEmpty, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ResumeTitle, constants.QueueEmpty, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		"disconnect": func(e *events.ApplicationCommandInteractionCreate) {
@@ -392,28 +392,28 @@ var (
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
 				if !server[guildID].IsPlaying() {
 					server[guildID].VC.Disconnect()
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.DisconnectedTitle, constants.Disconnected, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, c)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DisconnectedTitle, constants.Disconnected, false).
+						WithColor(0x7289DA), e, time.Second*5, c)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.StillPlaying, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, c)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.StillPlaying, false).
+						WithColor(0x7289DA), e, time.Second*5, c)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, c)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, c)
 			}
 		},
 		// Restarts the bot
 		"restart": func(e *events.ApplicationCommandInteractionCreate) {
 			// Check if the owner of the bot is the one who sent the command
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.RestartTitle, constants.Disconnected, false).
-					SetColor(0x7289DA).Build(), e, time.Second*1, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.RestartTitle, constants.Disconnected, false).
+					WithColor(0x7289DA), e, time.Second*1, nil)
 
 				clients.Database.Close()
 				os.Exit(0)
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, "I'm sorry "+e.Member().User.Username+", I'm afraid I can't do that", false).SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "I'm sorry "+e.Member().User.Username+", I'm afraid I can't do that", false).WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		// Creates a custom command to play a song or playlist
@@ -429,15 +429,15 @@ var (
 				server[guildID].Custom[command] = &database.CustomCommand{Link: link, Loop: loop}
 
 				if err != nil {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SuccessfulTitle, constants.CommandAdded, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, constants.CommandAdded, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CommandExists, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CommandExists, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		// Removes a custom command from the DB
@@ -449,15 +449,15 @@ var (
 				delete(server[guildID].Custom, command)
 
 				if err != nil {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SuccessfulTitle, constants.CommandRemoved, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle, constants.CommandRemoved, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CommandNotExists, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CommandNotExists, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		// Lists all custom commands for the current server
@@ -472,8 +472,8 @@ var (
 
 			sort.Strings(commands)
 
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.CommandsTitle, strings.Join(commands, ", "), false).
-				SetColor(0x7289DA).Build(), e, time.Second*30, nil)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.CommandsTitle, strings.Join(commands, ", "), false).
+				WithColor(0x7289DA), e, time.Second*30, nil)
 		},
 		// Calls a custom command
 		"custom": func(e *events.ApplicationCommandInteractionCreate) {
@@ -482,8 +482,8 @@ var (
 			c := embed.DeferResponse(e)
 
 			if server[guildID].DjModeCheck(e.Member().Member, owners) {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
-					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
+					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
 
 			options := e.SlashCommandInteractionData()
@@ -512,22 +512,22 @@ var (
 						server[guildID].Play(p)
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, c)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+						WithColor(0x7289DA), e, time.Second*5, c)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CommandInvalid, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, c)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.CommandInvalid, false).
+					WithColor(0x7289DA), e, time.Second*5, c)
 			}
 		},
 		// Stats, like latency, and the size of the local cache
 		"stats": func(e *events.ApplicationCommandInteractionCreate) {
 			size, files := manager.FolderStats(constants.CachePath)
 
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.StatsTitle, "Called by "+e.Member().User.Username, false).
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.StatsTitle, "Called by "+e.Member().User.Username, false).
 				AddField("Latency", e.Client().Gateway.Latency().String(), false).AddField("Guilds", strconv.Itoa(e.Client().Caches.GuildsLen()), false).
 				AddField("Cached song", strconv.Itoa(files)+", "+
-					manager.ByteCountSI(size), false).SetColor(0x7289DA).Build(), e, time.Second*15, nil)
+					manager.ByteCountSI(size), false).WithColor(0x7289DA), e, time.Second*15, nil)
 		},
 		// Refreshes things about a song
 		"update": func(e *events.ApplicationCommandInteractionCreate) {
@@ -547,11 +547,11 @@ var (
 							lit.Error("Error while removing playlist from db: %s", err)
 						}
 
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SuccessfulTitle,
-							constants.UpdateQueued, false).SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle,
+							constants.UpdateQueued, false).WithColor(0x7289DA), e, time.Second*5, nil)
 					} else {
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotCached, false).
-							SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotCached, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
 					}
 				} else {
 					if info {
@@ -565,9 +565,9 @@ var (
 						}
 					}
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SuccessfulTitle,
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle,
 						constants.UpdateQueued, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
 				// Check if it's in the search results
@@ -577,20 +577,20 @@ var (
 						lit.Error("Error while removing search from db: %s", err)
 					}
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.SuccessfulTitle,
-						constants.UpdateQueued, false).SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle,
+						constants.UpdateQueued, false).WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.InvalidURL, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.InvalidURL, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			}
 		},
 		"blacklist": func(e *events.ApplicationCommandInteractionCreate) {
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				if id := e.SlashCommandInteractionData().User("user").ID; id == e.Member().User.ID {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
 						"You are really trying to add yourself to the blacklist?", false).
-						SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+						WithColor(0x7289DA), e, time.Second*3, nil)
 				} else {
 					if _, ok := blacklist.Load(id); ok {
 						// Removing from the blacklist
@@ -601,9 +601,9 @@ var (
 							lit.Error("Error while deleting from blacklist, %s", err)
 						}
 
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.BlacklistTitle,
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.BlacklistTitle,
 							constants.BlacklistRemoved, false).
-							SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+							WithColor(0x7289DA), e, time.Second*3, nil)
 					} else {
 						// Adding
 						blacklist.Store(id, struct{}{})
@@ -613,15 +613,15 @@ var (
 							lit.Error("Error while inserting from blacklist, %s", err)
 						}
 
-						embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.BlacklistTitle,
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.BlacklistTitle,
 							constants.BlacklistAdded, false).
-							SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+							WithColor(0x7289DA), e, time.Second*3, nil)
 					}
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!", false).
-					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
 		},
 		// Skips to a given time. Valid formats are: 1h10m3s, 3m, 4m10s...
@@ -631,8 +631,8 @@ var (
 			if server[guildID].IsPlaying() {
 				t, err := time.ParseDuration(e.SlashCommandInteractionData().String("time"))
 				if err != nil {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoInvalid, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoInvalid, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
 					server[guildID].Queue.ModifyFirstElement(func(e *queue.Element) {
 						if e.Segments == nil {
@@ -649,12 +649,12 @@ var (
 						server[guildID].Paused.Store(false)
 					})
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.GotoTitle, constants.SkippedTo+t.String(), false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, constants.SkippedTo+t.String(), false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 		// Streams a song from the given URL, useful for radios
@@ -663,16 +663,16 @@ var (
 
 			c := embed.DeferResponse(e)
 			if server[guildID].DjModeCheck(e.Member().Member, owners) {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
-					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
+					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
 				options := e.SlashCommandInteractionData()
 				url := options.String("url")
 				if !strings.HasPrefix(url, "file") && manager.IsValidURL(url) {
-					go embed.SendEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).
-						AddField(constants.EnqueuedTitle, url, false).SetColor(0x7289DA).Build(), e, c, c)
+					go embed.SendEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).
+						AddField(constants.EnqueuedTitle, url, false).WithColor(0x7289DA), e, c, c)
 
 					stdout, cmds := manager.Stream(url)
 					el := queue.Element{
@@ -701,12 +701,12 @@ var (
 						}
 					}
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.InvalidURL, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, c)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.InvalidURL, false).
+						WithColor(0x7289DA), e, time.Second*5, c)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, c)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, c)
 			}
 		},
 		// Enables or disables DJ mode
@@ -721,8 +721,8 @@ var (
 						lit.Error("Error while disabling DJ mode, %s", err)
 					}
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.DjTitle, constants.DjDisabled, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjDisabled, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
 					server[guildID].DjMode = true
 					err := clients.Database.SetDJSettings(guildID, true)
@@ -730,13 +730,13 @@ var (
 						lit.Error("Error while enabling DJ mode, %s", err)
 					}
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.DjTitle, constants.DjEnabled, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjEnabled, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!", false).
-					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
 		},
 		// Sets the DJ role
@@ -752,16 +752,16 @@ var (
 						lit.Error("Error updating DJ role: %s", err.Error())
 					}
 
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.DjTitle, constants.DjRoleChanged, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjRoleChanged, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.DjTitle, constants.DjRoleEqual, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjRoleEqual, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!", false).
-					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
 		},
 		// Adds or removes the DJ role from a user
@@ -784,18 +784,18 @@ var (
 				}
 
 				if err != nil {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
 						"The bot doesn't have the necessary permission!", false).
-						SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+						WithColor(0x7289DA), e, time.Second*3, nil)
 				} else {
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.DjTitle,
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle,
 						"The role has been succefully "+action, false).
-						SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+						WithColor(0x7289DA), e, time.Second*5, nil)
 				}
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle,
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
 					"Only the owner of the bot can use this command!", false).
-					SetColor(0x7289DA).Build(), e, time.Second*3, nil)
+					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
 		},
 		// Generates a link to the web UI
@@ -804,13 +804,13 @@ var (
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
 				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().ID()})
-				embed := discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).SetColor(0x7289DA).Build()
+				embed := discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).WithColor(0x7289DA)
 
 				// Send the response as ephemeral
 				_ = e.CreateMessage(discord.NewMessageCreate().AddEmbeds(embed).AddFlags(discord.MessageFlagEphemeral))
 			} else {
-				embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
-					SetColor(0x7289DA).Build(), e, time.Second*5, nil)
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
+					WithColor(0x7289DA), e, time.Second*5, nil)
 			}
 		},
 	}

@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/dchest/uniuri v1.2.0
-	github.com/disgoorg/disgo v0.19.3-0.20260228005422-3fe98a0d9536
+	github.com/disgoorg/disgo v0.19.3-0.20260305185833-306575eac91c
 	github.com/disgoorg/godave/golibdave v0.1.1-0.20260214205329-977ec02b706f
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gin-contrib/cors v1.7.6

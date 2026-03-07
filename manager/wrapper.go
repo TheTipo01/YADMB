@@ -64,8 +64,8 @@ func (server *Server) Play(p PlayEvent) {
 		if err == nil {
 			server.downloadAndPlay(p, true)
 		} else {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbedBuilder().SetTitle(BotName).
-				AddField(constants.ErrorTitle, err.Error(), false).SetColor(0x7289DA).Build(), p.Event, time.Second*5, p.IsDeferred)
+			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).
+				AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5, p.IsDeferred)
 		}
 	}
 }
