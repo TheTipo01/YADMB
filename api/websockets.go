@@ -1,15 +1,16 @@
 package api
 
 import (
+	"context"
 	"net/http"
-	"sync/atomic"
 	"time"
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -18,9 +19,6 @@ const (
 
 	// Time allowed to read the next pong message from the client.
 	pongWait = 60 * time.Second
-
-	// Send pings to client with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
 )
 
 func (a *Api) websocketHandler(c *gin.Context) {
@@ -28,6 +26,7 @@ func (a *Api) websocketHandler(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	_, authorized := a.checkAuthorizationAndGuild(token, guild)
@@ -36,69 +35,92 @@ func (a *Api) websocketHandler(c *gin.Context) {
 		return
 	}
 
-	conn, err := a.wsUpgrader.Upgrade(c.Writer, c.Request, nil)
-	if err == nil {
-		n := make(chan notification.NotificationMessage)
-		a.notifier.AddChannel(n, guild)
+	// Check origin before accepting the WebSocket connection
+	if !a.checkOrigin(c.Request) {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
 
-		pingTicker := time.NewTicker(pingPeriod)
+	// Accept the WebSocket connection
+	conn, err := websocket.Accept(c.Writer, c.Request, &websocket.AcceptOptions{})
+	if err != nil {
+		return
+	}
+	defer conn.Close(websocket.StatusInternalError, "")
 
-		// TODO: while I do feel like a gigabrain for coming up with this solution, I'm not sure if this is the best way to do this
-		counter := atomic.Bool{}
-		clean := func() {
-			if counter.CompareAndSwap(false, true) {
-				pingTicker.Stop()
-				_ = conn.Close()
-				_ = a.notifier.RemoveChannel(n, guild)
+	// Create a context for the connection lifetime
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	n := make(chan notification.NotificationMessage, 10)
+	a.notifier.AddChannel(n, guild)
+	defer a.notifier.RemoveChannel(n, guild)
+
+	// Channel to signal when goroutines are done
+	done := make(chan struct{}, 2)
+
+	// Ping ticker
+	pingTicker := time.NewTicker((pongWait * 9) / 10)
+	defer pingTicker.Stop()
+
+	// Writer goroutine - sends messages and pings to client
+	go func() {
+		defer func() { done <- struct{}{} }()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+
+			case msg, ok := <-n:
+				if !ok {
+					return
+				}
+
+				writeCtx, cancel := context.WithTimeout(ctx, writeWait)
+				if err := wsjson.Write(writeCtx, conn, msg); err != nil {
+					cancel()
+					return
+				}
+				cancel()
+
+			case <-pingTicker.C:
+				writeCtx, cancel := context.WithTimeout(ctx, writeWait)
+				if err := conn.Ping(writeCtx); err != nil {
+					cancel()
+					return
+				}
+				cancel()
 			}
 		}
+	}()
 
-		conn.SetCloseHandler(func(code int, text string) error {
-			clean()
-			return nil
-		})
+	// Reader goroutine - keeps connection alive by reading pong messages
+	go func() {
+		defer func() { done <- struct{}{} }()
 
-		conn.SetPongHandler(func(string) error {
-			return conn.SetReadDeadline(time.Now().Add(pongWait))
-		})
+		for {
+			select {
+			case <-ctx.Done():
+				return
 
-		// Writer
-		go func() {
-			defer clean()
+			default:
+				readCtx, cancel := context.WithTimeout(ctx, pongWait)
+				_, _, err := conn.Read(readCtx)
+				cancel()
 
-			for {
-				select {
-				case msg, ok := <-n:
-					if !ok {
-						return
-					}
-
-					_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
-					err = conn.WriteJSON(msg)
-					if err != nil {
-						return
-					}
-				case <-pingTicker.C:
-					_ = conn.SetWriteDeadline(time.Now().Add(writeWait))
-					if err = conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-						return
-					}
-				}
-			}
-
-		}()
-
-		// Pong reader
-		go func() {
-			defer clean()
-			for {
-				_, _, err := conn.ReadMessage()
 				if err != nil {
+					// Connection closed or timeout
 					return
 				}
 			}
-		}()
-	}
+		}
+	}()
+
+	// Wait for first goroutine to exit, then stop the other, then wait it too
+	<-done
+	cancel()
+	<-done
 }
 
 func (a *Api) HandleNotifications() {

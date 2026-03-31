@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
 )
@@ -39,4 +41,15 @@ func (a *Api) checkAuthorizationAndGuild(token string, guild snowflake.ID) (*dis
 		return nil, false
 	}
 	return u, true
+}
+
+// checkOrigin verifies that the request origin matches the allowed origin
+func (a *Api) checkOrigin(r *http.Request) bool {
+	origin := a.origin
+
+	if origin == "" || origin == "*" {
+		return true
+	}
+
+	return r.Header.Get("Origin") == origin
 }

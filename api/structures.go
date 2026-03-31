@@ -7,7 +7,6 @@ import (
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
-	"github.com/gorilla/websocket"
 )
 
 type Api struct {
@@ -24,8 +23,9 @@ type Api struct {
 	// Websocket connections
 	notifier *notification.Notifier
 	// HTTP filesystem
-	fe         http.FileSystem
-	wsUpgrader *websocket.Upgrader
+	fe http.FileSystem
+	// Origin for WebSocket CORS
+	origin string
 }
 
 type UserInfo struct {

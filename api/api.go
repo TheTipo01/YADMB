@@ -12,7 +12,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 )
 
 func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[snowflake.ID]struct{}, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
@@ -24,17 +23,6 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 
 	r.Use(gin.Recovery(), cors.New(conf))
 
-	var checkOrigin func(r *http.Request) bool
-	if origin == "" || origin == "*" {
-		checkOrigin = func(r *http.Request) bool {
-			return true
-		}
-	} else {
-		checkOrigin = func(r *http.Request) bool {
-			return r.Header.Get("Origin") == origin
-		}
-	}
-
 	a := Api{
 		servers:       servers,
 		tokensToUsers: make(map[string]*discord.Member),
@@ -42,11 +30,7 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 		owner:         owner,
 		clients:       clients,
 		notifier:      notification.NewNotifier(),
-		wsUpgrader: &websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
-			CheckOrigin:     checkOrigin,
-		},
+		origin:        origin,
 	}
 
 	r.GET("/queue/:guild", a.getQueue)
