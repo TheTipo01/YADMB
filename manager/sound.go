@@ -30,12 +30,11 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	}
 	conn := server.VC.GetUDP()
 
-	ticker := time.NewTicker(time.Millisecond * 20)
-	defer ticker.Stop()
+	nextSend := time.Now()
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
-	for ; true; <-ticker.C {
+	for {
 		select {
 		case <-server.Pause:
 			go notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
@@ -43,6 +42,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			case <-server.Resume:
 				go notify(notification.NotificationMessage{Notification: notification.Resume, Guild: server.GuildID})
 				el.Segments = server.Queue.GetFirstElement().Segments
+				nextSend = time.Now()
 			case skipReason = <-server.Skip:
 				cleanUp(server, el.Closer)
 				return skipReason, nil
@@ -99,7 +99,11 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				return Error, err
 			}
 
+			if wait := time.Until(nextSend); wait > 0 {
+				time.Sleep(wait)
+			}
 			_, err = conn.Write(InBuf)
+			nextSend = time.Now().Add(20 * time.Millisecond)
 			if err != nil {
 				cleanUp(server, el.Closer)
 				server.VC.Disconnect()
@@ -107,9 +111,6 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			}
 		}
 	}
-
-	cleanUp(server, el.Closer)
-	return Finished, nil
 }
 
 func cleanUp(server *Server, closer io.Closer) {
