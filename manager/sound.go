@@ -35,7 +35,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 
 	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
-	for ; true; <-ticker.C {
+	for {
 		select {
 		case <-server.Pause:
 			go notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
@@ -105,11 +105,10 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				server.VC.Disconnect()
 				return Error, err
 			}
+
+			<-ticker.C
 		}
 	}
-
-	cleanUp(server, el.Closer)
-	return Finished, nil
 }
 
 func cleanUp(server *Server, closer io.Closer) {
