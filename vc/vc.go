@@ -3,6 +3,7 @@ package vc
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/voice"
@@ -56,10 +57,24 @@ func (v *VC) Join(channelID snowflake.ID, c *bot.Client) error {
 	if v.vc == nil {
 		v.vc = c.VoiceManager.CreateConn(v.guild)
 	}
+	conn := v.vc
 
-	err := v.vc.Open(context.TODO(), channelID, false, true)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
 
-	v.connected = true
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- conn.Open(ctx, channelID, false, true)
+	}()
+
+	var err error
+	select {
+	case err = <-errCh:
+	case <-ctx.Done():
+		err = ctx.Err()
+	}
+
+	v.connected = err == nil
 
 	return err
 }
