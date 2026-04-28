@@ -7,11 +7,20 @@ before:
     - go generate ./...
 builds:
   - env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
       - linux
+      - darwin
     goarch:
       - amd64
+      - 386
+      - arm
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: 386
+      - goos: windows
+        goarch: arm
 archives:
   - formats: zip
     files:
