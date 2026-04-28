@@ -8,6 +8,7 @@ repo_url = "https://github.com/TheTipo01/YADMB"
 copyright = """
 Copyright &copy; 2026 TheTipo01
 """
+extra_javascript = ["javascripts/swagger-ui.js"]
 
 [project.theme]
 language = "en"

@@ -1,2 +1,3 @@
 # API Reference
-!!swagger openapi.yml!!
+
+<div id="swagger-ui"></div>
