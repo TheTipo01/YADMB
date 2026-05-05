@@ -1,18 +1,3 @@
-FROM --platform=$BUILDPLATFORM node:alpine AS web-build
-
-RUN --mount=type=cache,target=/var/cache/apk \
-    ln -s /var/cache/apk /etc/apk/cache && \
-    apk add pnpm
-COPY web /web
-
-ENV PNPM_HOME="/pnpm"
-
-WORKDIR /web
-RUN --mount=type=cache,target=${PNPM_HOME} \
-    pnpm config set store-dir ${PNPM_HOME} && \
-    pnpm install --frozen-lockfile --prefer-offline
-RUN pnpm run build
-
 FROM --platform=$BUILDPLATFORM golang:alpine AS build
 
 COPY . /yadmb
@@ -23,7 +8,7 @@ ARG TARGETARCH
 RUN --mount=type=cache,target=/go/pkg/mod \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go mod download
 
-COPY --from=web-build /web/build /yadmb/web/build
+COPY --from=ghcr.io/thetipo01/yadmb-web:latest /web/build /yadmb/web/build
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \

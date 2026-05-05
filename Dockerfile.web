@@ -1,0 +1,17 @@
+FROM node:alpine AS web-build
+
+RUN --mount=type=cache,target=/var/cache/apk \
+    ln -s /var/cache/apk /etc/apk/cache && \
+    apk add pnpm
+COPY web /web
+
+ENV PNPM_HOME="/pnpm"
+
+WORKDIR /web
+RUN --mount=type=cache,target=${PNPM_HOME} \
+    pnpm config set store-dir ${PNPM_HOME} && \
+    pnpm install --frozen-lockfile --prefer-offline
+RUN pnpm run build
+
+FROM --platform=$BUILDPLATFORM scratch
+COPY --from=web-build /web/build /web/build
