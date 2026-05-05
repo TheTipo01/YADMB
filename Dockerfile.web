@@ -1,4 +1,4 @@
-FROM node:alpine AS web-build
+FROM --platform=$BUILDPLATFORM node:alpine AS web-build
 
 RUN --mount=type=cache,target=/var/cache/apk \
     ln -s /var/cache/apk /etc/apk/cache && \
