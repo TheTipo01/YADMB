@@ -48,6 +48,8 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 		c.Redirect(http.StatusMovedPermanently, "/")
 	})
 
+	r.UseH2C = true
+
 	go r.Run(address)
 
 	return &a
