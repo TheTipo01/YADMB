@@ -6,7 +6,7 @@ require (
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/coder/websocket v1.8.14
 	github.com/dchest/uniuri v1.2.0
-	github.com/disgoorg/disgo v0.19.4-0.20260416220846-a43f357e2c69
+	github.com/disgoorg/disgo v0.19.4-0.20260513223554-8fafd9677292
 	github.com/disgoorg/snowflake/v2 v2.0.4-0.20250223124221-0e6fdabd91cc
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-contrib/static v1.1.6
@@ -14,10 +14,10 @@ require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/goccy/go-json v0.10.6
 	github.com/kkyr/fig v0.5.0
-	github.com/thomas-vilte/dave-go v0.2.0
+	github.com/thomas-vilte/dave-go v0.2.1
 	github.com/zmb3/spotify/v2 v2.4.3
 	golang.org/x/oauth2 v0.36.0
-	google.golang.org/api v0.279.0
+	google.golang.org/api v0.281.0
 	modernc.org/sqlite v1.50.1
 )
 
@@ -46,7 +46,7 @@ require (
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.3.15 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.16 // indirect
 	github.com/googleapis/gax-go/v2 v2.22.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -73,15 +73,15 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	golang.org/x/arch v0.27.0 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
-	golang.org/x/net v0.54.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/grpc v1.81.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.72.3 // indirect
+	modernc.org/libc v1.72.5 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
