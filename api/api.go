@@ -3,6 +3,7 @@ package api
 import (
 	"embed"
 	"net/http"
+	"strings"
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
@@ -50,7 +51,11 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 
 	r.UseH2C = true
 
-	go r.Run(address)
+	if strings.HasPrefix(address, "unix://") {
+		go r.RunUnix(strings.TrimPrefix(address, "unix://"))
+	} else {
+		go r.Run(address)
+	}
 
 	return &a
 }
