@@ -58,12 +58,12 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 			lit.Error("Failed to remove existing socket: %v", err)
 		}
 
+		go r.RunUnix(socket)
+
 		err = os.Chmod(socket, 0777)
 		if err != nil {
 			lit.Error("Failed to change permission for socket: %v", err)
 		}
-
-		go r.RunUnix(socket)
 	} else {
 		go r.Run(address)
 	}
