@@ -49,8 +49,6 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 		c.Redirect(http.StatusMovedPermanently, "/")
 	})
 
-	r.UseH2C = true
-
 	if strings.HasPrefix(address, "unix://") {
 		go r.RunUnix(strings.TrimPrefix(address, "unix://"))
 	} else {
