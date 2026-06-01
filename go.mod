@@ -6,7 +6,7 @@ require (
 	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/coder/websocket v1.8.14
 	github.com/dchest/uniuri v1.2.0
-	github.com/disgoorg/disgo v0.19.4-0.20260513223554-8fafd9677292
+	github.com/disgoorg/disgo v0.19.4
 	github.com/disgoorg/snowflake/v2 v2.0.4-0.20250223124221-0e6fdabd91cc
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-contrib/static v1.1.6
@@ -14,11 +14,11 @@ require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/goccy/go-json v0.10.6
 	github.com/kkyr/fig v0.5.0
-	github.com/thomas-vilte/dave-go v0.2.1
+	github.com/thomas-vilte/dave-go v0.2.2
 	github.com/zmb3/spotify/v2 v2.4.3
 	golang.org/x/oauth2 v0.36.0
-	google.golang.org/api v0.281.0
-	modernc.org/sqlite v1.50.1
+	google.golang.org/api v0.283.0
+	modernc.org/sqlite v1.51.0
 )
 
 require (
@@ -42,7 +42,7 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.30.2 // indirect
+	github.com/go-playground/validator/v10 v10.30.3 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -68,10 +68,10 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.6.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0 // indirect
-	go.opentelemetry.io/otel v1.43.0 // indirect
-	go.opentelemetry.io/otel/metric v1.43.0 // indirect
-	go.opentelemetry.io/otel/trace v1.43.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
+	go.opentelemetry.io/otel v1.44.0 // indirect
+	go.opentelemetry.io/otel/metric v1.44.0 // indirect
+	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	golang.org/x/arch v0.27.0 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
