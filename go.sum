@@ -70,6 +70,10 @@ github.com/disgoorg/disgo v0.19.4 h1:Jz7UHte4bOGESNbNIbPhZCdX9iJw5PHU7Fu2Afdi+bY
 github.com/disgoorg/disgo v0.19.4/go.mod h1:NnV63iw4lJdF1fnV0gX27XR43ZgRGqnL122svRMTgTE=
 github.com/disgoorg/godave v0.1.0 h1:3g0Zqzz+zNaxQTVLfCnl5eZKGqZk6cM/JLLbMKCtZQQ=
 github.com/disgoorg/godave v0.1.0/go.mod h1:OreAC3hpabr39bMVA+jwOVDq1EUPXH5A0XUBiZaDI1Y=
+github.com/disgoorg/godave/golibdave v0.1.0 h1:ga70vTb2pCdFgu+Jq8KteE9qLhezG5dI4H0vB/+6vBQ=
+github.com/disgoorg/godave/golibdave v0.1.0/go.mod h1:u9INYjfw/FE0Evjr3dWjaYsaVfQcX+zNf+ZNQjROt6A=
+github.com/disgoorg/godave/libdave v0.1.0 h1:1HDvN9ORP23OgV4CDudol/EprgGeTOKuRvANh5eNsow=
+github.com/disgoorg/godave/libdave v0.1.0/go.mod h1:CxundbQ722MpK3vD31kaOAxbu1+cFnnEKQDqQ7rpxEM=
 github.com/disgoorg/json/v2 v2.0.0 h1:U16yy/ARK7/aEpzjjqK1b/KaqqGHozUdeVw/DViEzQI=
 github.com/disgoorg/json/v2 v2.0.0/go.mod h1:jZTBC0nIE1WeetSEI3/Dka8g+qglb4FPVmp5I5HpEfI=
 github.com/disgoorg/omit v1.0.0 h1:y0LkVUOyUHT8ZlnhIAeOZEA22UYykeysK8bLJ0SfT78=
@@ -247,10 +251,6 @@ github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXl
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/thomas-vilte/dave-go v0.2.2 h1:JrGVv/V8fo0oIAkcMkep93TnDalwjV90aa85aK2rbIo=
-github.com/thomas-vilte/dave-go v0.2.2/go.mod h1:reNyhubMlctm0r07p8pgCQqLtc2aMu41YEghhr8J5DY=
-github.com/thomas-vilte/mls-go v1.3.0 h1:iJvXCOAkIKiZZ1L5q8jPvsJ+HgZ9VHymEr4BYvnWU7E=
-github.com/thomas-vilte/mls-go v1.3.0/go.mod h1:bgIvQH/BHyfcFDuro1CLeqXASSJPFXIJ79WqJuzlRLM=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.3.1 h1:waO7eEiFDwidsBN6agj1vJQ4AG7lh2yqXyOXqhgQuyY=
