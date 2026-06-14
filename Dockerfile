@@ -19,7 +19,8 @@ COPY . /yadmb
 COPY --from=ghcr.io/thetipo01/godave-musl:latest /root/.local /root/.local
 ENV PKG_CONFIG_PATH="/root/.local/lib/pkgconfig"
 
-RUN ln -s ccache /usr/local/bin/gcc && ln -s ccache /usr/local/bin/g++ && ln -s ccache /usr/local/bin/cc && ln -s ccache /usr/local/bin/c++
+ENV CC=/usr/local/bin/gcc CXX=/usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc && ln -s /usr/bin/ccache /usr/local/bin/g++ && ln -s /usr/bin/ccache /usr/local/bin/cc && ln -s /usr/bin/ccache /usr/local/bin/c++
 ENV CCACHE_DIR=/ccache
 
 RUN --mount=type=cache,target=/go/pkg/mod \
