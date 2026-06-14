@@ -32,6 +32,7 @@ func GetSegments(videoID string) map[int]struct{} {
 		lit.Error("Can't get SponsorBlock segments: %s", err)
 		return nil
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		var (
@@ -40,7 +41,7 @@ func GetSegments(videoID string) map[int]struct{} {
 		)
 
 		err = json.NewDecoder(resp.Body).Decode(&videos)
-		_ = resp.Body.Close()
+
 		if err != nil {
 			lit.Error("Can't unmarshal JSON, %s", err)
 			return nil
