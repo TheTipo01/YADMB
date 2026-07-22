@@ -3,7 +3,7 @@ package database
 import "testing"
 
 func TestEncodeSegments(t *testing.T) {
-	result := EncodeSegments(map[int]bool{0: true, 1: true})
+	result := EncodeSegments(map[int]struct{}{0: {}, 1: {}})
 	if result != "0,1" {
 		t.Error("Encoding segments failed. Expected 0,1, got", result)
 	}
@@ -11,7 +11,7 @@ func TestEncodeSegments(t *testing.T) {
 
 func TestDecodeSegments(t *testing.T) {
 	result := DecodeSegments("0,1")
-	if result == nil || len(result) == 0 {
+	if len(result) == 0 {
 		t.Error("Decoding segments failed. Expected map, got nil")
 	}
 }

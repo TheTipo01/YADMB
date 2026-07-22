@@ -8,13 +8,7 @@ import (
 )
 
 func stringToBool(s string) bool {
-	if s == "true" {
-		return true
-	} else if s == "false" {
-		return false
-	} else {
-		return false
-	}
+	return s == "true"
 }
 
 func (a *Api) checkAuthorization(token string) (*discord.Member, bool) {

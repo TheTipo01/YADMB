@@ -40,7 +40,11 @@ func TestYouTube_GetPlaylist(t *testing.T) {
 }
 
 func TestYouTube_Search(t *testing.T) {
-	result := yt.Search("never gonna give you up", 1)
+	result, err := yt.Search("never gonna give you up", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if result == nil {
 		t.Fatal("search response is nil")
 	}

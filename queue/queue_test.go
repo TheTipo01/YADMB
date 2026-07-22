@@ -5,7 +5,7 @@ import "testing"
 func TestQueue_NewQueue(t *testing.T) {
 	q := NewQueue()
 
-	if &q == nil {
+	if q.Queue == nil {
 		t.Error("Expected a new queue, got nil")
 	}
 }

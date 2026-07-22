@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/disgoorg/disgo/discord"
@@ -22,8 +20,6 @@ type Api struct {
 	clients *manager.Clients
 	// Websocket connections
 	notifier *notification.Notifier
-	// HTTP filesystem
-	fe http.FileSystem
 	// Origin for WebSocket CORS
 	origin string
 }

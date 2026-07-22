@@ -11,7 +11,7 @@ func TestHash(t *testing.T) {
 
 func TestGetSegments(t *testing.T) {
 	result := GetSegments("kJQP7kiw5Fk")
-	if result == nil || len(result) == 0 {
+	if len(result) == 0 {
 		t.Error("Getting segments failed. Expected map, got nil")
 	}
 }

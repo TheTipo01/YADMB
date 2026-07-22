@@ -125,9 +125,7 @@ func (a *Api) websocketHandler(c *gin.Context) {
 
 func (a *Api) HandleNotifications() {
 	for {
-		select {
-		case n := <-manager.Notifications:
-			a.notifier.Notify(n.Guild, n)
-		}
+		n := <-manager.Notifications
+		a.notifier.Notify(n.Guild, n)
 	}
 }
