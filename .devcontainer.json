@@ -1,0 +1,35 @@
+{
+  "name": "Go",
+  "image": "mcr.microsoft.com/devcontainers/go:2-1.26-trixie",
+
+  "features": {
+    "ghcr.io/devcontainers-extra/features/deno:1": {},
+    "ghcr.io/devcontainers-extra/features/yt-dlp:2": {},
+    "ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
+    "ghcr.io/ttyrho/devcontainer-features/gcc:1": {},
+    "ghcr.io/devcontainers/features/node:2": {
+      "version": "26",
+      "pnpmVersion": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
+      "packages": "libopus-dev",
+    },
+  },
+
+  "forwardPorts": [8080],
+
+  "onCreateCommand": {
+    "libdave": "curl -sSL https://raw.githubusercontent.com/disgoorg/godave/f34f98224dafa0d6f89d2c36baff473ab34ec999/scripts/libdave_install.sh | bash -s v1.1.0",
+    "dca": "go install github.com/bwmarrin/dca/cmd/dca@e7cc179"
+  },
+
+  "remoteEnv": {
+    "PKG_CONFIG_PATH": "/home/vscode/.local/lib/pkgconfig",
+  },
+
+  "customizations": {
+    "jetbrains": {
+      "backend": "GoLand"
+    }
+  },
+}
