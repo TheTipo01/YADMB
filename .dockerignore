@@ -2,10 +2,6 @@ audio_cache
 yadmb.db
 config.yml
 data
-web/node_modules
-web/build
-web/.svelte-kit
-web/.idea
 .git
 Dockerfile
 docs

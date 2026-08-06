@@ -3,7 +3,7 @@ FROM --platform=$BUILDPLATFORM node:alpine AS web-build
 RUN --mount=type=cache,target=/var/cache/apk \
     ln -s /var/cache/apk /etc/apk/cache && \
     apk add pnpm
-COPY web /web
+COPY . /web
 
 ENV PNPM_HOME="/pnpm"
 
