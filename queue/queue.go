@@ -31,9 +31,9 @@ type Element struct {
 	// Interaction to edit
 	TextChannel snowflake.ID `json:"-"`
 	// Function to call before playing the song
-	BeforePlay func() `json:"-"`
+	BeforePlay func() error `json:"-"`
 	// Function to call after playing the song
-	AfterPlay func() `json:"-"`
+	AfterPlay func() error `json:"-"`
 	// Whether to loop the song
 	Loop bool `json:"loop"`
 	// How many frames have been played. Valid only for the first element in the queue

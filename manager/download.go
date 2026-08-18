@@ -143,12 +143,20 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			el.Reader = bufio.NewReader(pipe)
 			el.Downloading = true
 
-			el.BeforePlay = func() {
-				CmdsStart(cmd)
+			el.BeforePlay = func() error {
+				err := CmdsStart(cmd)
+				if len(err) > 0 {
+					return errors.New("error starting commands: " + StringifyErrors(err...))
+				}
+				return nil
 			}
 
-			el.AfterPlay = func() {
-				CmdsWait(cmd)
+			el.AfterPlay = func() error {
+				err := CmdsWait(cmd)
+				if len(err) > 0 {
+					return errors.New("error waiting for commands to finish: " + StringifyErrors(err...))
+				}
+				return nil
 			}
 		} else {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
@@ -267,12 +275,20 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 			el.Reader = bufio.NewReader(pipe)
 			el.Downloading = true
 
-			el.BeforePlay = func() {
-				CmdsStart(cmd)
+			el.BeforePlay = func() error {
+				err := CmdsStart(cmd)
+				if len(err) > 0 {
+					return errors.New("error starting commands: " + StringifyErrors(err...))
+				}
+				return nil
 			}
 
-			el.AfterPlay = func() {
-				CmdsWait(cmd)
+			el.AfterPlay = func() error {
+				err := CmdsWait(cmd)
+				if len(err) > 0 {
+					return errors.New("error waiting for commands to finish: " + StringifyErrors(err...))
+				}
+				return nil
 			}
 		} else {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)

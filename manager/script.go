@@ -10,23 +10,31 @@ import (
 )
 
 // CmdsStart starts all the exec.Cmd inside the slice
-func CmdsStart(cmds []*exec.Cmd) {
+func CmdsStart(cmds []*exec.Cmd) []error {
+	var errors []error
+
 	for _, cmd := range cmds {
 		err := cmd.Start()
 		if err != nil {
-			lit.Error("Error starting cmd: %s", err.Error())
+			errors = append(errors, err)
 		}
 	}
+
+	return errors
 }
 
 // CmdsWait waits for all the exec.Cmd inside the slice to finish processing, to free up resources
-func CmdsWait(cmds []*exec.Cmd) {
+func CmdsWait(cmds []*exec.Cmd) []error {
+	var errors []error
+
 	for _, cmd := range cmds {
 		err := cmd.Wait()
 		if err != nil {
-			lit.Error("Error waiting for cmd: %s", err.Error())
+			errors = append(errors, err)
 		}
 	}
+
+	return errors
 }
 
 // CmdsKill kills all the exec.Cmd inside the slice

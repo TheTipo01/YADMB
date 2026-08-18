@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/TheTipo01/YADMB/api/notification"
+	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
@@ -78,35 +79,56 @@ func (server *Server) play() {
 				WithColor(0x7289DA).WithThumbnail(el.Thumbnail), el.TextChannel)
 		}()
 
+		var err error
+
 		if el.BeforePlay != nil {
-			el.BeforePlay()
+			err = el.BeforePlay()
 		}
 
-		skipReason, _ := server.playSound(el)
+		if err == nil {
+			skipReason, err := server.playSound(el)
+			go waitMessageAndDelete(msg, server.Clients.Discord)
 
-		// If we are still downloading the song, we need to finish writing it to disk
-		if el.Downloading && skipReason > Finished {
-			devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0755)
-			_, _ = io.Copy(devnull, el.Reader)
-			_ = devnull.Close()
-		}
+			// If we are still downloading the song, we need to finish writing it to disk
+			if el.Downloading && skipReason > Finished {
+				// Notify the user
+				go func() {
+					msg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
+						AddField(constants.ProcessingTitle, constants.Processing, false).
+						WithColor(0x7289DA), el.TextChannel)
+				}()
 
-		if el.AfterPlay != nil {
-			el.AfterPlay()
-		}
+				devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0755)
+				_, _ = io.Copy(devnull, el.Reader)
+				_ = devnull.Close()
 
-		// Delete it after it has been played
-		go func() {
-			if message := <-msg; message != nil {
-				_ = (*server.Clients.Discord).Rest.DeleteMessage(message.ChannelID, message.ID)
+				go waitMessageAndDelete(msg, server.Clients.Discord)
 			}
-		}()
 
-		if skipReason == Finished {
-			go notify(notification.NotificationMessage{Notification: notification.Finished, Guild: server.GuildID})
+			if el.AfterPlay != nil {
+				err := el.AfterPlay()
+				if err == nil {
+					go func() {
+						embed.SendAndDeleteEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
+							AddField(constants.ErrorTitle, err.Error(), false).
+							WithColor(0x7289DA), el.TextChannel, time.Second*15)
+					}()
+				}
+			}
+
+			if err != nil {
+				embed.SendAndDeleteEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
+					AddField(constants.ErrorTitle, err.Error(), false).
+					WithColor(0x7289DA), el.TextChannel, time.Second*15)
+			}
+
+			if skipReason == Finished {
+				go notify(notification.NotificationMessage{Notification: notification.Finished, Guild: server.GuildID})
+			} else {
+				go notify(notification.NotificationMessage{Notification: notification.Skip, Guild: server.GuildID})
+			}
 		} else {
-			go notify(notification.NotificationMessage{Notification: notification.Skip, Guild: server.GuildID})
-
+			go waitMessageAndDelete(msg, server.Clients.Discord)
 		}
 
 		server.Queue.RemoveFirstElement()

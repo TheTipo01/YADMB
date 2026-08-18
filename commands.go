@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -682,11 +683,16 @@ var (
 						Link:        url,
 						User:        e.Member().User.Username,
 						TextChannel: e.Channel().ID(),
-						BeforePlay: func() {
-							manager.CmdsStart(cmds)
+						BeforePlay: func() error {
+							err := manager.CmdsStart(cmds)
+							if err != nil {
+								return errors.New("error while starting the stream: " + manager.StringifyErrors(err...))
+							}
+							return nil
 						},
-						AfterPlay: func() {
+						AfterPlay: func() error {
 							manager.CmdsKill(cmds)
+							return nil
 						},
 						Reader: stdout,
 						Closer: stdout,

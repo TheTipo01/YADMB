@@ -22,6 +22,7 @@ const (
 	ResumeTitle       = "Resume"
 	DjTitle           = "DJ"
 	WebUITitle        = "Web UI"
+	ProcessingTitle   = "Processing"
 )
 
 // Messages for embeds
@@ -77,6 +78,9 @@ const (
 
 	// Update
 	UpdateQueued = "Requested data will be updated next time the song is played!"
+
+	// Downloading song
+	Processing = "Still downloading the song, please wait!"
 )
 
 const (

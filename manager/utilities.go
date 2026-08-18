@@ -222,3 +222,21 @@ func checkTimeParameter(q url.Values, el *queue.Element) {
 		}
 	}
 }
+
+// StringifyErrors returns a single error string from an array of possible errors
+func StringifyErrors(errs ...error) string {
+	var b strings.Builder
+	for _, err := range errs {
+		if err != nil {
+			b.WriteString(err.Error())
+		}
+	}
+
+	return b.String()
+}
+
+func waitMessageAndDelete(msg chan *discord.Message, client *bot.Client) {
+	if message := <-msg; message != nil {
+		_ = client.Rest.DeleteMessage(message.ChannelID, message.ID)
+	}
+}
