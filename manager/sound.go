@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/TheTipo01/YADMB/api/notification"
@@ -60,11 +61,22 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 
 			// If this is the end of the file, just return.
 			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
-				// If we counted zero frames, something's wrong
-				if server.Frames.Load() == 0 {
-					return Error, errors.New("no audio was sent, something's wrong (probably with yt-dlp)")
+				var pipeErrors strings.Builder
+
+				for _, stderr := range el.Errors {
+					bytes, err := io.ReadAll(stderr)
+					if err == nil && len(bytes) > 0 {
+						pipeErrors.WriteString(string(bytes))
+					}
 				}
 
+				// If we read something from the stderr pipe, there's an error and we need to report it
+				if finalString := pipeErrors.String(); finalString != "" {
+					cleanUp(server, el.Closer)
+					return Error, errors.New(finalString)
+				}
+
+				// Else, the file just finished normally
 				if el.Loop {
 					if el.Closer != nil {
 						_ = el.Closer.Close()

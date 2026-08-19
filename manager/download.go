@@ -3,6 +3,7 @@ package manager
 import (
 	"bufio"
 	"errors"
+	"io"
 	"math/rand"
 	"net/url"
 	"os"
@@ -140,24 +141,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
 			pipe, cmd := gen(ytDLP.WebpageURL, el.ID, checkAudioOnly(ytDLP.RequestedFormats))
-			el.Reader = bufio.NewReader(pipe)
-			el.Downloading = true
-
-			el.BeforePlay = func() error {
-				err := CmdsStart(cmd)
-				if len(err) > 0 {
-					return errors.New("error starting commands: " + StringifyErrors(err...))
-				}
-				return nil
-			}
-
-			el.AfterPlay = func() error {
-				err := CmdsWait(cmd)
-				if len(err) > 0 {
-					return errors.New("error waiting for commands to finish: " + StringifyErrors(err...))
-				}
-				return nil
-			}
+			server.populateElement(&el, &pipe, &cmd)
 		} else {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
 			el.Reader = bufio.NewReader(f)
@@ -272,24 +256,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 		// If not, we download and convert it
 		if err != nil || info.Size() <= 0 {
 			pipe, cmd := gen(el.Link, el.ID, true)
-			el.Reader = bufio.NewReader(pipe)
-			el.Downloading = true
-
-			el.BeforePlay = func() error {
-				err := CmdsStart(cmd)
-				if len(err) > 0 {
-					return errors.New("error starting commands: " + StringifyErrors(err...))
-				}
-				return nil
-			}
-
-			el.AfterPlay = func() error {
-				err := CmdsWait(cmd)
-				if len(err) > 0 {
-					return errors.New("error waiting for commands to finish: " + StringifyErrors(err...))
-				}
-				return nil
-			}
+			server.populateElement(&el, &pipe, &cmd)
 		} else {
 			f, _ := os.Open(constants.CachePath + el.ID + constants.AudioExtension)
 			el.Reader = bufio.NewReader(f)
@@ -514,4 +481,37 @@ func getInfo(link string) ([]string, error) {
 	}
 
 	return splittedOut, nil
+}
+
+// populateElement creates the various function to cleanup after every download
+func (server *Server) populateElement(el *queue.Element, pipe *io.ReadCloser, cmd *[]*exec.Cmd) {
+	el.Reader = bufio.NewReader(*pipe)
+	el.Downloading = true
+
+	el.BeforePlay = func() error {
+		err := CmdsStart(*cmd)
+		if len(err) > 0 {
+			return errors.New("error starting commands: " + StringifyErrors(err...))
+		}
+		return nil
+	}
+
+	el.AfterPlay = func() error {
+		err := CmdsWait(*cmd)
+		if len(err) > 0 {
+			return errors.New("error waiting for commands to finish: " + StringifyErrors(err...))
+		}
+		return nil
+	}
+
+	el.Errors = make([]io.ReadCloser, len(*cmd))
+
+	for i, cmd := range *cmd {
+		rc, err := cmd.StderrPipe()
+		if err != nil {
+			lit.Error("Error getting stderr pipe: %s", err)
+		}
+		el.Errors[i] = rc
+	}
+
 }

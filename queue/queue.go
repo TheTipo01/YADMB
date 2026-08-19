@@ -40,6 +40,8 @@ type Element struct {
 	Frames int `json:"frames,omitempty"`
 	// Whether the song is paused
 	IsPaused *bool `json:"isPaused,omitempty"`
+	// Stderr pipes to get possible errors
+	Errors []io.ReadCloser `json:"-"`
 }
 
 type Queue struct {
