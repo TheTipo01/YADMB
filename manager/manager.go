@@ -107,7 +107,7 @@ func (server *Server) play() {
 
 			if el.AfterPlay != nil {
 				err := el.AfterPlay()
-				if err == nil {
+				if err != nil {
 					go func() {
 						embed.SendAndDeleteEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
 							AddField(constants.ErrorTitle, err.Error(), false).
