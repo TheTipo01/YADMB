@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
     --mount=type=cache,target=/root/.cache/pip \
     ln -s /var/cache/apk /etc/apk/cache && \
     apk add ffmpeg python3 ca-certificates py3-pip && \
-    pip3 install --break-system-packages "yt-dlp[default,curl-cffi]" yt-dlp-ejs && \
+    pip3 install --break-system-packages --pre "yt-dlp[default,curl-cffi]" yt-dlp-ejs && \
     apk del py3-pip
 
 COPY --from=ghcr.io/thetipo01/dca:latest /usr/bin/dca /usr/bin/
