@@ -29,6 +29,7 @@ chmod +x libdave_install.sh
 ```
 
 Final things:
+
 - make sure your PKG_CONFIG_PATH has been correctly updated with the new libdave library
 - modify the `example_config.yml`, adding all required tokens and renaming it to `config.yml`
 - for info about creating and adding the bot, see the following [page](hosting.md)
