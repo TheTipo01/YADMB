@@ -19,8 +19,7 @@
   "forwardPorts": [8080],
 
   "onCreateCommand": {
-    "libdave": "curl -sSL https://raw.githubusercontent.com/disgoorg/godave/f34f98224dafa0d6f89d2c36baff473ab34ec999/scripts/libdave_install.sh | bash -s v1.1.0",
-    "dca": "go install github.com/bwmarrin/dca/cmd/dca@e7cc179"
+    "libdave": "curl -sSL https://raw.githubusercontent.com/disgoorg/godave/f34f98224dafa0d6f89d2c36baff473ab34ec999/scripts/libdave_install.sh | bash -s v1.1.0"
   },
 
   "remoteEnv": {

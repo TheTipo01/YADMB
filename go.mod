@@ -18,6 +18,7 @@ require (
 	github.com/zmb3/spotify/v2 v2.4.3
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.297.0
+	layeh.com/gopus v0.0.0-20210501142526-1ee02d434e32
 	modernc.org/sqlite v1.58.0
 )
 

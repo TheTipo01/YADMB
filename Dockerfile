@@ -37,7 +37,6 @@ RUN --mount=type=cache,target=/var/cache/apk \
     pip3 install --break-system-packages --pre "yt-dlp[default,curl-cffi]" yt-dlp-ejs bgutil-ytdlp-pot-provider && \
     apk del py3-pip
 
-COPY --from=ghcr.io/thetipo01/dca:latest /usr/bin/dca /usr/bin/
 COPY --from=denoland/deno:bin /deno /usr/bin/
 
 COPY --from=build /yadmb/yadmb /usr/bin/

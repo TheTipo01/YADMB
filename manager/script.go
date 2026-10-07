@@ -47,8 +47,8 @@ func CmdsKill(cmds []*exec.Cmd) {
 	}
 }
 
-// download downloads the song and gives back a pipe with DCA audio
-func download(link string, audioOnly bool) []*exec.Cmd {
+// download downloads the song and gives back the raw PCM produced by ffmpeg
+func download(link string, audioOnly bool) ([]*exec.Cmd, io.ReadCloser) {
 	var format string
 
 	// If the flag audioOnly is raised, we use an audio only format to save bandwidth
@@ -69,25 +69,16 @@ func download(link string, audioOnly bool) []*exec.Cmd {
 	ffmpeg.Stdin = ytOut
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
 
-	// dca converts it to a format useful for playing back on discord
-	dca := exec.Command("dca")
-	dca.Stdin = ffmpegOut
-
-	return []*exec.Cmd{ytDlp, ffmpeg, dca}
+	return []*exec.Cmd{ytDlp, ffmpeg}, ffmpegOut
 }
 
 // gen substitutes the old scripts, by downloading the song, converting it to DCA and passing it via a pipe
 func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
-	cmds := download(link, audioOnly)
-	dcaOut, _ := cmds[2].StdoutPipe()
+	cmds, pcm := download(link, audioOnly)
 
-	// tee saves the output from dca to file and also gives it back to us
-	tee := exec.Command("tee", constants.CachePath+filename+constants.AudioExtension)
-	tee.Stdin = dcaOut
-	teeOut, _ := tee.StdoutPipe()
-
-	// We give back
-	return teeOut, append(cmds, tee)
+	// The DCA encoder reads the PCM from ffmpeg and, while streaming it back to
+	// us, saves it to the cache file.
+	return newDCAReader(pcm, constants.CachePath+filename+constants.AudioExtension), cmds
 }
 
 // Stream substitutes the old scripts for streaming directly to discord from a given source
@@ -96,9 +87,5 @@ func Stream(link string) (io.ReadCloser, []*exec.Cmd) {
 		"-ar", "48000", "-ac", "2", "pipe:1", "-af", "loudnorm=I=-16:LRA=11:TP=-1.5")
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
 
-	dca := exec.Command("dca")
-	dca.Stdin = ffmpegOut
-	dcaOut, _ := dca.StdoutPipe()
-
-	return dcaOut, []*exec.Cmd{ffmpeg, dca}
+	return newDCAReader(ffmpegOut, ""), []*exec.Cmd{ffmpeg}
 }

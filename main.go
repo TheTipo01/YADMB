@@ -166,10 +166,6 @@ func init() {
 	_ = os.Remove("--Frag1")
 
 	// Checks useful for knowing if every dependency exists
-	if manager.IsCommandNotAvailable("dca") {
-		lit.Error("Error: can't find dca!")
-	}
-
 	if manager.IsCommandNotAvailable("ffmpeg") {
 		lit.Error("Error: can't find ffmpeg!")
 	}

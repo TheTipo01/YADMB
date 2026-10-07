@@ -59,6 +59,14 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			// Read opus frame length from dca file.
 			err = binary.Read(el.Reader, binary.LittleEndian, &opuslen)
 
+			// If we got an actual read error, bail out, removing the partial file
+			// so that it gets downloaded again.
+			if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+				cleanUp(server, el.Closer)
+				_ = os.Remove(constants.CachePath + el.ID + constants.AudioExtension)
+				return Error, err
+			}
+
 			// If this is the end of the file, just return.
 			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 				var pipeErrors strings.Builder
