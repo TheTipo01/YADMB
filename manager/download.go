@@ -493,13 +493,29 @@ func (server *Server) populateElement(el *queue.Element, pipe *io.ReadCloser, cm
 		if len(err) > 0 {
 			return errors.New("error starting commands: " + StringifyErrors(err...))
 		}
+
+		// Start downloading/encoding in the background, so that it isn't paced
+		// by playback.
+		if t, ok := (*pipe).(transcoder); ok {
+			t.Start()
+		}
+
 		return nil
 	}
 
 	el.AfterPlay = func() error {
-		err := CmdsWait(*cmd)
-		if len(err) > 0 {
-			return errors.New("error waiting for commands to finish: " + StringifyErrors(err...))
+		var errs []error
+
+		// Wait for the background encoding to finish writing the cache file.
+		if t, ok := (*pipe).(transcoder); ok {
+			if err := t.Wait(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		errs = append(errs, CmdsWait(*cmd)...)
+		if len(errs) > 0 {
+			return errors.New("error waiting for commands to finish: " + StringifyErrors(errs...))
 		}
 		return nil
 	}

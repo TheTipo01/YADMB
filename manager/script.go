@@ -76,9 +76,9 @@ func download(link string, audioOnly bool) ([]*exec.Cmd, io.ReadCloser) {
 func gen(link string, filename string, audioOnly bool) (io.ReadCloser, []*exec.Cmd) {
 	cmds, pcm := download(link, audioOnly)
 
-	// The DCA encoder reads the PCM from ffmpeg and, while streaming it back to
-	// us, saves it to the cache file.
-	return newDCAReader(pcm, constants.CachePath+filename+constants.AudioExtension), cmds
+	// The stream encodes the PCM as fast as it can into the cache file, while
+	// playback reads the frames back from there as they become available.
+	return newDCAStream(pcm, constants.CachePath+filename+constants.AudioExtension), cmds
 }
 
 // Stream substitutes the old scripts for streaming directly to discord from a given source
@@ -87,5 +87,5 @@ func Stream(link string) (io.ReadCloser, []*exec.Cmd) {
 		"-ar", "48000", "-ac", "2", "pipe:1", "-af", "loudnorm=I=-16:LRA=11:TP=-1.5")
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
 
-	return newDCAReader(ffmpegOut, ""), []*exec.Cmd{ffmpeg}
+	return newDCAReader(ffmpegOut), []*exec.Cmd{ffmpeg}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 
 	"layeh.com/gopus"
 )
@@ -21,51 +22,84 @@ const (
 // pcmFrameBytes is the size in bytes of a single signed 16-bit PCM frame.
 const pcmFrameBytes = audioFrameSize * audioChannels * 2
 
-// dcaReader converts a stream of signed 16-bit little-endian PCM audio into the
-// DCA0 format used for Discord voice playback. It replaces the external dca
-// executable, encoding the audio on demand as it is read.
-type dcaReader struct {
-	// encoder is created lazily on the first frame, so that no Opus state is
-	// allocated for audio that is never played.
+// transcoder is implemented by the audio sources that encode in the background,
+// independently of how fast the audio is played back.
+type transcoder interface {
+	// Start begins the background encoding. It is safe to call it more than once.
+	Start()
+	// Wait blocks until the background encoding has finished and returns the
+	// first error encountered, if any.
+	Wait() error
+}
+
+// pcmEncoder converts signed 16-bit little-endian PCM into the DCA0 format.
+type pcmEncoder struct {
 	encoder *gopus.Encoder
-
-	// pcm is the source of raw PCM audio, usually ffmpeg's stdout.
-	pcm io.Reader
-	// source is closed once the stream ends, so that the process feeding it can
-	// terminate instead of blocking on a full pipe.
-	source io.Closer
-
-	// cache, when not empty, is the path the encoded audio is saved to while it
-	// is being streamed. The file is created lazily on the first frame.
-	cache     string
-	cacheFile *os.File
-
-	// raw and samples are scratch buffers reused for every encoded frame.
 	raw     []byte
 	samples []int16
+	frame   []byte
+}
 
-	// buf holds the DCA frame currently being handed out, made of a 2 byte
-	// little-endian length followed by the encoded Opus data.
-	buf    []byte
-	offset int
+func newPCMEncoder() (*pcmEncoder, error) {
+	encoder, err := gopus.NewEncoder(audioSampleRate, audioChannels, gopus.Audio)
+	if err != nil {
+		return nil, err
+	}
+	encoder.SetBitrate(audioBitrate)
 
-	// pending marks that a final, partial frame has been produced and that an
-	// EOF should be returned once it has been consumed.
-	pending bool
+	return &pcmEncoder{
+		encoder: encoder,
+		raw:     make([]byte, pcmFrameBytes),
+		samples: make([]int16, audioFrameSize*audioChannels),
+	}, nil
+}
+
+// next reads one PCM frame from r and returns its DCA0 representation. The
+// returned slice is only valid until the next call. A short final frame is
+// padded with silence; the following call returns io.EOF.
+func (e *pcmEncoder) next(r io.Reader) ([]byte, error) {
+	n, err := io.ReadFull(r, e.raw)
+	if err == io.EOF {
+		return nil, io.EOF
+	}
+
+	partial := errors.Is(err, io.ErrUnexpectedEOF)
+	if err != nil && !partial {
+		return nil, err
+	}
+
+	// Zero any trailing bytes left over from the previous frame, so that a
+	// partial final frame is padded with silence.
+	for i := n; i < len(e.raw); i++ {
+		e.raw[i] = 0
+	}
+	for i := range e.samples {
+		e.samples[i] = int16(binary.LittleEndian.Uint16(e.raw[i*2:]))
+	}
+
+	opus, err := e.encoder.Encode(e.samples, audioFrameSize, pcmFrameBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	e.frame = binary.LittleEndian.AppendUint16(e.frame[:0], uint16(len(opus)))
+	e.frame = append(e.frame, opus...)
+	return e.frame, nil
+}
+
+// dcaReader converts a PCM stream into DCA0 on demand, as it is read. It is used
+// for live streams, where buffering the whole input would never terminate.
+type dcaReader struct {
+	encoder *pcmEncoder
+	pcm     io.ReadCloser
+	buf     []byte
+	offset  int
 	err     error
 }
 
-// newDCAReader returns a reader that encodes the PCM coming from pcm into the
-// DCA0 format. When cache is not empty, the encoded audio is also written to
-// that path.
-func newDCAReader(pcm io.ReadCloser, cache string) *dcaReader {
-	return &dcaReader{
-		pcm:     pcm,
-		source:  pcm,
-		cache:   cache,
-		raw:     make([]byte, pcmFrameBytes),
-		samples: make([]int16, audioFrameSize*audioChannels),
-	}
+// newDCAReader returns a reader that encodes the PCM coming from pcm on demand.
+func newDCAReader(pcm io.ReadCloser) *dcaReader {
+	return &dcaReader{pcm: pcm}
 }
 
 // Read implements io.Reader. It returns the DCA stream, encoding more PCM data
@@ -76,15 +110,23 @@ func (r *dcaReader) Read(p []byte) (int, error) {
 			return 0, r.err
 		}
 
-		if r.pending {
-			r.finish(io.EOF)
-			return 0, r.err
+		if r.encoder == nil {
+			encoder, err := newPCMEncoder()
+			if err != nil {
+				r.finish(err)
+				return 0, r.err
+			}
+			r.encoder = encoder
 		}
 
-		if err := r.readFrame(); err != nil {
+		frame, err := r.encoder.next(r.pcm)
+		if err != nil {
 			r.finish(err)
 			return 0, r.err
 		}
+
+		r.buf = frame
+		r.offset = 0
 	}
 
 	n := copy(p, r.buf[r.offset:])
@@ -92,101 +134,189 @@ func (r *dcaReader) Read(p []byte) (int, error) {
 	return n, nil
 }
 
-// Close implements io.Closer. It stops the encoder and releases the underlying
-// source and cache file.
+// Close implements io.Closer. It stops the encoder and releases the source.
 func (r *dcaReader) Close() error {
-	r.pending = false
 	r.finish(io.EOF)
 	return nil
 }
 
-// readFrame reads one PCM frame, encodes it and stores the resulting DCA frame
-// in buf. It returns io.EOF when the source has no more data.
-func (r *dcaReader) readFrame() error {
-	n, err := io.ReadFull(r.pcm, r.raw)
-	if err == io.EOF {
-		return io.EOF
-	}
-
-	partial := errors.Is(err, io.ErrUnexpectedEOF)
-	if err != nil && !partial {
-		return err
-	}
-
-	// Zero any trailing bytes left over from the previous frame, so that a
-	// partial final frame is padded with silence.
-	for i := n; i < len(r.raw); i++ {
-		r.raw[i] = 0
-	}
-	for i := range r.samples {
-		r.samples[i] = int16(binary.LittleEndian.Uint16(r.raw[i*2:]))
-	}
-
-	if r.encoder == nil {
-		r.encoder, err = gopus.NewEncoder(audioSampleRate, audioChannels, gopus.Audio)
-		if err != nil {
-			return err
-		}
-		r.encoder.SetBitrate(audioBitrate)
-	}
-
-	opus, err := r.encoder.Encode(r.samples, audioFrameSize, pcmFrameBytes)
-	if err != nil {
-		return err
-	}
-
-	r.buf = binary.LittleEndian.AppendUint16(r.buf[:0], uint16(len(opus)))
-	r.buf = append(r.buf, opus...)
-	r.offset = 0
-
-	if err := r.writeCache(); err != nil {
-		return err
-	}
-
-	// If this was a partial frame, signal the end of the stream once it has been
-	// consumed.
-	r.pending = partial
-	return nil
-}
-
-// writeCache lazily opens the cache file and appends the current frame to it.
-func (r *dcaReader) writeCache() error {
-	if r.cache == "" {
-		return nil
-	}
-
-	if r.cacheFile == nil {
-		f, err := os.Create(r.cache)
-		if err != nil {
-			return err
-		}
-		r.cacheFile = f
-	}
-
-	_, err := r.cacheFile.Write(r.buf)
-	return err
-}
-
-// finish records the first error encountered, closes the source and flushes the
-// cache file. A nil error is treated as a regular end of stream.
 func (r *dcaReader) finish(err error) {
 	if err == nil {
 		err = io.EOF
 	}
-
 	if r.err == nil {
 		r.err = err
 	}
-
-	if r.source != nil {
-		_ = r.source.Close()
-		r.source = nil
+	if r.pcm != nil {
+		_ = r.pcm.Close()
+		r.pcm = nil
 	}
+}
 
-	if r.cacheFile != nil {
-		if cacheErr := r.cacheFile.Close(); cacheErr != nil && r.err == io.EOF {
-			r.err = cacheErr
+// dcaStream decouples encoding from playback. A background goroutine encodes the
+// PCM source into the cache file as fast as it can, while the consumer reads
+// frames from that same file as they become available. This way a song is
+// downloaded and converted at full speed instead of being paced by playback.
+type dcaStream struct {
+	path string
+	pcm  io.ReadCloser
+
+	mu      sync.Mutex
+	cond    *sync.Cond
+	file    *os.File
+	size    int64
+	offset  int64
+	started bool
+	done    bool
+	closed  bool
+	err     error
+}
+
+// newDCAStream returns a stream that encodes pcm into the DCA0 format, saving it
+// to path. Nothing happens until Start or Read is called.
+func newDCAStream(pcm io.ReadCloser, path string) *dcaStream {
+	s := &dcaStream{path: path, pcm: pcm}
+	s.cond = sync.NewCond(&s.mu)
+	return s
+}
+
+// Start begins the background encoding. It is safe to call it more than once.
+func (s *dcaStream) Start() {
+	s.mu.Lock()
+	if s.started {
+		s.mu.Unlock()
+		return
+	}
+	s.started = true
+
+	file, err := os.Create(s.path)
+	if err != nil {
+		s.err = err
+		s.done = true
+		s.cond.Broadcast()
+		s.mu.Unlock()
+
+		_ = s.pcm.Close()
+		return
+	}
+	s.file = file
+	s.mu.Unlock()
+
+	go s.encode()
+}
+
+// encode is the producer: it reads the PCM source and appends every encoded
+// frame to the cache file, without waiting for the consumer.
+func (s *dcaStream) encode() {
+	var err error
+
+	encoder, err := newPCMEncoder()
+	if err == nil {
+		var frame []byte
+		for {
+			frame, err = encoder.next(s.pcm)
+			if err != nil {
+				break
+			}
+
+			if _, err = s.append(frame); err != nil {
+				break
+			}
 		}
-		r.cacheFile = nil
 	}
+
+	// A regular end of stream is not an error.
+	if errors.Is(err, io.EOF) {
+		err = nil
+	}
+
+	s.mu.Lock()
+	if s.closed {
+		// The stream was closed on purpose, don't report the resulting error.
+		err = nil
+	}
+	if err != nil && s.err == nil {
+		s.err = err
+	}
+	s.done = true
+	s.cond.Broadcast()
+	s.mu.Unlock()
+
+	_ = s.pcm.Close()
+}
+
+// append writes a frame at the end of the file and wakes up any waiting reader.
+func (s *dcaStream) append(frame []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.file == nil {
+		return 0, io.ErrClosedPipe
+	}
+
+	n, err := s.file.WriteAt(frame, s.size)
+	s.size += int64(n)
+	s.cond.Broadcast()
+	return n, err
+}
+
+// Read implements io.Reader. It blocks until at least one more frame is
+// available, then reads directly from the cache file.
+func (s *dcaStream) Read(p []byte) (int, error) {
+	s.Start()
+
+	s.mu.Lock()
+	for s.offset >= s.size && !s.done {
+		s.cond.Wait()
+	}
+	offset, size, file, err := s.offset, s.size, s.file, s.err
+	s.mu.Unlock()
+
+	if offset >= size {
+		if err != nil {
+			return 0, err
+		}
+		return 0, io.EOF
+	}
+
+	if int64(len(p)) > size-offset {
+		p = p[:size-offset]
+	}
+
+	n, readErr := file.ReadAt(p, offset)
+	if n > 0 {
+		s.mu.Lock()
+		s.offset += int64(n)
+		s.mu.Unlock()
+	}
+
+	if readErr != nil && !errors.Is(readErr, io.EOF) {
+		return n, readErr
+	}
+	return n, nil
+}
+
+// Close implements io.Closer. It stops the background encoding.
+func (s *dcaStream) Close() error {
+	s.mu.Lock()
+	s.closed = true
+	s.mu.Unlock()
+
+	return s.pcm.Close()
+}
+
+// Wait implements transcoder. It blocks until the background encoding is done
+// and closes the cache file.
+func (s *dcaStream) Wait() error {
+	s.mu.Lock()
+	for s.started && !s.done {
+		s.cond.Wait()
+	}
+	err, file := s.err, s.file
+	s.mu.Unlock()
+
+	if file != nil {
+		_ = file.Close()
+	}
+	return err
 }
