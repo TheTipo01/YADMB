@@ -47,6 +47,38 @@ jobs:
           chmod +x libdave_install.sh
           ./libdave_install.sh v1.1.0
           rm libdave_install.sh
+      - name: Install arm64 cross-compilation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu unzip
+
+          # Build a static Opus for arm64 (gopus only bundles it for amd64/386).
+          curl -fsSL https://downloads.xiph.org/releases/opus/opus-1.4.tar.gz -o /tmp/opus.tar.gz
+          tar -xzf /tmp/opus.tar.gz -C /tmp
+          cd /tmp/opus-1.4
+          ./configure --host=aarch64-linux-gnu --prefix=/opt/arm64 \
+            --disable-shared --enable-static --disable-doc --disable-extra-programs
+          make -j"$(nproc)"
+          sudo make install
+
+          # Fetch the prebuilt arm64 libdave and register it with pkg-config.
+          curl -fsSL https://github.com/discord/libdave/releases/download/v1.1.0/cpp/libdave-Linux-ARM64-boringssl.zip -o /tmp/libdave-arm64.zip
+          sudo mkdir -p /opt/arm64/lib /opt/arm64/include
+          sudo unzip -j -o /tmp/libdave-arm64.zip "lib/libdave.so" -d /opt/arm64/lib
+          sudo unzip -j -o /tmp/libdave-arm64.zip "include/dave/dave.h" -d /opt/arm64/include
+          sudo tee /opt/arm64/lib/pkgconfig/dave.pc >/dev/null <<'EOF'
+          prefix=/opt/arm64
+          exec_prefix=${prefix}
+          libdir=${exec_prefix}/lib
+          includedir=${prefix}/include
+
+          Name: dave
+          Description: Discord Audio & Video End-to-End Encryption (DAVE) Protocol
+          Version: v1.1.0
+          URL: https://github.com/discord/libdave
+          Libs: -L${libdir} -ldave -Wl,-rpath,${libdir}
+          Cflags: -I${includedir}
+          EOF
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
@@ -55,4 +87,3 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG_CONFIG_PATH: /home/runner/.local/lib/pkgconfig
