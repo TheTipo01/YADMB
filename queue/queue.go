@@ -114,9 +114,7 @@ func (q *Queue) GetAllQueue() []Element {
 
 	queueCopy := make([]Element, len(q.Queue))
 
-	for i, el := range q.Queue {
-		queueCopy[i] = el
-	}
+	copy(queueCopy, q.Queue)
 
 	return queueCopy
 }
