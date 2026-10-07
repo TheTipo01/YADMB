@@ -3,10 +3,10 @@ package sponsorblock
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/bwmarrin/lit"
 	"github.com/goccy/go-json"
 )
 
@@ -29,7 +29,7 @@ func GetSegments(videoID string) map[int]struct{} {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		lit.Error("Can't get SponsorBlock segments: %s", err)
+		slog.Error("Can't get SponsorBlock segments", "error", err)
 		return nil
 	}
 	defer resp.Body.Close()
@@ -43,7 +43,7 @@ func GetSegments(videoID string) map[int]struct{} {
 		err = json.NewDecoder(resp.Body).Decode(&videos)
 
 		if err != nil {
-			lit.Error("Can't unmarshal JSON, %s", err)
+			slog.Error("Can't unmarshal JSON", "error", err)
 			return nil
 		}
 

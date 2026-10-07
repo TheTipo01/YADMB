@@ -1,9 +1,9 @@
 package embed
 
 import (
+	"log/slog"
 	"time"
 
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
@@ -42,7 +42,7 @@ func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInter
 	}
 
 	if err != nil {
-		lit.Error("InteractionRespond failed: %s", err)
+		slog.Error("InteractionRespond failed", "error", err)
 		return
 	}
 
@@ -63,7 +63,7 @@ func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCom
 
 	err := e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	if err != nil {
-		lit.Error("InteractionResponseDelete failed: %s", err)
+		slog.Error("InteractionResponseDelete failed", "error", err)
 		return
 	}
 }
@@ -76,7 +76,7 @@ func ModifyInteraction(e *events.ApplicationCommandInteractionCreate, embed disc
 
 	_, err := e.Client().Rest.UpdateInteractionResponse(e.ApplicationID(), e.Token(), discord.NewMessageUpdate().AddEmbeds(embed))
 	if err != nil {
-		lit.Error("InteractionResponseEdit failed: %s", err)
+		slog.Error("InteractionResponseEdit failed", "error", err)
 		return
 	}
 }
@@ -93,7 +93,7 @@ func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationComman
 
 	err := e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	if err != nil {
-		lit.Error("InteractionResponseDelete failed: %s", err)
+		slog.Error("InteractionResponseDelete failed", "error", err)
 		return
 	}
 }

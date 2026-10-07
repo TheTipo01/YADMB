@@ -2,13 +2,13 @@ package api
 
 import (
 	"embed"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/bwmarrin/lit"
 	"github.com/dchest/uniuri"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
@@ -55,14 +55,14 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 		socket := strings.TrimPrefix(address, "unix://")
 		err := os.Remove(socket)
 		if err != nil {
-			lit.Error("Failed to remove existing socket: %v", err)
+			slog.Error("Failed to remove existing socket", "error", err)
 		}
 
 		go r.RunUnix(socket)
 
 		err = os.Chmod(socket, 0777)
 		if err != nil {
-			lit.Error("Failed to change permission for socket: %v", err)
+			slog.Error("Failed to change permission for socket", "error", err)
 		}
 	} else {
 		go r.Run(address)

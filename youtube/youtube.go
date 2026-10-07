@@ -2,10 +2,10 @@ package youtube
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"time"
 
-	"github.com/bwmarrin/lit"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -28,7 +28,7 @@ func NewYoutube(key string) (*YouTube, error) {
 func (y *YouTube) GetVideo(id string) *Video {
 	response, err := y.client.Videos.List([]string{"snippet", "contentDetails"}).Id(id).Do()
 	if err != nil {
-		lit.Error("youtube GetVideo: %s", err.Error())
+		slog.Error("youtube GetVideo", "error", err)
 		return nil
 	}
 
@@ -50,7 +50,7 @@ func (y *YouTube) GetVideo(id string) *Video {
 func (y *YouTube) GetPlaylist(id string) []Video {
 	response, err := y.client.PlaylistItems.List([]string{"snippet"}).PlaylistId(id).MaxResults(50).Do()
 	if err != nil {
-		lit.Error("youtube GetPlaylist: %s", err.Error())
+		slog.Error("youtube GetPlaylist", "error", err)
 		return nil
 	}
 
@@ -87,7 +87,7 @@ func (y *YouTube) GetPlaylist(id string) []Video {
 func (y *YouTube) getVideosDurations(id ...string) []float64 {
 	response, err := y.client.Videos.List([]string{"contentDetails"}).Id(id...).Do()
 	if err != nil {
-		lit.Error("youtube getVideosDurations: %s", err.Error())
+		slog.Error("youtube getVideosDurations", "error", err)
 		return nil
 	}
 

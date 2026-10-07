@@ -2,12 +2,12 @@ package mysql
 
 import (
 	"database/sql"
+	"log/slog"
 	"time"
 
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/database/common"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/snowflake/v2"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -33,7 +33,7 @@ func NewDatabase(dsn string) *database.Database {
 	// Open database connection
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
-		lit.Error("Error opening db connection, %s", err)
+		slog.Error("Error opening db connection", "error", err)
 		return nil
 	}
 
@@ -79,13 +79,13 @@ func addToDb(el queue.Element, exist bool) {
 			_, err := db.Exec("INSERT IGNORE INTO song (id, title, duration, thumbnail, segments) VALUES (?, ?, ?, ?, ?)",
 				el.ID, el.Title, el.Duration, el.Thumbnail, database.EncodeSegments(el.Segments))
 			if err != nil {
-				lit.Error("Error inserting into song, %s", err)
+				slog.Error("Error inserting into song", "error", err)
 			}
 		}
 
 		err := addLinkDB(el.ID, el.Link)
 		if err != nil {
-			lit.Error("Error inserting into link, %s", err.Error())
+			slog.Error("Error inserting into link", "error", err)
 		}
 	}
 }

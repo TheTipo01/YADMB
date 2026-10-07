@@ -20,7 +20,6 @@ import (
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/TheTipo01/YADMB/spotify"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/cache"
@@ -61,16 +60,22 @@ var (
 	guildList *sync.Map
 	// Channel used to notify the presence updater that the guild count has changed
 	guildCountChan = make(chan struct{})
+	// Logging level, configurable via config.yml
+	logLevel = new(slog.LevelVar)
 )
 
 func init() {
-	lit.LogLevel = lit.LogError
+	logLevel.Set(slog.LevelError)
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: true,
+		Level:     logLevel,
+	})))
 	gin.SetMode(gin.ReleaseMode)
 
 	var cfg Config
 	err := fig.Load(&cfg, fig.File("config.yml"), fig.Dirs(".", "./data"))
 	if err != nil {
-		lit.Error(err.Error())
+		slog.Error("Error loading config", "error", err)
 		return
 	}
 
@@ -85,22 +90,22 @@ func init() {
 	longLivedTokens = cfg.ApiTokens
 	origin = cfg.Origin
 
-	// Set lit.LogLevel to the given value
+	// Set the log level to the given value
 	switch strings.ToLower(cfg.LogLevel) {
 	case "logwarning", "warning":
-		lit.LogLevel = lit.LogWarning
+		logLevel.Set(slog.LevelWarn)
 
 	case "loginformational", "informational":
-		lit.LogLevel = lit.LogInformational
+		logLevel.Set(slog.LevelInfo)
 
 	case "logdebug", "debug":
-		lit.LogLevel = lit.LogDebug
+		logLevel.Set(slog.LevelDebug)
 	}
 
 	if cfg.ClientID != "" && cfg.ClientSecret != "" {
 		clients.Spotify, err = spotify.NewSpotify(cfg.ClientID, cfg.ClientSecret)
 		if err != nil {
-			lit.Error("spotify: couldn't get token: %s", err)
+			slog.Error("spotify: couldn't get token", "error", err)
 		}
 	}
 
@@ -130,13 +135,13 @@ func init() {
 	// Load the blacklist
 	blacklist, err = clients.Database.GetBlacklist()
 	if err != nil {
-		lit.Error("Error loading blacklist: %s", err)
+		slog.Error("Error loading blacklist", "error", err)
 	}
 
 	// Load the DJ settings
 	dj, err := clients.Database.GetDJ()
 	if err != nil {
-		lit.Error("Error loading DJ settings: %s", err)
+		slog.Error("Error loading DJ settings", "error", err)
 	}
 
 	for k := range dj {
@@ -158,7 +163,7 @@ func init() {
 	// Create folders used by the bot
 	if _, err = os.Stat(constants.CachePath); err != nil {
 		if err = os.Mkdir(constants.CachePath, 0755); err != nil {
-			lit.Error("Cannot create %s, %s", constants.CachePath, err)
+			slog.Error("Cannot create cache folder", "path", constants.CachePath, "error", err)
 		}
 	}
 
@@ -167,17 +172,17 @@ func init() {
 
 	// Checks useful for knowing if every dependency exists
 	if manager.IsCommandNotAvailable("ffmpeg") {
-		lit.Error("Error: can't find ffmpeg!")
+		slog.Error("ffmpeg not found")
 	}
 
 	if manager.IsCommandNotAvailable("yt-dlp") {
-		lit.Error("Error: can't find yt-dlp!")
+		slog.Error("yt-dlp not found")
 	}
 
 	if cfg.YouTubeAPI != "" {
 		clients.Youtube, err = youtube.NewYoutube(cfg.YouTubeAPI)
 		if err != nil {
-			lit.Error("youtube: couldn't get client: %s", err)
+			slog.Error("youtube: couldn't get client", "error", err)
 		}
 	}
 
@@ -186,13 +191,8 @@ func init() {
 
 func main() {
 	if token == "" {
-		lit.Error("No token provided. Please modify config.yml")
+		slog.Error("No token provided. Please modify config.yml")
 		return
-	}
-
-	logger := slog.Default()
-	if lit.LogLevel == lit.LogDebug {
-		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	}
 
 	client, _ := disgo.New(token,
@@ -218,20 +218,20 @@ func main() {
 
 		bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(golibdave.NewSession)),
 
-		bot.WithLogger(logger),
+		bot.WithLogger(slog.Default()),
 	)
 
 	defer client.Close(context.TODO())
 
 	if err := client.OpenGateway(context.TODO()); err != nil {
-		lit.Error("errors while connecting to gateway %s", err)
+		slog.Error("errors while connecting to gateway", "error", err)
 		return
 	}
 
 	// Register commands
 	_, err := client.Rest.SetGlobalCommands(client.ApplicationID, commands)
 	if err != nil {
-		lit.Error("Error registering commands: %s", err)
+		slog.Error("Error registering commands", "error", err)
 		return
 	}
 
@@ -240,7 +240,7 @@ func main() {
 		go webApi.HandleNotifications()
 
 		if len(longLivedTokens) > 0 {
-			lit.Info("Loading long lived tokens")
+			slog.Info("Loading long lived tokens")
 			for _, t := range longLivedTokens {
 				userInfo := api.UserInfo{
 					LongLivedToken: t.Token,
@@ -249,7 +249,7 @@ func main() {
 				}
 				user, err := client.Rest.GetMember(t.Guild, t.UserID)
 				if err != nil {
-					lit.Error("Error loading long lived token for user %s in guild %s: %s", t.UserID, t.Guild, err)
+					slog.Error("Error loading long lived token", "user", t.UserID, "guild", t.Guild, "error", err)
 				} else {
 					webApi.AddLongLivedToken(user, userInfo)
 				}
@@ -258,11 +258,11 @@ func main() {
 	}
 
 	// Print guilds the bot is connected to
-	if lit.LogLevel == lit.LogDebug {
-		lit.Debug("Bot is connected to %d guilds.", len(server))
+	if logLevel.Level() == slog.LevelDebug {
+		slog.Debug("Bot is connected to guilds", "count", len(server))
 
 		for id := range server {
-			lit.Debug("Guild ID: %s", id.String())
+			slog.Debug("Guild", "id", id)
 		}
 
 	}
@@ -271,7 +271,7 @@ func main() {
 	clients.Discord = client
 
 	// Wait here until CTRL-C or another term signal is received.
-	lit.Info("YADMB is now running. Press CTRL-C to exit.")
+	slog.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc

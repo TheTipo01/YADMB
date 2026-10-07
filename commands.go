@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"sort"
 	"strconv"
@@ -15,7 +16,6 @@ import (
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/manager"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )
@@ -545,7 +545,7 @@ var (
 					if entries, err := clients.Database.GetPlaylist(link); err == nil && len(entries) > 0 {
 						err := clients.Database.RemovePlaylist(link)
 						if err != nil {
-							lit.Error("Error while removing playlist from db: %s", err)
+							slog.Error("Error while removing playlist from db", "error", err)
 						}
 
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle,
@@ -562,7 +562,7 @@ var (
 					if song {
 						err := os.Remove(constants.CachePath + el.ID + constants.AudioExtension)
 						if err != nil {
-							lit.Error(err.Error())
+							slog.Error("Error removing cached song", "id", el.ID, "error", err)
 						}
 					}
 
@@ -575,7 +575,7 @@ var (
 				if search, err := clients.Database.GetSearch(link); err == nil && search != "" {
 					err := clients.Database.RemoveSearch(link)
 					if err != nil {
-						lit.Error("Error while removing search from db: %s", err)
+						slog.Error("Error while removing search from db", "error", err)
 					}
 
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SuccessfulTitle,
@@ -599,7 +599,7 @@ var (
 
 						err := clients.Database.RemoveFromBlacklist(id)
 						if err != nil {
-							lit.Error("Error while deleting from blacklist, %s", err)
+							slog.Error("Error while deleting from blacklist", "error", err)
 						}
 
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.BlacklistTitle,
@@ -611,7 +611,7 @@ var (
 
 						err := clients.Database.AddToBlacklist(id)
 						if err != nil {
-							lit.Error("Error while inserting from blacklist, %s", err)
+							slog.Error("Error while inserting from blacklist", "error", err)
 						}
 
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.BlacklistTitle,
@@ -724,7 +724,7 @@ var (
 					server[guildID].DjMode = false
 					err := clients.Database.SetDJSettings(guildID, false)
 					if err != nil {
-						lit.Error("Error while disabling DJ mode, %s", err)
+						slog.Error("Error while disabling DJ mode", "error", err)
 					}
 
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjDisabled, false).
@@ -733,7 +733,7 @@ var (
 					server[guildID].DjMode = true
 					err := clients.Database.SetDJSettings(guildID, true)
 					if err != nil {
-						lit.Error("Error while enabling DJ mode, %s", err)
+						slog.Error("Error while enabling DJ mode", "error", err)
 					}
 
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjEnabled, false).
@@ -755,7 +755,7 @@ var (
 					server[guildID].DjRole = role.ID
 					err := clients.Database.UpdateDJRole(guildID, role.ID)
 					if err != nil {
-						lit.Error("Error updating DJ role: %s", err.Error())
+						slog.Error("Error updating DJ role", "error", err)
 					}
 
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjRoleChanged, false).

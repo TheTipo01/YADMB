@@ -2,10 +2,9 @@ package database
 
 import (
 	"database/sql"
+	"log/slog"
 	"strconv"
 	"strings"
-
-	"github.com/bwmarrin/lit"
 )
 
 // ExecQuery executes a simple query given a DB
@@ -13,7 +12,7 @@ func ExecQuery(db *sql.DB, query ...string) {
 	for _, q := range query {
 		_, err := db.Exec(q)
 		if err != nil {
-			lit.Error("Error executing query, %s", err)
+			slog.Error("Error executing query", "error", err)
 		}
 	}
 }

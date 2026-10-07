@@ -2,11 +2,11 @@ package manager
 
 import (
 	"io"
+	"log/slog"
 	"os/exec"
 	"strings"
 
 	"github.com/TheTipo01/YADMB/constants"
-	"github.com/bwmarrin/lit"
 )
 
 // CmdsStart starts all the exec.Cmd inside the slice
@@ -42,7 +42,7 @@ func CmdsKill(cmds []*exec.Cmd) {
 	for _, cmd := range cmds {
 		err := cmd.Process.Kill()
 		if err != nil {
-			lit.Error("Error killing cmd: %s", err.Error())
+			slog.Error("Error killing cmd", "error", err)
 		}
 	}
 }

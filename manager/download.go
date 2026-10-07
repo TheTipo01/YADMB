@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"io"
+	"log/slog"
 	"math/rand"
 	"net/url"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/sponsorblock"
 	"github.com/TheTipo01/YADMB/youtube"
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/goccy/go-json"
 	spotAPI "github.com/zmb3/spotify/v2"
@@ -212,7 +212,7 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 				// Add the video as a playlist entry
 				err := p.Clients.Database.AddPlaylist(id, youtubeBase+result[i].ID, i)
 				if err != nil {
-					lit.Error("Error adding playlist to database: %s", err)
+					slog.Error("Error adding playlist to database", "error", err)
 				}
 			}
 		}()
@@ -284,7 +284,7 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube, db *database.Datab
 	// Check if it's in the database
 	link, err := db.GetSearch(query)
 	if err == nil && link != "" {
-		lit.Debug("Found song in database: %s, %s", query, link)
+		slog.Debug("Found song in database", "query", query, "link", link)
 		return link, nil
 	}
 
@@ -292,9 +292,9 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube, db *database.Datab
 		result, err := yt.Search(query, 1)
 		if err == nil && len(result) > 0 {
 			err = db.AddSearch(query, youtubeBase+result[0].ID)
-			lit.Debug("Found song from YouTube API, adding to db %s, %s", query, youtubeBase+result[0].ID)
+			slog.Debug("Found song from YouTube API, adding to db", "query", query, "link", youtubeBase+result[0].ID)
 			if err != nil {
-				lit.Error("Error adding search to database: %s", err)
+				slog.Error("Error adding search to database", "error", err)
 			}
 
 			return youtubeBase + result[0].ID, nil
@@ -309,9 +309,9 @@ func searchDownloadAndPlay(query string, yt *youtube.YouTube, db *database.Datab
 
 		if ids[0] != "" {
 			err = db.AddSearch(query, youtubeBase+ids[0])
-			lit.Debug("Found song from yt-dlp, adding to db %s, %s", query, youtubeBase+ids[0])
+			slog.Debug("Found song from yt-dlp, adding to db", "query", query, "link", youtubeBase+ids[0])
 			if err != nil {
-				lit.Error("Error adding search to database: %s", err)
+				slog.Error("Error adding search to database", "error", err)
 			}
 
 			return youtubeBase + ids[0], nil
@@ -357,7 +357,7 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 				if err == nil {
 					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
 					if err != nil {
-						lit.Error("Error adding playlist to database: %s", err)
+						slog.Error("Error adding playlist to database", "error", err)
 					}
 
 					server.downloadAndPlay(p, false)
@@ -368,7 +368,7 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 
 			server.WG.Done()
 		} else {
-			lit.Error("Can't get info on a spotify playlist: %s", err)
+			slog.Error("Can't get info on a spotify playlist", "error", err)
 			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5, p.IsDeferred)
 		}
 	} else {
@@ -411,7 +411,7 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 				if err == nil {
 					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
 					if err != nil {
-						lit.Error("Error adding playlist to database: %s", err)
+						slog.Error("Error adding playlist to database", "error", err)
 					}
 
 					server.downloadAndPlay(p, false)
@@ -422,7 +422,7 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 
 			server.WG.Done()
 		} else {
-			lit.Error("Can't get info on a spotify album: %s", err)
+			slog.Error("Can't get info on a spotify album", "error", err)
 			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5, p.IsDeferred)
 		}
 	} else {
@@ -447,7 +447,7 @@ func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
 			if err == nil {
 				err = p.Clients.Database.AddSearch(id.String(), p.Song)
 				if err != nil {
-					lit.Error("Error adding search to database: %s", err)
+					slog.Error("Error adding search to database", "error", err)
 				}
 
 				server.downloadAndPlay(p, true)
@@ -455,7 +455,7 @@ func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
 				go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5, p.IsDeferred)
 			}
 		} else {
-			lit.Error("Can't get info on a spotify track: %s", err)
+			slog.Error("Can't get info on a spotify track", "error", err)
 			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.SpotifyError+err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5, p.IsDeferred)
 		}
 	} else {
@@ -525,7 +525,7 @@ func (server *Server) populateElement(el *queue.Element, pipe *io.ReadCloser, cm
 	for i, cmd := range *cmd {
 		rc, err := cmd.StderrPipe()
 		if err != nil {
-			lit.Error("Error getting stderr pipe: %s", err)
+			slog.Error("Error getting stderr pipe", "error", err)
 		}
 		el.Errors[i] = rc
 	}

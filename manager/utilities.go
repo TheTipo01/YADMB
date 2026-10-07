@@ -5,6 +5,7 @@ import (
 	"encoding/base32"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"net/url"
 	"os"
@@ -16,7 +17,6 @@ import (
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
@@ -28,7 +28,7 @@ func FilterPlaylist(link string) (string, error) {
 	if com, be := strings.Contains(link, "youtube.com"), strings.Contains(link, "youtu.be"); com || be {
 		u, err := url.Parse(link)
 		if err != nil {
-			lit.Error("FilterPlaylist failed: %s", err)
+			slog.Error("FilterPlaylist failed", "error", err)
 			return "", err
 		}
 
@@ -147,7 +147,7 @@ func DeleteInteraction(client *bot.Client, i discord.Interaction, c <-chan struc
 
 	err := client.Rest.DeleteInteractionResponse(i.ApplicationID(), i.Token())
 	if err != nil {
-		lit.Error("InteractionResponseDelete failed: %s", err)
+		slog.Error("InteractionResponseDelete failed", "error", err)
 		return
 	}
 }

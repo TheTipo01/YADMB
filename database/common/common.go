@@ -2,11 +2,11 @@ package common
 
 import (
 	"database/sql"
+	"log/slog"
 	"sync"
 
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/queue"
-	"github.com/bwmarrin/lit"
 	"github.com/disgoorg/snowflake/v2"
 )
 
@@ -46,7 +46,7 @@ func (c Common) AddCommand(command string, song string, guild snowflake.ID, loop
 func (c Common) RemoveCustom(command string, guild snowflake.ID) error {
 	_, err := c.db.Exec("DELETE FROM customCommands WHERE guild=? AND command=?", guild, command)
 	if err != nil {
-		lit.Error("Error removing from the database, %s", err)
+		slog.Error("Error removing from the database", "error", err)
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func (c Common) GetCustomCommands() (map[snowflake.ID]map[string]*database.Custo
 	for rows.Next() {
 		err = rows.Scan(&guild, &command, &song, &loop)
 		if err != nil {
-			lit.Error("Error scanning rows from query, %s", err)
+			slog.Error("Error scanning rows from query", "error", err)
 			continue
 		}
 
@@ -88,12 +88,12 @@ func (c Common) GetCustomCommands() (map[snowflake.ID]map[string]*database.Custo
 func (c Common) RemoveFromDB(el queue.Element) {
 	_, err := c.db.Exec("DELETE FROM link WHERE songID=?", el.ID)
 	if err != nil {
-		lit.Error("Error while deleting from link, %s", err)
+		slog.Error("Error while deleting from link", "error", err)
 	}
 
 	_, err = c.db.Exec("DELETE FROM song WHERE id=?", el.ID)
 	if err != nil {
-		lit.Error("Error while deleting from song, %s", err)
+		slog.Error("Error while deleting from song", "error", err)
 	}
 }
 
@@ -121,7 +121,7 @@ func (c Common) GetDJ() (map[snowflake.ID]database.DJ, error) {
 
 		err = rows.Scan(&guild, &role, &enabled)
 		if err != nil {
-			lit.Error("Error scanning rows from query, %s", err)
+			slog.Error("Error scanning rows from query", "error", err)
 			continue
 		}
 
@@ -143,7 +143,7 @@ func (c Common) GetBlacklist() (*sync.Map, error) {
 		var id string
 		err = rows.Scan(&id)
 		if err != nil {
-			lit.Error("Error scanning rows from query, %s", err)
+			slog.Error("Error scanning rows from query", "error", err)
 			continue
 		}
 
@@ -161,14 +161,14 @@ func (c Common) GetFavorites(userID snowflake.ID) []database.Favorite {
 
 	rows, err := c.db.Query("SELECT name, link, folder FROM favorites WHERE userID=?", userID)
 	if err != nil {
-		lit.Error("Error querying database, %s", err)
+		slog.Error("Error querying database", "error", err)
 		return nil
 	}
 
 	for rows.Next() {
 		err = rows.Scan(&name, &link, &folder)
 		if err != nil {
-			lit.Error("Error scanning rows from query, %s", err)
+			slog.Error("Error scanning rows from query", "error", err)
 			continue
 		}
 
@@ -220,7 +220,7 @@ func (c Common) GetPlaylist(playlist string) ([]string, error) {
 	for rows.Next() {
 		err = rows.Scan(&entry)
 		if err != nil {
-			lit.Error("Error scanning rows from query, %s", err)
+			slog.Error("Error scanning rows from query", "error", err)
 			continue
 		}
 
@@ -233,7 +233,7 @@ func (c Common) GetPlaylist(playlist string) ([]string, error) {
 func (c Common) AddPlaylist(playlist, entry string, number int) error {
 	_, err := c.db.Exec("INSERT INTO playlist (playlist, entry, number) VALUES (?, ?, ?)", playlist, entry, number)
 	if err != nil {
-		lit.Error("Error inserting into playlist, %s", err)
+		slog.Error("Error inserting into playlist", "error", err)
 		return err
 	}
 

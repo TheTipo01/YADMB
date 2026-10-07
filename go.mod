@@ -3,7 +3,6 @@ module github.com/TheTipo01/YADMB
 go 1.26.0
 
 require (
-	github.com/bwmarrin/lit v0.0.0-20190813132558-fd4b44871312
 	github.com/coder/websocket v1.8.15
 	github.com/dchest/uniuri v1.2.0
 	github.com/disgoorg/disgo v0.19.7-0.20260719203244-c09c86fe2aa0
