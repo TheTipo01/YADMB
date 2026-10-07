@@ -2,7 +2,7 @@ FROM golang:alpine AS build
 
 RUN --mount=type=cache,target=/var/cache/apk \
     ln -s /var/cache/apk /etc/apk/cache && \
-    apk add --no-cache build-base pkgconfig ccache
+    apk add --no-cache build-base pkgconfig opus-dev ccache
 
 COPY go.mod /yadmb/go.mod
 COPY go.sum /yadmb/go.sum
@@ -33,7 +33,7 @@ FROM alpine
 RUN --mount=type=cache,target=/var/cache/apk \
     --mount=type=cache,target=/root/.cache/pip \
     ln -s /var/cache/apk /etc/apk/cache && \
-    apk add ffmpeg python3 ca-certificates py3-pip && \
+    apk add ffmpeg python3 ca-certificates py3-pip opus && \
     pip3 install --break-system-packages --pre "yt-dlp[default,curl-cffi]" yt-dlp-ejs bgutil-ytdlp-pot-provider && \
     apk del py3-pip
 
