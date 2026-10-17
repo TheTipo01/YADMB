@@ -24,6 +24,8 @@ const (
 	PrioritySong
 	// LoopFinished notification for a song finishing a loop
 	LoopFinished
+	// Started notification when the first audio frame is actually produced
+	Started
 )
 
 type Notification int8

@@ -46,9 +46,9 @@ func NewServer(guildID snowflake.ID, clients *Clients) *Server {
 // AddSong adds a song to the queue
 func (server *Server) AddSong(priority bool, el ...queue.Element) {
 	if priority {
-		go notify(notification.NotificationMessage{Notification: notification.PrioritySong, Songs: el, Guild: server.GuildID})
+		notify(notification.NotificationMessage{Notification: notification.PrioritySong, Songs: el, Guild: server.GuildID})
 	} else {
-		go notify(notification.NotificationMessage{Notification: notification.NewSongs, Songs: el, Guild: server.GuildID})
+		notify(notification.NotificationMessage{Notification: notification.NewSongs, Songs: el, Guild: server.GuildID})
 	}
 
 	server.cleanMu.Lock()
@@ -187,9 +187,9 @@ func (server *Server) play(done chan struct{}) {
 		}
 
 		if skipReason == Finished {
-			go notify(notification.NotificationMessage{Notification: notification.Finished, Guild: server.GuildID})
+			notify(notification.NotificationMessage{Notification: notification.Finished, Guild: server.GuildID})
 		} else {
-			go notify(notification.NotificationMessage{Notification: notification.Skip, Guild: server.GuildID})
+			notify(notification.NotificationMessage{Notification: notification.Skip, Guild: server.GuildID})
 		}
 
 		// The reader of the current element is partially consumed. Drop it and
