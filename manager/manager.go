@@ -337,6 +337,8 @@ func (server *Server) Clean() {
 	server.Clear.Store(false)
 	server.cleanMu.Unlock()
 
+	notify(notification.NotificationMessage{Notification: notification.Clear, Guild: server.GuildID})
+
 	server.playMu.Lock()
 	if !server.Started.Load() && server.Queue.IsEmpty() {
 		server.scheduleQuitLocked()
