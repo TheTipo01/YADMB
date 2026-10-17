@@ -188,10 +188,15 @@ func (server *Server) SetSpeaking(flag voice.SpeakingFlags) error {
 	return server.VC.SetSpeaking(ctx, flag)
 }
 
-// ensureVoiceUDP returns a usable UDP connection, reconnecting if needed.
+// ensureVoiceUDP returns a usable UDP connection, letting disgo finish an
+// in-progress reconnect before forcing a new connection.
 func (server *Server) ensureVoiceUDP() (voice.UDPConn, error) {
 	conn, err := server.VC.UDP()
 	if err == nil {
+		return conn, nil
+	}
+
+	if conn, err := server.waitForVoice(nil); err == nil {
 		return conn, nil
 	}
 
@@ -300,6 +305,10 @@ func (server *Server) waitForVoice(frame []byte) (voice.UDPConn, error) {
 			disconnectedSince = time.Time{}
 
 			if conn, err := server.VC.UDP(); err == nil {
+				if frame == nil {
+					return conn, nil
+				}
+
 				if _, err := conn.Write(frame); err == nil {
 					return conn, nil
 				}
