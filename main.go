@@ -118,6 +118,16 @@ func init() {
 		clients.Database = sqlite.NewDatabase(cfg.DSN)
 	case "mysql":
 		clients.Database = mysql.NewDatabase(cfg.DSN)
+	default:
+		slog.Error("Unknown database driver", "driver", cfg.Driver)
+		token = ""
+		return
+	}
+
+	if clients.Database == nil {
+		slog.Error("Could not initialize the database")
+		token = ""
+		return
 	}
 
 	// And load custom commands from the db
