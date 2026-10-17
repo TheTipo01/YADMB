@@ -43,12 +43,16 @@ func (n *Notifier) RemoveChannel(channel chan<- NotificationMessage, guild snowf
 	return false
 }
 
-// Notify sends a notification to all channels in the notifier for the given guild (if any)
+// Notify sends a notification to all channels in the notifier for the given guild (if any).
+// Slow or disconnected clients are skipped instead of blocking the caller.
 func (n *Notifier) Notify(guild snowflake.ID, message NotificationMessage) {
 	n.mutex.RLock()
 	defer n.mutex.RUnlock()
 
 	for _, c := range n.channels[guild] {
-		c <- message
+		select {
+		case c <- message:
+		default:
+		}
 	}
 }

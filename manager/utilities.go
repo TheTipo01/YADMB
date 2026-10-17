@@ -200,7 +200,10 @@ func cleanURL(link string) string {
 }
 
 func notify(n notification.NotificationMessage) {
-	Notifications <- n
+	select {
+	case Notifications <- n:
+	default:
+	}
 }
 
 // skipTo checks if the link has a time parameter and if so, skips to that time
