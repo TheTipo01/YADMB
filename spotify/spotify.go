@@ -2,6 +2,7 @@ package spotify
 
 import (
 	"context"
+	"sync"
 
 	"github.com/zmb3/spotify/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -9,6 +10,8 @@ import (
 )
 
 type Spotify struct {
+	// Protects client and ctx, which are replaced when the token is refreshed.
+	mu sync.RWMutex
 	// Spotify client
 	client *spotify.Client
 	// Spotify context
@@ -40,56 +43,83 @@ func (s *Spotify) refreshClient() error {
 		TokenURL:     spotifyauth.TokenURL,
 	}
 
-	s.ctx = context.Background()
+	ctx := context.Background()
 
 	// Check spotify token and create a spotify client
-	token, err := credentials.Token(s.ctx)
+	token, err := credentials.Token(ctx)
 	if err != nil {
 		return err
 	}
 
-	s.client = spotify.New(spotifyauth.New().Client(s.ctx, token))
+	client := spotify.New(spotifyauth.New().Client(ctx, token))
+
+	s.mu.Lock()
+	s.ctx = ctx
+	s.client = client
+	s.mu.Unlock()
 
 	return nil
 }
 
+func (s *Spotify) getClient() (*spotify.Client, context.Context) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.client, s.ctx
+}
+
+func (s *Spotify) refreshAndGetClient() (*spotify.Client, context.Context, error) {
+	if err := s.refreshClient(); err != nil {
+		return nil, nil, err
+	}
+
+	client, ctx := s.getClient()
+	return client, ctx, nil
+}
+
 func (s *Spotify) GetPlaylist(id spotify.ID) (*spotify.FullPlaylist, error) {
-	p, err := s.client.GetPlaylist(s.ctx, id)
+	client, ctx := s.getClient()
+
+	p, err := client.GetPlaylist(ctx, id)
 	if err != nil {
-		err = s.refreshClient()
+		client, ctx, err = s.refreshAndGetClient()
 		if err != nil {
 			return nil, err
 		}
 
-		return s.client.GetPlaylist(s.ctx, id)
+		return client.GetPlaylist(ctx, id)
 	}
 
 	return p, nil
 }
 
 func (s *Spotify) GetTrack(id spotify.ID) (*spotify.FullTrack, error) {
-	t, err := s.client.GetTrack(s.ctx, id)
+	client, ctx := s.getClient()
+
+	t, err := client.GetTrack(ctx, id)
 	if err != nil {
-		err = s.refreshClient()
+		client, ctx, err = s.refreshAndGetClient()
 		if err != nil {
 			return nil, err
 		}
 
-		return s.client.GetTrack(s.ctx, id)
+		return client.GetTrack(ctx, id)
 	}
 
 	return t, nil
 }
 
 func (s *Spotify) GetAlbum(id spotify.ID) (*spotify.FullAlbum, error) {
-	a, err := s.client.GetAlbum(s.ctx, id)
+	client, ctx := s.getClient()
+
+	a, err := client.GetAlbum(ctx, id)
 	if err != nil {
-		err = s.refreshClient()
+		client, ctx, err = s.refreshAndGetClient()
 		if err != nil {
 			return nil, err
 		}
 
-		return s.client.GetAlbum(s.ctx, id)
+		return client.GetAlbum(ctx, id)
 	}
 
 	return a, nil

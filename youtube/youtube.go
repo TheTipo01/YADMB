@@ -78,7 +78,9 @@ func (y *YouTube) GetPlaylist(id string) []Video {
 
 	durations := y.getVideosDurations(ids...)
 	for i := range result {
-		result[i].Duration = durations[i]
+		if i < len(durations) {
+			result[i].Duration = durations[i]
+		}
 	}
 
 	return result
@@ -125,6 +127,10 @@ func (y *YouTube) Search(query string, maxResults int64) ([]Video, error) {
 }
 
 func getBestThumbnail(thumbnails *youtube.ThumbnailDetails) string {
+	if thumbnails == nil {
+		return ""
+	}
+
 	if thumbnails.Maxres != nil {
 		return thumbnails.Maxres.Url
 	}

@@ -18,7 +18,12 @@ const (
 // GetSegments returns a map for skipping certain frames of a song
 func GetSegments(videoID string) map[int]struct{} {
 	// Gets segments
-	req, _ := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments/"+hash(videoID), nil) // Sets timeout to one second, as sometime i
+	req, err := http.NewRequest("GET", "https://sponsor.ajay.app/api/skipSegments/"+hash(videoID), nil) // Sets timeout to one second, as sometime i
+	if err != nil {
+		slog.Error("Can't create SponsorBlock request", "error", err)
+		return nil
+	}
+
 	client := http.Client{Timeout: time.Second}
 
 	req.Header.Set("User-Agent", "github.com/TheTipo01/YADMB")

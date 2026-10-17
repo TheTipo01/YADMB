@@ -35,22 +35,23 @@ func (server *Server) Play(p PlayEvent) {
 		u, err := url.Parse(p.Song)
 		if err == nil {
 			splitted := strings.Split(u.Path, "/")
-			if len(splitted) >= 2 {
-				if len(splitted) == 4 {
-					// Remove second element
-					splitted = append(splitted[:1], splitted[2:]...)
-				}
+			if len(splitted) == 4 {
+				// Remove second element
+				splitted = append(splitted[:1], splitted[2:]...)
+			}
 
+			if len(splitted) >= 3 {
 				switch splitted[1] {
 				case "track":
 					server.spotifyTrack(p, spotify.ID(splitted[2]))
+					return
 				case "playlist":
 					server.spotifyPlaylist(p, spotify.ID(splitted[2]))
+					return
 				case "album":
 					server.spotifyAlbum(p, spotify.ID(splitted[2]))
+					return
 				}
-
-				return
 			}
 		}
 	}

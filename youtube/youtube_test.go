@@ -72,3 +72,9 @@ func TestYouTube_Search(t *testing.T) {
 		t.Fatal("first video does not match")
 	}
 }
+
+func TestGetBestThumbnailNil(t *testing.T) {
+	if thumbnail := getBestThumbnail(nil); thumbnail != "" {
+		t.Fatalf("expected empty thumbnail, got %q", thumbnail)
+	}
+}

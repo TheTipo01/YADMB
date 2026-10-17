@@ -97,7 +97,11 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 
 	// We parse every track as individual json, because yt-dlp
 	for _, singleJSON := range infoJSON {
-		_ = json.Unmarshal([]byte(singleJSON), &ytDLP)
+		ytDLP = YtDLP{}
+		if err := json.Unmarshal([]byte(singleJSON), &ytDLP); err != nil {
+			slog.Error("Error parsing yt-dlp output", "error", err)
+			continue
+		}
 
 		el = queue.Element{
 			Title:       ytDLP.Title,
@@ -357,7 +361,7 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 			for j := 0; j < len(playlist.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := playlist.Tracks.Tracks[j]
 
-				p.Song, err = searchDownloadAndPlay(track.Track.Name+" - "+track.Track.Artists[0].Name, p.Clients.Youtube, p.Clients.Database)
+				p.Song, err = searchDownloadAndPlay(trackQuery(track.Track.Name, track.Track.Artists), p.Clients.Youtube, p.Clients.Database)
 				if err == nil {
 					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
 					if err != nil {
@@ -411,7 +415,7 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 			for j := 0; j < len(album.Tracks.Tracks) && !server.Clear.Load(); j++ {
 				track := album.Tracks.Tracks[j]
 
-				p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube, p.Clients.Database)
+				p.Song, err = searchDownloadAndPlay(trackQuery(track.Name, track.Artists), p.Clients.Youtube, p.Clients.Database)
 				if err == nil {
 					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
 					if err != nil {
@@ -447,7 +451,7 @@ func (server *Server) spotifyTrack(p PlayEvent, id spotAPI.ID) {
 
 	if p.Clients.Spotify != nil {
 		if track, err := p.Clients.Spotify.GetTrack(id); err == nil {
-			p.Song, err = searchDownloadAndPlay(track.Name+" - "+track.Artists[0].Name, p.Clients.Youtube, p.Clients.Database)
+			p.Song, err = searchDownloadAndPlay(trackQuery(track.Name, track.Artists), p.Clients.Youtube, p.Clients.Database)
 			if err == nil {
 				err = p.Clients.Database.AddSearch(id.String(), p.Song)
 				if err != nil {
@@ -534,4 +538,19 @@ func (server *Server) populateElement(el *queue.Element, pipe *io.ReadCloser, cm
 		el.Errors[i] = rc
 	}
 
+}
+
+// trackQuery builds the search string for a Spotify track without assuming
+// that the artist list is non-empty.
+func trackQuery(name string, artists []spotAPI.SimpleArtist) string {
+	if len(artists) == 0 {
+		return name
+	}
+
+	names := make([]string, 0, len(artists))
+	for _, artist := range artists {
+		names = append(names, artist.Name)
+	}
+
+	return name + " - " + strings.Join(names, ", ")
 }

@@ -312,11 +312,16 @@ func (s *dcaStream) Wait() error {
 	for s.started && !s.done {
 		s.cond.Wait()
 	}
-	err, file := s.err, s.file
+	err, file, started := s.err, s.file, s.started
 	s.mu.Unlock()
 
 	if file != nil {
 		_ = file.Close()
 	}
+
+	if !started && s.pcm != nil {
+		_ = s.pcm.Close()
+	}
+
 	return err
 }
