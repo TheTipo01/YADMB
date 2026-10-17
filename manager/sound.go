@@ -253,6 +253,14 @@ func (server *Server) reconnectVoice() (voice.UDPConn, error) {
 		cancel()
 
 		if err == nil {
+			// If this reconnect happened mid-song, resync clients as soon as
+			// the voice connection is usable again. At the start of a song the
+			// frame counter is still zero, so the first Sync is sent when the
+			// first frame is actually read.
+			if frames := int(server.Frames.Load()); frames > 0 {
+				server.notifySync(frames, true)
+			}
+
 			return conn, nil
 		}
 
