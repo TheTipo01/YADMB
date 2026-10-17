@@ -35,6 +35,11 @@ func NewDatabase(dsn string) *database.Database {
 		return nil
 	}
 
+	if err = db.Ping(); err != nil {
+		slog.Error("Error connecting to db", "error", err)
+		return nil
+	}
+
 	// Create tables if they don't exist
 	database.ExecQuery(db, tblSong, tblCommands, tblBlacklist, tblLink, tblDJ, tblFavorites, tblSearch, tblPlaylist)
 

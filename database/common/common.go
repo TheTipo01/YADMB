@@ -49,7 +49,7 @@ func (c Common) RemoveCustom(command string, guild snowflake.ID) error {
 		slog.Error("Error removing from the database", "error", err)
 	}
 
-	return nil
+	return err
 }
 
 // GetCustomCommands loads custom command from the database
@@ -60,10 +60,11 @@ func (c Common) GetCustomCommands() (map[snowflake.ID]map[string]*database.Custo
 		commands             = make(map[snowflake.ID]map[string]*database.CustomCommand)
 	)
 
-	rows, err := c.db.Query("SELECT * FROM customCommands")
+	rows, err := c.db.Query("SELECT guild, command, song, loop FROM customCommands")
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(&guild, &command, &song, &loop)
@@ -72,13 +73,21 @@ func (c Common) GetCustomCommands() (map[snowflake.ID]map[string]*database.Custo
 			continue
 		}
 
-		parsedGuild := snowflake.MustParse(guild)
+		parsedGuild, err := snowflake.Parse(guild)
+		if err != nil {
+			slog.Error("Error parsing guild from database", "guild", guild, "error", err)
+			continue
+		}
 
 		if commands[parsedGuild] == nil {
 			commands[parsedGuild] = make(map[string]*database.CustomCommand)
 		}
 
 		commands[parsedGuild][command] = &database.CustomCommand{Link: song, Loop: loop}
+	}
+
+	if err = rows.Err(); err != nil {
+		return commands, err
 	}
 
 	return commands, nil
@@ -114,10 +123,14 @@ func (c Common) GetDJ() (map[snowflake.ID]database.DJ, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
-		var role, guild string
-		var enabled bool
+		var (
+			role    sql.NullString
+			guild   string
+			enabled bool
+		)
 
 		err = rows.Scan(&guild, &role, &enabled)
 		if err != nil {
@@ -125,7 +138,26 @@ func (c Common) GetDJ() (map[snowflake.ID]database.DJ, error) {
 			continue
 		}
 
-		roles[snowflake.MustParse(guild)] = database.DJ{Role: snowflake.MustParse(role), Enabled: enabled}
+		parsedGuild, err := snowflake.Parse(guild)
+		if err != nil {
+			slog.Error("Error parsing guild from database", "guild", guild, "error", err)
+			continue
+		}
+
+		var roleID snowflake.ID
+		if role.Valid && role.String != "" {
+			roleID, err = snowflake.Parse(role.String)
+			if err != nil {
+				slog.Error("Error parsing DJ role from database", "role", role.String, "error", err)
+				roleID = 0
+			}
+		}
+
+		roles[parsedGuild] = database.DJ{Role: roleID, Enabled: enabled}
+	}
+
+	if err = rows.Err(); err != nil {
+		return roles, err
 	}
 
 	return roles, nil
@@ -138,6 +170,7 @@ func (c Common) GetBlacklist() (*sync.Map, error) {
 	if err != nil {
 		return &ids, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var id string
@@ -148,6 +181,10 @@ func (c Common) GetBlacklist() (*sync.Map, error) {
 		}
 
 		ids.Store(id, struct{}{})
+	}
+
+	if err = rows.Err(); err != nil {
+		return &ids, err
 	}
 
 	return &ids, nil
@@ -164,6 +201,7 @@ func (c Common) GetFavorites(userID snowflake.ID) []database.Favorite {
 		slog.Error("Error querying database", "error", err)
 		return nil
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(&name, &link, &folder)
@@ -173,6 +211,10 @@ func (c Common) GetFavorites(userID snowflake.ID) []database.Favorite {
 		}
 
 		favorites = append(favorites, database.Favorite{Name: name, Link: link, Folder: folder})
+	}
+
+	if err = rows.Err(); err != nil {
+		slog.Error("Error iterating favorites", "error", err)
 	}
 
 	return favorites
@@ -216,6 +258,7 @@ func (c Common) GetPlaylist(playlist string) ([]string, error) {
 	if err != nil {
 		return entries, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err = rows.Scan(&entry)
@@ -227,7 +270,11 @@ func (c Common) GetPlaylist(playlist string) ([]string, error) {
 		entries = append(entries, entry)
 	}
 
-	return entries, err
+	if err = rows.Err(); err != nil {
+		return entries, err
+	}
+
+	return entries, nil
 }
 
 func (c Common) AddPlaylist(playlist, entry string, number int) error {
