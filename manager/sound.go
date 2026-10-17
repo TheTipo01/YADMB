@@ -27,6 +27,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	var (
 		opuslen    int16
 		skip       bool
+		started    bool
 		skipReason SkipReason
 		err        error
 	)
@@ -47,15 +48,15 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	ticker := time.NewTicker(time.Millisecond * 20)
 	defer ticker.Stop()
 
-	go notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
+	notify(notification.NotificationMessage{Notification: notification.Playing, Guild: server.GuildID})
 
 	for {
 		select {
 		case <-server.Pause:
-			go notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
+			notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
 			select {
 			case <-server.Resume:
-				go notify(notification.NotificationMessage{Notification: notification.Resume, Guild: server.GuildID})
+				notify(notification.NotificationMessage{Notification: notification.Resume, Guild: server.GuildID})
 			case target := <-server.Seek:
 				seekToFrame(el, target, int(server.Frames.Load()))
 			case skipReason = <-server.Skip:
@@ -126,7 +127,7 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 					el.Reader = bufio.NewReader(f)
 					el.Closer = f
 					server.Frames.Store(0)
-					go notify(notification.NotificationMessage{Notification: notification.LoopFinished, Guild: server.GuildID})
+					notify(notification.NotificationMessage{Notification: notification.LoopFinished, Guild: server.GuildID})
 					continue
 				} else {
 					cleanUp(server, el.Closer)
@@ -149,6 +150,13 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 				// Force to re-download the song
 				_ = os.Remove(constants.CachePath + el.ID + constants.AudioExtension)
 				return Error, err
+			}
+
+			// The first successfully read frame means the source is actually
+			// producing audio. This is what the web UI uses to start its clock.
+			if !started {
+				started = true
+				notify(notification.NotificationMessage{Notification: notification.Started, Guild: server.GuildID})
 			}
 
 			if skip {
@@ -234,12 +242,18 @@ func (server *Server) reconnectVoice() (voice.UDPConn, error) {
 }
 
 // writeFrame writes a single opus frame. If the UDP connection is gone, it
-// reconnects and retries the same frame so playback resumes where it stopped.
+// first gives disgo a chance to recover the existing voice connection (for
+// example after the bot was moved to another channel), then falls back to a
+// forced reconnect. The same frame is retried so playback resumes in place.
 func (server *Server) writeFrame(conn voice.UDPConn, frame []byte) (voice.UDPConn, error) {
 	if _, err := conn.Write(frame); err == nil {
 		return conn, nil
 	} else {
-		slog.Warn("voice write failed, reconnecting", "guild", server.GuildID, "error", err)
+		slog.Warn("voice write failed, trying to recover", "guild", server.GuildID, "error", err)
+	}
+
+	if newConn, err := server.waitForVoice(frame); err == nil {
+		return newConn, nil
 	}
 
 	newConn, err := server.reconnectVoice()
@@ -253,6 +267,49 @@ func (server *Server) writeFrame(conn voice.UDPConn, frame []byte) (voice.UDPCon
 	}
 
 	return newConn, nil
+}
+
+// waitForVoice waits for disgo's own reconnect logic to make the voice
+// connection usable again. This is the common path when Discord moves the bot
+// between channels: the old call is terminated and disgo opens a fresh voice
+// session. Retrying the same frame avoids losing the current song.
+func (server *Server) waitForVoice(frame []byte) (voice.UDPConn, error) {
+	const (
+		maxWait           = 35 * time.Second
+		pollInterval      = 250 * time.Millisecond
+		disconnectedGrace = 3 * time.Second
+	)
+
+	deadline := time.Now().Add(maxWait)
+	var disconnectedSince time.Time
+
+	for time.Now().Before(deadline) {
+		if server.Clear.Load() {
+			return nil, ErrVoiceLost
+		}
+
+		switch server.VC.GatewayStatus() {
+		case voice.StatusDisconnected, voice.StatusUnconnected:
+			if disconnectedSince.IsZero() {
+				disconnectedSince = time.Now()
+			} else if time.Since(disconnectedSince) >= disconnectedGrace {
+				// disgo is not reconnecting; let the caller force a fresh conn.
+				return nil, ErrVoiceLost
+			}
+		default:
+			disconnectedSince = time.Time{}
+
+			if conn, err := server.VC.UDP(); err == nil {
+				if _, err := conn.Write(frame); err == nil {
+					return conn, nil
+				}
+			}
+		}
+
+		time.Sleep(pollInterval)
+	}
+
+	return nil, ErrVoiceLost
 }
 
 func seekToFrame(el *queue.Element, target, current int) {

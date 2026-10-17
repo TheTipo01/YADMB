@@ -72,6 +72,19 @@ func (v *VC) ChannelID() (snowflake.ID, bool) {
 	return *channelID, true
 }
 
+// GatewayStatus returns the current voice gateway status.
+func (v *VC) GatewayStatus() voice.Status {
+	v.mu.RLock()
+	conn := v.conn
+	v.mu.RUnlock()
+
+	if conn == nil {
+		return voice.StatusUnconnected
+	}
+
+	return conn.Gateway().Status()
+}
+
 // Join joins channelID. Joining the channel the bot is already in is a no-op.
 // Joining another channel while already connected returns ErrAlreadyConnected;
 // the caller decides whether it is allowed to move the bot.

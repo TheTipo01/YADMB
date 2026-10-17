@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/dchest/uniuri v1.2.0
-	github.com/disgoorg/disgo v0.19.7-0.20260719203244-c09c86fe2aa0
+	github.com/disgoorg/disgo v0.19.7-0.20261001194251-68b7dbe697f2
 	github.com/disgoorg/godave/golibdave v0.3.0
 	github.com/disgoorg/snowflake/v2 v2.0.4-0.20250223124221-0e6fdabd91cc
 	github.com/gin-contrib/cors v1.7.7

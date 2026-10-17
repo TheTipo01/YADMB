@@ -65,8 +65,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dchest/uniuri v1.2.0 h1:koIcOUdrTIivZgSLhHQvKgqdWZq5d7KdMEWF1Ud6+5g=
 github.com/dchest/uniuri v1.2.0/go.mod h1:fSzm4SLHzNZvWLvWJew423PhAzkpNQYq+uNLq4kxhkY=
-github.com/disgoorg/disgo v0.19.7-0.20260719203244-c09c86fe2aa0 h1:2dzfi12y0TH0kzCd3NaXEULUfZlpqCWWO9XqRC/3w4Y=
-github.com/disgoorg/disgo v0.19.7-0.20260719203244-c09c86fe2aa0/go.mod h1:ZMGQXsHdnrc7rIgcugi6Ht8sSPOKXwy7WKeNlDGfgKg=
+github.com/disgoorg/disgo v0.19.7-0.20261001194251-68b7dbe697f2 h1:xX71+Ln5drbunrNX1HvC0i/wxpNc33G3rNOkSG64+Mo=
+github.com/disgoorg/disgo v0.19.7-0.20261001194251-68b7dbe697f2/go.mod h1:ZMGQXsHdnrc7rIgcugi6Ht8sSPOKXwy7WKeNlDGfgKg=
 github.com/disgoorg/godave v0.3.0 h1:37F3ZuiMd8/EXeoCtTeE8iP2eT2nWsfEa4/ITwoKfe4=
 github.com/disgoorg/godave v0.3.0/go.mod h1:OreAC3hpabr39bMVA+jwOVDq1EUPXH5A0XUBiZaDI1Y=
 github.com/disgoorg/godave/golibdave v0.3.0 h1:mSX4YzIYasUB80fo8izi0ENplOKRm7WDwRxXYfKFKWQ=
