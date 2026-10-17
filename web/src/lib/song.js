@@ -20,11 +20,15 @@ export async function ToggleSong(GuildID, token, action = '', host) {
 
 		// Error Handling
 		switch (response.status) {
+			case 200:
+				return Response.SUCCESS;
 			case 401:
 				return Response.QUEUE_TOKEN_ERR;
 			case 406:
 				return Response.SONG_PAUSED_ERR;
 			case 500:
+				return Response.SONG_TOGGLE_ERR;
+			default:
 				return Response.SONG_TOGGLE_ERR;
 		}
 	}

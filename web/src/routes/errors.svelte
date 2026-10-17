@@ -14,6 +14,7 @@
 	$effect(() => {
 		loading = true;
 		open = false;
+		let timer;
 
 		Promise.resolve(response).then((result) => {
 			code = result;
@@ -22,13 +23,13 @@
 			if (typeof result === 'number') {
 				open = true;
 
-				const timer = setTimeout(() => {
+				timer = setTimeout(() => {
 					open = false;
 				}, 7000);
-
-				return () => clearTimeout(timer);
 			}
 		});
+
+		return () => clearTimeout(timer);
 	});
 </script>
 

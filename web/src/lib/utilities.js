@@ -1,6 +1,10 @@
 // Function to add an object to the array
 export function AddObjectToArray(promise, objectToAdd) {
 	return promise.then((array) => {
+		if (!Array.isArray(array)) {
+			return [...objectToAdd];
+		}
+
 		return [...array, ...objectToAdd];
 	});
 }
@@ -8,6 +12,10 @@ export function AddObjectToArray(promise, objectToAdd) {
 // Function to add an object to the array as the second element
 export function AddObjectToArrayAsSecond(promise, objectToAdd) {
 	return promise.then((array) => {
+		if (!array || array.length === 0) {
+			return [...objectToAdd];
+		}
+
 		return [array[0], ...objectToAdd, ...array.slice(1)];
 	});
 }
@@ -15,24 +23,42 @@ export function AddObjectToArrayAsSecond(promise, objectToAdd) {
 // Function to remove the first object from the array
 export function RemoveFirstObjectFromArray(promise) {
 	return promise.then((array) => {
-		array.shift();
-		return array;
+		if (!Array.isArray(array)) {
+			return [];
+		}
+
+		return array.slice(1);
 	});
 }
 
 // Function to remove the given object from the array
 export function RemoveObjectFromArray(promise, objectToRemove) {
 	return promise.then((array) => {
+		if (!Array.isArray(array)) {
+			return [];
+		}
+
 		return array.filter((object) => {
 			return object !== objectToRemove;
 		});
 	});
 }
 
+// Function to remove favorites with the given name from the array
+export function RemoveObjectFromArrayByName(promise, name) {
+	return promise.then((array) => {
+		if (!Array.isArray(array)) {
+			return [];
+		}
+
+		return array.filter((object) => object.name !== name);
+	});
+}
+
 // Function to negate isPaused of the first element in the queue
 export function TogglePause(promise) {
 	return promise.then((array) => {
-		if (array.length > 0) {
+		if (Array.isArray(array) && array.length > 0) {
 			array[0].isPaused = !array[0].isPaused;
 		}
 		return array;
@@ -42,7 +68,7 @@ export function TogglePause(promise) {
 // Function to set isPaused of the first element in the queue
 export function SetPause(promise, isPaused) {
 	return promise.then((array) => {
-		if (array.length > 0) {
+		if (Array.isArray(array) && array.length > 0) {
 			array[0].isPaused = isPaused;
 		}
 
@@ -80,13 +106,13 @@ export function GetPauseStatus(promise) {
 // Function to get the GuildID from URL query
 export function GetGuildID() {
 	let query = new URLSearchParams(window.location.search);
-	return query.get('GuildId');
+	return query.get('GuildId') ?? '';
 }
 
 // Function to get the Token from URL query
 export function GetToken() {
 	let query = new URLSearchParams(window.location.search);
-	return query.get('token');
+	return query.get('token') ?? '';
 }
 
 // Function to get the hostname and protocol from URL
@@ -97,6 +123,10 @@ export function GetHost() {
 // Function to get the number of folders
 export function GetFolders(favorites) {
 	let folders = [''];
+	if (!Array.isArray(favorites)) {
+		return folders;
+	}
+
 	for (let i = 0; i < favorites.length; i++) {
 		if (!folders.includes(favorites[i].folder)) {
 			folders.push(favorites[i].folder);
@@ -108,21 +138,38 @@ export function GetFolders(favorites) {
 
 // Function to get timestamp
 export function GetTime(seconds) {
-	let minutes = Math.floor(seconds / 60);
-	let hours = Math.floor(seconds / 3600);
-	seconds = Math.floor(seconds % 60);
+	seconds = Math.max(0, Math.floor(Number(seconds) || 0));
 
-	seconds = seconds < 10 ? '0' + seconds : seconds;
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	const secs = seconds % 60;
+	const pad = (value) => String(value).padStart(2, '0');
 
 	if (hours !== 0) {
-		minutes = minutes < 10 ? '0' + minutes : minutes;
-		hours = hours < 10 ? '0' + hours : hours;
-		return `${hours}:${minutes}:${seconds}`;
+		return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 	}
 	if (minutes !== 0) {
-		minutes = minutes < 10 ? '0' + minutes : minutes;
-		return `${minutes}:${seconds}`;
+		return `${pad(minutes)}:${pad(secs)}`;
 	}
 
-	return `00:${seconds}`;
+	return `00:${pad(secs)}`;
+}
+
+// Only allow http(s) links in href attributes.
+export function SafeHref(link) {
+	if (!link) {
+		return '#';
+	}
+
+	try {
+		const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+		const url = new URL(link, base);
+		if (url.protocol === 'http:' || url.protocol === 'https:') {
+			return link;
+		}
+	} catch {
+		// Ignore invalid URLs.
+	}
+
+	return '#';
 }

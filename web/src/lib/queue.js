@@ -4,10 +4,10 @@ import { Response } from './error';
 export async function AddToQueueHTML(GuildID, token, host) {
 	// Values needed for adding a song to a queue
 	let song = document.getElementById('song').value.trim();
-	let shuffle = document.getElementById('shuffle')?.checked;
-	let playlist = document.getElementById('playlist')?.checked;
-	let loop = document.getElementById('loop')?.checked;
-	let priority = document.getElementById('priority')?.checked;
+	let shuffle = document.getElementById('shuffle')?.checked ?? false;
+	let playlist = document.getElementById('playlist')?.checked ?? false;
+	let loop = document.getElementById('loop')?.checked ?? false;
+	let priority = document.getElementById('priority')?.checked ?? false;
 
 	return AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority);
 }
@@ -25,10 +25,10 @@ export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, 
 		body: new URLSearchParams({
 			token: token,
 			song: song,
-			shuffle: shuffle.toString(),
-			playlist: playlist.toString(),
-			loop: loop.toString(),
-			priority: priority.toString()
+			shuffle: String(shuffle),
+			playlist: String(playlist),
+			loop: String(loop),
+			priority: String(priority)
 		}).toString()
 	});
 
@@ -42,6 +42,8 @@ export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, 
 			return Response.QUEUE_ADD_ERR;
 		case 406:
 			return Response.QUEUE_PLAYLIST_ERR;
+		default:
+			return Response.QUEUE_PLAY_ERR;
 	}
 }
 
@@ -73,6 +75,8 @@ export async function RemoveFromQueue(GuildID, token, clear = false, host) {
 			return Response.QUEUE_CHANNEL_ERR;
 		case 406:
 			return Response.QUEUE_PLAY_ERR;
+		default:
+			return Response.QUEUE_PLAY_ERR;
 	}
 }
 
@@ -94,5 +98,7 @@ export async function GetQueue(GuildID, token, host) {
 			return await response.json();
 		case 401:
 			return Response.QUEUE_TOKEN_ERR;
+		default:
+			return Response.QUEUE_PLAY_ERR;
 	}
 }

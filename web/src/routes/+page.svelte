@@ -16,7 +16,7 @@
 		GetTime,
 		AddObjectToArrayAsSecond
 	} from '../lib/utilities.js';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { GetQueue } from '../lib/queue.js';
 	import logo from '../assets/logo_yadmb.png';
 	import { ListMusicSolid, StarSolid } from 'flowbite-svelte-icons';
@@ -31,8 +31,19 @@
 	let queue = $state(null);
 	let seconds = 0;
 	let timestamp = $state();
+	let socket;
+	let reconnectTimer;
+	let clockTimer;
+	let stopped = false;
 
 	onMount(async () => {
+		clockTimer = setInterval(function () {
+			if (playing) {
+				seconds += 1;
+				timestamp = GetTime(seconds);
+			}
+		}, 1000);
+
 		GuildId = GetGuildID();
 		token = GetToken();
 		host = GetHost();
@@ -51,9 +62,20 @@
 			websocket_url = websocket_url.replace('http://', 'ws://');
 		}
 
-		// Connects to the websocket
-		function start() {
-			const socket = new WebSocket(websocket_url);
+		// Connects to the websocket, reconnecting with exponential backoff.
+		let reconnectDelay = 1000;
+
+		function connect() {
+			if (stopped) {
+				return;
+			}
+
+			socket = new WebSocket(websocket_url);
+
+			socket.onopen = function () {
+				reconnectDelay = 1000;
+			};
+
 			socket.onmessage = function (e) {
 				// Enum for the events
 				const Notification = Object.freeze({
@@ -67,10 +89,20 @@
 					NewSongPriority: 7,
 					LoopFinished: 8
 				});
-				let signal = JSON.parse(e.data);
+
+				let signal;
+				try {
+					signal = JSON.parse(e.data);
+				} catch (error) {
+					console.error('Invalid websocket message', error);
+					return;
+				}
+
+				const songs = Array.isArray(signal.song) ? signal.song : [];
+
 				switch (signal.notification) {
 					case Notification.NewSong: // New song
-						queue = AddObjectToArray(queue, signal.song);
+						queue = AddObjectToArray(queue, songs);
 						break;
 					case Notification.Skip:
 					case Notification.Finished: // Song skipped or finished
@@ -78,11 +110,14 @@
 						queue = SetPause(queue, false);
 						playing = false;
 						seconds = 0;
+						timestamp = GetTime(0);
 						break;
 					case Notification.Clear: // Queue cleared
 						queue = ClearArray(queue);
 						queue = SetPause(queue, false);
+						playing = false;
 						seconds = 0;
+						timestamp = GetTime(0);
 						break;
 					case Notification.Resume:
 					case Notification.Pause: // Song paused or resumed
@@ -93,28 +128,39 @@
 						playing = true;
 						break;
 					case Notification.NewSongPriority:
-						queue = AddObjectToArrayAsSecond(queue, signal.song);
+						queue = AddObjectToArrayAsSecond(queue, songs);
 						break;
 					case Notification.LoopFinished:
 						seconds = 0;
+						timestamp = GetTime(0);
 						break;
 				}
 			};
 
-			socket.onclose = function (e) {
-				if (!socket || socket.readyState === WebSocket.CLOSED) start();
+			socket.onclose = function () {
+				if (stopped) {
+					return;
+				}
+
+				clearTimeout(reconnectTimer);
+				reconnectTimer = setTimeout(connect, reconnectDelay);
+				reconnectDelay = Math.min(reconnectDelay * 2, 30000);
 			};
-			socket.onerror = socket.onclose;
+
+			socket.onerror = function () {
+				socket?.close();
+			};
 		}
 
-		start();
+		connect();
 	});
-	setInterval(function () {
-		if (playing) {
-			seconds += 1;
-			timestamp = GetTime(seconds);
-		}
-	}, 1000);
+
+	onDestroy(() => {
+		stopped = true;
+		clearTimeout(reconnectTimer);
+		clearInterval(clockTimer);
+		socket?.close();
+	});
 </script>
 
 <div class="flex justify-center">

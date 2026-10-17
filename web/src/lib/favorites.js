@@ -30,6 +30,8 @@ export async function AddFavorite(token, host) {
 			return Response.FAVORITE_TOKEN_ERROR;
 		case 500:
 			return Response.DUPLICATE_ERROR;
+		default:
+			return Response.FAVORITE_ERROR;
 	}
 }
 
@@ -57,6 +59,8 @@ export async function RemoveFavorite(token, name, host) {
 			return Response.FAVORITE_TOKEN_ERROR;
 		case 500:
 			return Response.FAVORITE_ERROR;
+		default:
+			return Response.FAVORITE_ERROR;
 	}
 }
 
@@ -78,5 +82,7 @@ export async function GetFavorites(token, host) {
 			return await response.json();
 		case 401:
 			return Response.FAVORITE_TOKEN_ERROR;
+		default:
+			return Response.FAVORITE_ERROR;
 	}
 }

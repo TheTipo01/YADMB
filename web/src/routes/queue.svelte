@@ -4,6 +4,8 @@
 	import { ToggleSong } from '../lib/song';
 	import { PauseSolid, PlaySolid } from 'flowbite-svelte-icons';
 	import Error from './errors.svelte';
+	import { Response } from '../lib/error';
+	import { SafeHref } from '../lib/utilities';
 
 	/** @type {{GuildId: any, token: any, host: any, queue: any, timestamp: any}} */
 	let { GuildId, token, host, queue, timestamp } = $props();
@@ -27,13 +29,21 @@
 
 	// Helper function to handle Toggle and update UI immediately
 	async function handleToggle(action) {
-		// Optimistic Update: Update the UI immediately so the button gets disabled
-		if (queueData && queueData.length > 0) {
-			queueData[0].isPaused = action === 'pause';
+		if (!queueData || queueData.length === 0) {
+			return;
 		}
+
+		const previous = queueData[0].isPaused;
+
+		// Optimistic Update: Update the UI immediately so the button gets disabled
+		queueData[0].isPaused = action === 'pause';
 
 		// Perform the API call
 		code = await ToggleSong(GuildId, token, action, host);
+
+		if (code !== Response.SUCCESS) {
+			queueData[0].isPaused = previous;
+		}
 	}
 </script>
 
@@ -92,6 +102,8 @@
 <!-- Queue Display -->
 {#if isLoading}
 	<P>Fetching Queue</P>
+{:else if typeof queueData === 'number'}
+	<Error response={queueData} />
 {:else if queueData && queueData.length !== 0 && typeof queueData != 'number'}
 	<div class="grid grid-row-2 gap-4">
 		<!-- First Row -->
@@ -100,7 +112,7 @@
 			<div class="justify-self-center">
 				<!-- Thumbnail and pause/resume buttons -->
 				<div>
-					<A href={queueData[0].link}
+					<A href={SafeHref(queueData[0].link)}
 						><img alt="thumbnail" src={queueData[0].thumbnail} class="max-w-3xl" /></A
 					>
 					{#if timestamp !== undefined}
@@ -134,7 +146,7 @@
 					{#if index !== 0}
 						<div class="grid grid-cols-3 justify-items-center mt-3">
 							<Avatar src={song.thumbnail} cornerStyle="rounded" />
-							<A href={song.link}>{song.title}</A>
+							<A href={SafeHref(song.link)}>{song.title}</A>
 							<P>{song.duration}</P>
 						</div>
 					{/if}
@@ -148,7 +160,7 @@
 				<div>
 					<!-- Title and various info -->
 					<div>
-						<A class="mt-0" href={queueData[0].link}
+						<A class="mt-0" href={SafeHref(queueData[0].link)}
 							><P weight="bold" class="mt-0 justify-self-start">{queueData[0].title}</P></A
 						>
 						<P>Requested by {queueData[0].user}</P>

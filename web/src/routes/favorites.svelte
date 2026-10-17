@@ -1,7 +1,12 @@
 <script>
 	import { Accordion, AccordionItem, Button, Input, Label, Modal, P, A } from 'flowbite-svelte';
 	import { AddFavorite, GetFavorites, RemoveFavorite } from '../lib/favorites';
-	import { AddObjectToArray, RemoveObjectFromArray, GetFolders } from '../lib/utilities';
+	import {
+		AddObjectToArray,
+		RemoveObjectFromArrayByName,
+		GetFolders,
+		SafeHref
+	} from '../lib/utilities';
 	import {
 		Table,
 		TableBody,
@@ -23,6 +28,38 @@
 	let favorites = $state(GetFavorites(token, host));
 	let code = $state(favorites);
 	let showModal = $state(false);
+
+	async function submitFavorite() {
+		const result = await AddFavorite(token, host);
+		switch (result) {
+			case Response.FAVORITE_TOKEN_ERROR:
+				code = Response.FAVORITE_TOKEN_ERROR;
+				break;
+			case Response.DUPLICATE_ERROR:
+				code = Response.DUPLICATE_ERROR;
+				break;
+			default:
+				code = Response.SUCCESS;
+				favorites = AddObjectToArray(favorites, result);
+		}
+
+		showModal = false;
+	}
+
+	async function removeFavorite(song) {
+		const result = await RemoveFavorite(token, song.name, host);
+		switch (result) {
+			case Response.FAVORITE_TOKEN_ERROR:
+				code = Response.FAVORITE_TOKEN_ERROR;
+				break;
+			case Response.FAVORITE_ERROR:
+				code = Response.FAVORITE_ERROR;
+				break;
+			default:
+				code = Response.SUCCESS;
+				favorites = RemoveObjectFromArrayByName(favorites, song.name);
+		}
+	}
 </script>
 
 <!-- Modal Button -->
@@ -42,8 +79,7 @@
 					id="name"
 					onkeydown={(e) => {
 						if (e.key === 'Enter') {
-							code = AddFavorite(token, host);
-							showModal = false;
+							submitFavorite();
 						}
 					}}
 					required
@@ -56,8 +92,7 @@
 					id="link"
 					onkeydown={(e) => {
 						if (e.key === 'Enter') {
-							code = AddFavorite(token, host);
-							showModal = false;
+							submitFavorite();
 						}
 					}}
 					required
@@ -70,8 +105,7 @@
 					id="folder"
 					onkeydown={(e) => {
 						if (e.key === 'Enter') {
-							code = AddFavorite(token, host);
-							showModal = false;
+							submitFavorite();
 						}
 					}}
 				/>
@@ -81,23 +115,7 @@
 
 	<!-- Submit button -->
 	{#snippet footer()}
-		<Button
-			onclick={async () => {
-				let result = await AddFavorite(token, host, favorites);
-				switch (result) {
-					case Response.FAVORITE_TOKEN_ERROR:
-						code = Response.FAVORITE_TOKEN_ERROR;
-						break;
-					case Response.DUPLICATE_ERROR:
-						code = Response.DUPLICATE_ERROR;
-						break;
-					default:
-						code = Response.SUCCESS;
-						favorites = AddObjectToArray(favorites, result);
-				}
-			}}
-			>Add
-		</Button>
+		<Button onclick={submitFavorite}>Add</Button>
 	{/snippet}
 </Modal>
 
@@ -107,7 +125,9 @@
 {#await favorites}
 	<P>Loading Favorites</P>
 {:then favorite}
-	{#if favorite.length !== 0}
+	{#if typeof favorite === 'number'}
+		<Error response={favorite} />
+	{:else if Array.isArray(favorite) && favorite.length !== 0}
 		<Accordion>
 			{#each GetFolders(favorite) as folder}
 				<!-- Folder Header -->
@@ -133,7 +153,7 @@
 									{#if song.folder === folder}
 										<TableBodyCell class="w-1/2"><P align="center">{song.name}</P></TableBodyCell>
 										<TableBodyCell align="center" class="w-2/5"
-											><A href={song.link}>{song.link}</A></TableBodyCell
+											><A href={SafeHref(song.link)}>{song.link}</A></TableBodyCell
 										>
 										<TableBodyCell
 											onclick={() =>
@@ -153,22 +173,7 @@
 											</div>
 											<P align="center">Add to Queue</P>
 										</TableBodyCell>
-										<TableBodyCell
-											onclick={async () => {
-												let result = await RemoveFavorite(token, song.name, host);
-												switch (result) {
-													case Response.FAVORITE_TOKEN_ERROR:
-														code = Response.FAVORITE_TOKEN_ERROR;
-														break;
-													case Response.FAVORITE_NOT_FOUND:
-														code = Response.FAVORITE_NOT_FOUND;
-														break;
-													default:
-														code = Response.SUCCESS;
-														favorites = RemoveObjectFromArray(favorites, song);
-												}
-											}}
-										>
+										<TableBodyCell onclick={() => removeFavorite(song)}>
 											<div class="flex items-center justify-center cursor-pointer">
 												<TrashBinSolid size="lg" />
 											</div>
