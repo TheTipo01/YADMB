@@ -355,6 +355,12 @@ components:
       properties:
         notification:
           type: integer
+          description: |
+            0 = NewSongs, 1 = Skip, 2 = Pause, 3 = Resume, 4 = Clear,
+            5 = Finished, 6 = Playing, 7 = PrioritySong, 8 = LoopFinished,
+            9 = Started (the bot produced the first audio frame; start the
+            playback clock only on this event)
+          enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
           example: 0
         song:
           type: array

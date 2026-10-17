@@ -28,6 +28,7 @@
 	let host = $state('');
 	let activetab = $state('queue');
 	let playing;
+	let started = $state(false);
 	let queue = $state(null);
 	let seconds = 0;
 	let timestamp = $state();
@@ -48,10 +49,13 @@
 		token = GetToken();
 		host = GetHost();
 		queue = GetQueue(GuildId, token, host);
-		playing = await GetPauseStatus(queue);
 
-		// Timestamp
-		if (seconds === 0) seconds = (await GetFrames(queue)) / FrameSeconds;
+		const frames = await GetFrames(queue);
+		const paused = await GetPauseStatus(queue);
+		seconds = frames / FrameSeconds;
+		started = frames > 0;
+		playing = paused && started;
+
 		timestamp = GetTime(Math.floor(seconds));
 
 		let websocket_url = `${host}/ws/${GuildId}?` + new URLSearchParams({ token: token }).toString();
@@ -87,7 +91,8 @@
 					Finished: 5,
 					Playing: 6,
 					NewSongPriority: 7,
-					LoopFinished: 8
+					LoopFinished: 8,
+					Started: 9
 				});
 
 				let signal;
@@ -108,6 +113,7 @@
 					case Notification.Finished: // Song skipped or finished
 						queue = RemoveFirstObjectFromArray(queue);
 						queue = SetPause(queue, false);
+						started = false;
 						playing = false;
 						seconds = 0;
 						timestamp = GetTime(0);
@@ -115,6 +121,7 @@
 					case Notification.Clear: // Queue cleared
 						queue = ClearArray(queue);
 						queue = SetPause(queue, false);
+						started = false;
 						playing = false;
 						seconds = 0;
 						timestamp = GetTime(0);
@@ -122,10 +129,20 @@
 					case Notification.Resume:
 					case Notification.Pause: // Song paused or resumed
 						queue = TogglePause(queue);
-						playing = !playing;
+						playing = signal.notification === Notification.Resume ? started : false;
 						break;
 					case Notification.Playing:
+						// The bot is preparing the song; the clock starts on Started.
+						started = false;
+						playing = false;
+						seconds = 0;
+						timestamp = GetTime(0);
+						break;
+					case Notification.Started:
+						started = true;
 						playing = true;
+						seconds = 0;
+						timestamp = GetTime(0);
 						break;
 					case Notification.NewSongPriority:
 						queue = AddObjectToArrayAsSecond(queue, songs);
