@@ -103,7 +103,7 @@ func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationComman
 }
 
 func DeferResponse(e *events.ApplicationCommandInteractionCreate) chan struct{} {
-	c := make(chan struct{})
+	c := make(chan struct{}, 1)
 
 	if e != nil {
 		go func() {
