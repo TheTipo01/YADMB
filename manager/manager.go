@@ -13,7 +13,6 @@ import (
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
-	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/TheTipo01/YADMB/vc"
@@ -22,7 +21,7 @@ import (
 )
 
 var (
-	Notifications = make(chan notification.NotificationMessage, 1)
+	Notifications = make(chan notification.NotificationMessage, 64)
 	BotName       string
 )
 
@@ -30,7 +29,6 @@ var (
 func NewServer(guildID snowflake.ID, clients *Clients) *Server {
 	return &Server{
 		Queue:   queue.NewQueue(),
-		Custom:  make(map[string]*database.CustomCommand),
 		GuildID: guildID,
 		Pause:   make(chan struct{}, 1),
 		Resume:  make(chan struct{}, 1),

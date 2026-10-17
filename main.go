@@ -132,8 +132,11 @@ func init() {
 
 	// And load custom commands from the db
 	commands, _ := clients.Database.GetCustomCommands()
-	for k := range commands {
-		servers.GetOrCreate(k, &clients).Custom = commands[k]
+	for guild := range commands {
+		srv := servers.GetOrCreate(guild, &clients)
+		for command, cmd := range commands[guild] {
+			srv.SetCustom(command, cmd)
+		}
 	}
 
 	// Load the blacklist
@@ -150,8 +153,8 @@ func init() {
 
 	for k := range dj {
 		srv := servers.GetOrCreate(k, &clients)
-		srv.DjMode = dj[k].Enabled
-		srv.DjRole = dj[k].Role
+		srv.SetDJEnabled(dj[k].Enabled)
+		srv.SetDJRoleID(dj[k].Role)
 	}
 
 	// Load the whitelist

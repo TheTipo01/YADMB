@@ -67,7 +67,7 @@ func (server *Server) PlayCommand(clients *Clients, e *events.ApplicationCommand
 }
 
 func (server *Server) DjModeCheck(member discord.Member, owner map[snowflake.ID]struct{}) bool {
-	if _, isOwner := owner[member.User.ID]; server.DjMode && isOwner && !HasRole(member.RoleIDs, server.DjRole) {
+	if _, isOwner := owner[member.User.ID]; server.DJEnabled() && isOwner && !HasRole(member.RoleIDs, server.DJRoleID()) {
 		return true
 	}
 	return false

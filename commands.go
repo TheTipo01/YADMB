@@ -430,9 +430,13 @@ var (
 			loop := options.Bool("loop")
 			guildID := *e.GuildID()
 
-			if getServer(guildID).Custom[command] == nil {
+			srv := getServer(guildID)
+
+			if _, ok := srv.GetCustom(command); !ok {
 				err := clients.Database.AddCommand(command, link, guildID, loop)
-				getServer(guildID).Custom[command] = &database.CustomCommand{Link: link, Loop: loop}
+				if err == nil {
+					srv.SetCustom(command, &database.CustomCommand{Link: link, Loop: loop})
+				}
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
@@ -449,10 +453,14 @@ var (
 		// Removes a custom command from the DB
 		"rmcustom": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
+			srv := getServer(guildID)
+			command := e.SlashCommandInteractionData().String("custom-command")
 
-			if command := e.SlashCommandInteractionData().String("custom-command"); getServer(guildID).Custom[command] != nil {
+			if _, ok := srv.GetCustom(command); ok {
 				err := clients.Database.RemoveCustom(command, guildID)
-				delete(getServer(guildID).Custom, command)
+				if err == nil {
+					srv.DeleteCustom(command)
+				}
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
@@ -470,12 +478,7 @@ var (
 		"listcustom": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
 
-			commands := make([]string, 0, len(getServer(guildID).Custom))
-
-			for c := range getServer(guildID).Custom {
-				commands = append(commands, c)
-			}
-
+			commands := getServer(guildID).CustomNames()
 			sort.Strings(commands)
 
 			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.CommandsTitle, strings.Join(commands, ", "), false).
@@ -484,10 +487,11 @@ var (
 		// Calls a custom command
 		"custom": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
+			srv := getServer(guildID)
 
 			c := embed.DeferResponse(e)
 
-			if getServer(guildID).DjModeCheck(e.Member().Member, owners) {
+			if srv.DjModeCheck(e.Member().Member, owners) {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
 					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
@@ -496,17 +500,17 @@ var (
 
 			command := strings.ToLower(options.String("command"))
 
-			if getServer(guildID).Custom[command] != nil {
+			if custom, ok := srv.GetCustom(command); ok {
 				// Check if user is not in a voice channel
 				if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
-					if manager.JoinVC(e, *vs.ChannelID, getServer(guildID), c) {
+					if manager.JoinVC(e, *vs.ChannelID, srv, c) {
 						p := manager.PlayEvent{
 							Username:    e.Member().User.Username,
-							Song:        getServer(guildID).Custom[command].Link,
+							Song:        custom.Link,
 							Clients:     &clients,
 							Event:       e,
 							Random:      false,
-							Loop:        getServer(guildID).Custom[command].Loop,
+							Loop:        custom.Loop,
 							Priority:    false,
 							IsDeferred:  c,
 							TextChannel: e.Channel().ID(),
@@ -598,26 +602,32 @@ var (
 						"You are really trying to add yourself to the blacklist?", false).
 						WithColor(0x7289DA), e, time.Second*3, nil)
 				} else {
-					if _, ok := blacklist.Load(id); ok {
-						// Removing from the blacklist
-						blacklist.Delete(id)
+					key := id.String()
 
-						err := clients.Database.RemoveFromBlacklist(id)
-						if err != nil {
+					if _, ok := blacklist.Load(key); ok {
+						// Removing from the blacklist
+						if err := clients.Database.RemoveFromBlacklist(id); err != nil {
 							slog.Error("Error while deleting from blacklist", "error", err)
+							embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
+								WithColor(0x7289DA), e, time.Second*5, nil)
+							return
 						}
+
+						blacklist.Delete(key)
 
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.BlacklistTitle,
 							constants.BlacklistRemoved, false).
 							WithColor(0x7289DA), e, time.Second*3, nil)
 					} else {
 						// Adding
-						blacklist.Store(id, struct{}{})
-
-						err := clients.Database.AddToBlacklist(id)
-						if err != nil {
-							slog.Error("Error while inserting from blacklist", "error", err)
+						if err := clients.Database.AddToBlacklist(id); err != nil {
+							slog.Error("Error while inserting into blacklist", "error", err)
+							embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
+								WithColor(0x7289DA), e, time.Second*5, nil)
+							return
 						}
+
+						blacklist.Store(key, struct{}{})
 
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.BlacklistTitle,
 							constants.BlacklistAdded, false).
@@ -718,10 +728,11 @@ var (
 		// Enables or disables DJ mode
 		"dj": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
+			srv := getServer(guildID)
 
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
-				if getServer(guildID).DjMode {
-					getServer(guildID).DjMode = false
+				if srv.DJEnabled() {
+					srv.SetDJEnabled(false)
 					err := clients.Database.SetDJSettings(guildID, false)
 					if err != nil {
 						slog.Error("Error while disabling DJ mode", "error", err)
@@ -730,7 +741,7 @@ var (
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjDisabled, false).
 						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					getServer(guildID).DjMode = true
+					srv.SetDJEnabled(true)
 					err := clients.Database.SetDJSettings(guildID, true)
 					if err != nil {
 						slog.Error("Error while enabling DJ mode", "error", err)
@@ -748,11 +759,12 @@ var (
 		// Sets the DJ role
 		"djrole": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
+			srv := getServer(guildID)
 
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				role := e.SlashCommandInteractionData().Role("role")
-				if role.ID != getServer(guildID).DjRole {
-					getServer(guildID).DjRole = role.ID
+				if role.ID != srv.DJRoleID() {
+					srv.SetDJRoleID(role.ID)
 					err := clients.Database.UpdateDJRole(guildID, role.ID)
 					if err != nil {
 						slog.Error("Error updating DJ role", "error", err)
@@ -773,19 +785,23 @@ var (
 		// Adds or removes the DJ role from a user
 		"djroletoggle": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
+			srv := getServer(guildID)
 
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				var err error
 				var action string
 
 				user := e.SlashCommandInteractionData().User("user")
-				member, _ := e.Client().Caches.Member(*e.GuildID(), user.ID)
+				member, ok := e.Client().Caches.Member(*e.GuildID(), user.ID)
+				roleID := srv.DJRoleID()
 
-				if !manager.HasRole(member.RoleIDs, getServer(guildID).DjRole) {
-					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, getServer(guildID).DjRole)
+				if !ok || roleID == 0 {
+					err = errors.New("member or DJ role not available")
+				} else if !manager.HasRole(member.RoleIDs, roleID) {
+					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, roleID)
 					action = "added!"
 				} else {
-					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, getServer(guildID).DjRole)
+					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, roleID)
 					action = "removed!"
 				}
 
@@ -807,6 +823,12 @@ var (
 		// Generates a link to the web UI
 		"webui": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
+
+			if webApi == nil {
+				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle,
+					"The web UI is not enabled!", false).WithColor(0x7289DA), e, time.Second*5, nil)
+				return
+			}
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
 				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().ID()})

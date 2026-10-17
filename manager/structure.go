@@ -31,7 +31,7 @@ type Server struct {
 	// Voice connection
 	VC *vc.VC
 	// Custom commands, maps a command to a song
-	Custom map[string]*database.CustomCommand
+	Custom sync.Map
 	// Frames
 	Frames atomic.Uint64
 	// Quit channel
@@ -56,6 +56,8 @@ type Server struct {
 	DjRole snowflake.ID
 	// Whether the DJ mode is enabled
 	DjMode bool
+	// Protects the DJ settings
+	djMu sync.RWMutex
 	// Clients used for interacting with the various APIs
 	Clients *Clients
 	// Mutexes and state used by the player
