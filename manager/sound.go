@@ -22,6 +22,18 @@ import (
 // rest of the queue can be retried by the next play command.
 var ErrVoiceLost = errors.New("voice connection lost")
 
+// notifySync tells clients the exact playback position and whether audio is
+// currently flowing. It is sent after a start, a pause/resume, a skip and
+// whenever a voice interruption has been recovered.
+func (server *Server) notifySync(frames int, playing bool) {
+	notify(notification.NotificationMessage{
+		Notification: notification.Sync,
+		Guild:        server.GuildID,
+		Frames:       frames,
+		Playing:      &playing,
+	})
+}
+
 // Plays a song in DCA format
 func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	var (
@@ -54,9 +66,13 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 		select {
 		case <-server.Pause:
 			notify(notification.NotificationMessage{Notification: notification.Pause, Guild: server.GuildID})
+			server.notifySync(int(server.Frames.Load()), false)
 			select {
 			case <-server.Resume:
 				notify(notification.NotificationMessage{Notification: notification.Resume, Guild: server.GuildID})
+				if started {
+					server.notifySync(int(server.Frames.Load()), true)
+				}
 			case target := <-server.Seek:
 				seekToFrame(el, target, int(server.Frames.Load()))
 			case skipReason = <-server.Skip:
@@ -72,6 +88,12 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			frame := int(server.Frames.Load())
 			if _, ok := el.Segments[frame]; ok {
 				skip = !skip
+
+				// The target frame was reached: resync clients instead of
+				// letting their local clock drift during the fast-forward.
+				if !skip {
+					server.notifySync(frame, true)
+				}
 			}
 
 			// Read opus frame length from dca file.
@@ -153,10 +175,10 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			}
 
 			// The first successfully read frame means the source is actually
-			// producing audio. This is what the web UI uses to start its clock.
+			// producing audio. Sync clients to the real playback position.
 			if !started {
 				started = true
-				notify(notification.NotificationMessage{Notification: notification.Started, Guild: server.GuildID})
+				server.notifySync(int(server.Frames.Load()), true)
 			}
 
 			if skip {
@@ -257,7 +279,12 @@ func (server *Server) writeFrame(conn voice.UDPConn, frame []byte) (voice.UDPCon
 		slog.Warn("voice write failed, trying to recover", "guild", server.GuildID, "error", err)
 	}
 
+	// Audio stopped flowing at this position. Freeze client clocks until the
+	// connection is usable again.
+	server.notifySync(int(server.Frames.Load()), false)
+
 	if newConn, err := server.waitForVoice(frame); err == nil {
+		server.notifySync(int(server.Frames.Load()), true)
 		return newConn, nil
 	}
 
@@ -270,6 +297,8 @@ func (server *Server) writeFrame(conn voice.UDPConn, frame []byte) (voice.UDPCon
 		slog.Warn("voice write failed after reconnect", "guild", server.GuildID, "error", err)
 		return nil, ErrVoiceLost
 	}
+
+	server.notifySync(int(server.Frames.Load()), true)
 
 	return newConn, nil
 }

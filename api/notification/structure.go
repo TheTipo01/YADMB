@@ -24,8 +24,8 @@ const (
 	PrioritySong
 	// LoopFinished notification for a song finishing a loop
 	LoopFinished
-	// Started notification when the first audio frame is actually produced
-	Started
+	// Sync notification carrying the current playback position and state
+	Sync
 )
 
 type Notification int8
@@ -33,5 +33,9 @@ type Notification int8
 type NotificationMessage struct {
 	Notification Notification    `json:"notification"`
 	Songs        []queue.Element `json:"song,omitempty"`
-	Guild        snowflake.ID    `json:"-"`
+	// Frames is the number of audio frames already played. Used by Sync.
+	Frames int `json:"frames,omitempty"`
+	// Playing is set by Sync to tell clients whether playback is currently flowing.
+	Playing *bool        `json:"playing,omitempty"`
+	Guild   snowflake.ID `json:"-"`
 }

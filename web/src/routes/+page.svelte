@@ -92,7 +92,7 @@
 					Playing: 6,
 					NewSongPriority: 7,
 					LoopFinished: 8,
-					Started: 9
+					Sync: 9
 				});
 
 				let signal;
@@ -138,12 +138,17 @@
 						seconds = 0;
 						timestamp = GetTime(0);
 						break;
-					case Notification.Started:
-						started = true;
-						playing = true;
-						seconds = 0;
-						timestamp = GetTime(0);
+					case Notification.Sync: {
+						const frames = typeof signal.frames === 'number' ? signal.frames : 0;
+						seconds = frames / FrameSeconds;
+						timestamp = GetTime(Math.floor(seconds));
+
+						if (typeof signal.playing === 'boolean') {
+							started = signal.playing;
+							playing = signal.playing;
+						}
 						break;
+					}
 					case Notification.NewSongPriority:
 						queue = AddObjectToArrayAsSecond(queue, songs);
 						break;
