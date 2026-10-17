@@ -180,6 +180,10 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 
 			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.EnqueuedTitle, "https://www.youtube.com/playlist?list="+id, false).WithColor(0x7289DA), p.Event, time.Second*3, p.IsDeferred)
 
+			if p.Random {
+				entries = shuffle(entries)
+			}
+
 			for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
 				p.Song = entries[j]
 				server.downloadAndPlay(p, false)
@@ -337,6 +341,10 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 
 		go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String(), false).WithColor(0x7289DA), p.Event, time.Second*3, p.IsDeferred)
 
+		if p.Random {
+			entries = shuffle(entries)
+		}
+
 		for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
 			p.Song = entries[j]
 			server.downloadAndPlay(p, false)
@@ -352,18 +360,27 @@ func (server *Server) spotifyPlaylist(p PlayEvent, id spotAPI.ID) {
 
 			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/playlist/"+id.String(), false).WithColor(0x7289DA), p.Event, time.Second*3, p.IsDeferred)
 
+			order := make([]int, len(playlist.Tracks.Tracks))
+			for i := range order {
+				order[i] = i
+			}
+
 			if p.Random {
-				rand.Shuffle(len(playlist.Tracks.Tracks), func(i, j int) {
-					playlist.Tracks.Tracks[i], playlist.Tracks.Tracks[j] = playlist.Tracks.Tracks[j], playlist.Tracks.Tracks[i]
+				rand.Shuffle(len(order), func(i, j int) {
+					order[i], order[j] = order[j], order[i]
 				})
 			}
 
-			for j := 0; j < len(playlist.Tracks.Tracks) && !server.Clear.Load(); j++ {
-				track := playlist.Tracks.Tracks[j]
+			for _, index := range order {
+				if server.Clear.Load() {
+					break
+				}
+
+				track := playlist.Tracks.Tracks[index]
 
 				p.Song, err = searchDownloadAndPlay(trackQuery(track.Track.Name, track.Track.Artists), p.Clients.Youtube, p.Clients.Database)
 				if err == nil {
-					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
+					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, index)
 					if err != nil {
 						slog.Error("Error adding playlist to database", "error", err)
 					}
@@ -391,6 +408,10 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 
 		go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String(), false).WithColor(0x7289DA), p.Event, time.Second*3, p.IsDeferred)
 
+		if p.Random {
+			entries = shuffle(entries)
+		}
+
 		for j := 0; j < len(entries) && !server.Clear.Load(); j++ {
 			p.Song = entries[j]
 			server.downloadAndPlay(p, false)
@@ -406,18 +427,27 @@ func (server *Server) spotifyAlbum(p PlayEvent, id spotAPI.ID) {
 
 			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.EnqueuedTitle, "https://open.spotify.com/album/"+id.String(), false).WithColor(0x7289DA), p.Event, time.Second*3, p.IsDeferred)
 
+			order := make([]int, len(album.Tracks.Tracks))
+			for i := range order {
+				order[i] = i
+			}
+
 			if p.Random {
-				rand.Shuffle(len(album.Tracks.Tracks), func(i, j int) {
-					album.Tracks.Tracks[i], album.Tracks.Tracks[j] = album.Tracks.Tracks[j], album.Tracks.Tracks[i]
+				rand.Shuffle(len(order), func(i, j int) {
+					order[i], order[j] = order[j], order[i]
 				})
 			}
 
-			for j := 0; j < len(album.Tracks.Tracks) && !server.Clear.Load(); j++ {
-				track := album.Tracks.Tracks[j]
+			for _, index := range order {
+				if server.Clear.Load() {
+					break
+				}
+
+				track := album.Tracks.Tracks[index]
 
 				p.Song, err = searchDownloadAndPlay(trackQuery(track.Name, track.Artists), p.Clients.Youtube, p.Clients.Database)
 				if err == nil {
-					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, j)
+					err = p.Clients.Database.AddPlaylist(id.String(), p.Song, index)
 					if err != nil {
 						slog.Error("Error adding playlist to database", "error", err)
 					}
