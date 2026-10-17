@@ -9,15 +9,30 @@ import (
 var yt *YouTube
 
 func init() {
+	key := os.Getenv("YOUTUBE_API")
+	if key == "" {
+		return
+	}
+
 	var err error
 
-	yt, err = NewYoutube(os.Getenv("YOUTUBE_API"))
+	yt, err = NewYoutube(key)
 	if err != nil {
 		panic(err)
 	}
 }
 
+func requireYouTube(t *testing.T) {
+	t.Helper()
+
+	if yt == nil {
+		t.Skip("YOUTUBE_API is not set")
+	}
+}
+
 func TestYouTube_GetVideo(t *testing.T) {
+	requireYouTube(t)
+
 	response := yt.GetVideo("dQw4w9WgXcQ")
 	if response == nil {
 		t.Fatal("video response is nil")
@@ -29,6 +44,8 @@ func TestYouTube_GetVideo(t *testing.T) {
 }
 
 func TestYouTube_GetPlaylist(t *testing.T) {
+	requireYouTube(t)
+
 	result := yt.GetPlaylist("PLqcP8b8B-T6D9cru6eqsWQRLc8LlkIAKh")
 	if result == nil {
 		t.Fatal("playlist response is nil")
@@ -40,6 +57,8 @@ func TestYouTube_GetPlaylist(t *testing.T) {
 }
 
 func TestYouTube_Search(t *testing.T) {
+	requireYouTube(t)
+
 	result, err := yt.Search("never gonna give you up", 1)
 	if err != nil {
 		t.Fatal(err)
