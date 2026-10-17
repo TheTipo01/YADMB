@@ -2,9 +2,11 @@ package manager
 
 import (
 	"bufio"
+	"context"
 	"encoding/binary"
 	"errors"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -15,6 +17,11 @@ import (
 	"github.com/disgoorg/disgo/voice"
 )
 
+// ErrVoiceLost is returned by the playback loop when the voice connection could
+// not be recovered. The current song is dropped and playback stops so that the
+// rest of the queue can be retried by the next play command.
+var ErrVoiceLost = errors.New("voice connection lost")
+
 // Plays a song in DCA format
 func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 	var (
@@ -24,12 +31,18 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 		err        error
 	)
 
-	// Start speaking.
-	err = server.VC.SetSpeaking(voice.SpeakingFlagMicrophone)
+	conn, err := server.ensureVoiceUDP()
 	if err != nil {
 		return Error, err
 	}
-	conn := server.VC.GetUDP()
+
+	// Start speaking.
+	if err := server.SetSpeaking(voice.SpeakingFlagMicrophone); err != nil {
+		conn, err = server.reconnectVoice()
+		if err != nil {
+			return Error, err
+		}
+	}
 
 	ticker := time.NewTicker(time.Millisecond * 20)
 	defer ticker.Stop()
@@ -43,16 +56,20 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			select {
 			case <-server.Resume:
 				go notify(notification.NotificationMessage{Notification: notification.Resume, Guild: server.GuildID})
-				el.Segments = server.Queue.GetFirstElement().Segments
+			case target := <-server.Seek:
+				seekToFrame(el, target, int(server.Frames.Load()))
 			case skipReason = <-server.Skip:
 				cleanUp(server, el.Closer)
 				return skipReason, nil
 			}
+		case target := <-server.Seek:
+			seekToFrame(el, target, int(server.Frames.Load()))
 		case skipReason = <-server.Skip:
 			cleanUp(server, el.Closer)
 			return skipReason, nil
 		default:
-			if _, ok := el.Segments[int(server.Frames.Load())]; ok {
+			frame := int(server.Frames.Load())
+			if _, ok := el.Segments[frame]; ok {
 				skip = !skip
 			}
 
@@ -63,12 +80,24 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			// so that it gets downloaded again.
 			if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 				cleanUp(server, el.Closer)
+
+				// A clear operation closes the reader on purpose. Don't treat the
+				// resulting error as a broken cache file.
+				if server.Clear.Load() || server.cleaning.Load() {
+					return Clear, nil
+				}
+
 				_ = os.Remove(constants.CachePath + el.ID + constants.AudioExtension)
 				return Error, err
 			}
 
 			// If this is the end of the file, just return.
 			if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
+				if server.Clear.Load() || server.cleaning.Load() {
+					cleanUp(server, el.Closer)
+					return Clear, nil
+				}
+
 				var pipeErrors strings.Builder
 
 				for _, stderr := range el.Errors {
@@ -109,35 +138,138 @@ func (server *Server) playSound(el *queue.Element) (SkipReason, error) {
 			InBuf := make([]byte, opuslen)
 			err = binary.Read(el.Reader, binary.LittleEndian, &InBuf)
 
-			// Keep count of the frames in the song
-			server.Frames.Add(1)
-
-			if skip {
-				continue
-			}
-
 			// Should not be any end of file errors
 			if err != nil {
 				cleanUp(server, el.Closer)
+
+				if server.Clear.Load() || server.cleaning.Load() {
+					return Clear, nil
+				}
+
 				// Force to re-download the song
 				_ = os.Remove(constants.CachePath + el.ID + constants.AudioExtension)
 				return Error, err
 			}
 
-			_, err = conn.Write(InBuf)
+			if skip {
+				// Keep count of the frames in the song even when we don't send them.
+				server.Frames.Add(1)
+				continue
+			}
+
+			conn, err = server.writeFrame(conn, InBuf)
 			if err != nil {
 				cleanUp(server, el.Closer)
-				server.VC.Disconnect()
 				return Error, err
 			}
+
+			// Keep count of the frames in the song
+			server.Frames.Add(1)
 
 			<-ticker.C
 		}
 	}
 }
 
+// SetSpeaking changes the bot speaking state, translating a missing connection
+// into the vc error instead of a nil pointer dereference.
+func (server *Server) SetSpeaking(flag voice.SpeakingFlags) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return server.VC.SetSpeaking(ctx, flag)
+}
+
+// ensureVoiceUDP returns a usable UDP connection, reconnecting if needed.
+func (server *Server) ensureVoiceUDP() (voice.UDPConn, error) {
+	conn, err := server.VC.UDP()
+	if err == nil {
+		return conn, nil
+	}
+
+	return server.reconnectVoice()
+}
+
+// reconnectVoice tries to reopen the voice connection and returns the new UDP
+// connection. It is used both for resume-after-write-error and for a connection
+// that disappeared between songs.
+func (server *Server) reconnectVoice() (voice.UDPConn, error) {
+	if server.Clear.Load() {
+		return nil, ErrVoiceLost
+	}
+
+	if server.Clients == nil || server.Clients.Discord == nil {
+		return nil, ErrVoiceLost
+	}
+
+	for attempt := 0; attempt < 3; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+
+		err := server.VC.Reconnect(ctx, server.Clients.Discord.VoiceManager)
+		if err == nil {
+			err = server.VC.SetSpeaking(ctx, voice.SpeakingFlagMicrophone)
+		}
+
+		var conn voice.UDPConn
+		if err == nil {
+			conn, err = server.VC.UDP()
+		}
+
+		cancel()
+
+		if err == nil {
+			return conn, nil
+		}
+
+		slog.Warn("voice reconnect failed", "guild", server.GuildID, "attempt", attempt+1, "error", err)
+
+		if server.Clear.Load() {
+			return nil, ErrVoiceLost
+		}
+
+		time.Sleep(time.Duration(attempt+1) * time.Second)
+	}
+
+	return nil, ErrVoiceLost
+}
+
+// writeFrame writes a single opus frame. If the UDP connection is gone, it
+// reconnects and retries the same frame so playback resumes where it stopped.
+func (server *Server) writeFrame(conn voice.UDPConn, frame []byte) (voice.UDPConn, error) {
+	if _, err := conn.Write(frame); err == nil {
+		return conn, nil
+	} else {
+		slog.Warn("voice write failed, reconnecting", "guild", server.GuildID, "error", err)
+	}
+
+	newConn, err := server.reconnectVoice()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := newConn.Write(frame); err != nil {
+		slog.Warn("voice write failed after reconnect", "guild", server.GuildID, "error", err)
+		return nil, ErrVoiceLost
+	}
+
+	return newConn, nil
+}
+
+func seekToFrame(el *queue.Element, target, current int) {
+	if target <= current+1 {
+		return
+	}
+
+	if el.Segments == nil {
+		el.Segments = make(map[int]struct{}, 2)
+	}
+
+	el.Segments[current+1] = struct{}{}
+	el.Segments[target] = struct{}{}
+}
+
 func cleanUp(server *Server, closer io.Closer) {
-	_ = server.VC.SetSpeaking(voice.SpeakingFlagNone)
+	_ = server.SetSpeaking(voice.SpeakingFlagNone)
 	server.Frames.Store(0)
 
 	if closer != nil {

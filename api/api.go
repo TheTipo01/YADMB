@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[snowflake.ID]struct{}, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
+func NewApi(servers *manager.Servers, address string, owner map[snowflake.ID]struct{}, clients *manager.Clients, buildFS *embed.FS, origin string) *Api {
 	r := gin.New()
 
 	conf := cors.DefaultConfig()
@@ -27,13 +27,11 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 	r.Use(gin.Recovery(), cors.New(conf))
 
 	a := Api{
-		servers:       servers,
-		tokensToUsers: make(map[string]*discord.Member),
-		userInfo:      make(map[snowflake.ID]*UserInfo),
-		owner:         owner,
-		clients:       clients,
-		notifier:      notification.NewNotifier(),
-		origin:        origin,
+		servers:  servers,
+		owner:    owner,
+		clients:  clients,
+		notifier: notification.NewNotifier(),
+		origin:   origin,
 	}
 
 	r.GET("/queue/:guild", a.getQueue)
@@ -74,13 +72,19 @@ func NewApi(servers map[snowflake.ID]*manager.Server, address string, owner map[
 // AddUser adds a user to the api, returning the token.
 // If the user is already in the api, it removes it and generates a new one.
 func (a *Api) AddUser(user *discord.Member, userInfo UserInfo) string {
+	a.userMu.Lock()
+	defer a.userMu.Unlock()
+
 	userID := user.User.ID
 
-	if u, ok := a.userInfo[userID]; ok {
-		delete(a.tokensToUsers, u.token)
+	if value, ok := a.userInfo.Load(userID); ok {
+		old := value.(*UserInfo)
+		if old.token != "" {
+			a.tokensToUsers.Delete(old.token)
+		}
 
-		if a.userInfo[userID].LongLivedToken == "" {
-			delete(a.userInfo, userID)
+		if old.LongLivedToken == "" {
+			a.userInfo.Delete(userID)
 		}
 	}
 
@@ -88,29 +92,32 @@ func (a *Api) AddUser(user *discord.Member, userInfo UserInfo) string {
 	var token string
 	for {
 		token = uniuri.NewLen(32)
-		if _, ok := a.tokensToUsers[token]; !ok {
+		if _, ok := a.tokensToUsers.Load(token); !ok {
 			break
 		}
 	}
 
-	a.tokensToUsers[token] = user
+	a.tokensToUsers.Store(token, user)
 
-	if a.userInfo[userID] != nil {
-		userInfo.LongLivedToken = a.userInfo[userID].LongLivedToken
+	if value, ok := a.userInfo.Load(userID); ok {
+		userInfo.LongLivedToken = value.(*UserInfo).LongLivedToken
 	}
 	userInfo.token = token
 
-	a.userInfo[userID] = &userInfo
+	a.userInfo.Store(userID, &userInfo)
 
 	return token
 }
 
 func (a *Api) AddLongLivedToken(user *discord.Member, userInfo UserInfo) {
-	a.tokensToUsers[userInfo.LongLivedToken] = user
+	a.userMu.Lock()
+	defer a.userMu.Unlock()
+
+	a.tokensToUsers.Store(userInfo.LongLivedToken, user)
 
 	userID := user.User.ID
-	if a.userInfo[userID] != nil {
-		userInfo.token = a.userInfo[userID].token
+	if value, ok := a.userInfo.Load(userID); ok {
+		userInfo.token = value.(*UserInfo).token
 	}
-	a.userInfo[userID] = &userInfo
+	a.userInfo.Store(userID, &userInfo)
 }

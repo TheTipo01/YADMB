@@ -28,8 +28,9 @@ const (
 // Messages for embeds
 const (
 	// Voice channel
-	NotInVC    = "You're not in a voice channel in this guild!"
-	CantJoinVC = "Can't join voice channel!"
+	NotInVC        = "You're not in a voice channel in this guild!"
+	CantJoinVC     = "Can't join voice channel!"
+	BotInAnotherVC = "I'm already playing in another voice channel!"
 
 	// Queue
 	QueueCleared = "Queue cleared!"
@@ -52,6 +53,7 @@ const (
 	InvalidURL          = "Invalid URL!"
 	StillPlaying        = "Can't disconnect the bot!\nStill playing in a voice channel."
 	GotoInvalid         = "Wrong format.\nValid formats are: 1h10m3s, 3m, 4m10s..."
+	GotoBackwards       = "Can't skip backwards!"
 	NothingPlaying      = "No song playing!"
 	SpotifyError        = "Can't get info about spotify link!\nError code: "
 	SpotifyNotConfigure = "Spotify is not configured!\nSee the documentation for more info."

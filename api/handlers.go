@@ -16,6 +16,7 @@ func (a *Api) getQueue(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	_, authorized := a.checkAuthorizationAndGuild(token, guild)
@@ -24,10 +25,16 @@ func (a *Api) getQueue(c *gin.Context) {
 		return
 	}
 
-	queue := a.servers[guild].Queue.GetAllQueue()
+	srv, ok := a.servers.Get(guild)
+	if !ok {
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	queue := srv.Queue.GetAllQueue()
 	if len(queue) > 0 {
-		queue[0].Frames = int(a.servers[guild].Frames.Load())
-		isPaused := a.servers[guild].Paused.Load()
+		queue[0].Frames = int(srv.Frames.Load())
+		isPaused := srv.Paused.Load()
 		queue[0].IsPaused = &isPaused
 	}
 
@@ -39,11 +46,18 @@ func (a *Api) addToQueue(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	u, authorized := a.checkAuthorizationAndGuild(token, guild)
 	if !authorized {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	srv, ok := a.servers.Get(guild)
+	if !ok {
+		c.AbortWithStatus(http.StatusForbidden)
 		return
 	}
 
@@ -55,26 +69,27 @@ func (a *Api) addToQueue(c *gin.Context) {
 
 	status := manager.NotInVC
 
-	if a.servers[guild].DjModeCheck(*u, a.owner) {
+	if srv.DjModeCheck(*u, a.owner) {
 		status = manager.DjMode
 	} else {
-		if !a.servers[guild].VC.IsConnected() {
-			if vs := manager.FindUserVoiceState(a.clients.Discord, guild, u.User.ID); vs != nil {
-				if a.servers[guild].VC.Join(*vs.ChannelID, a.clients.Discord) == nil {
-					status = manager.Success
-				}
-			}
-		} else {
-			status = manager.Success
-		}
-
-		var err error
 		if !playlist {
 			song, err = manager.FilterPlaylist(song)
 		}
 
-		if err == nil {
-			a.servers[guild].Play(manager.PlayEvent{
+		if err != nil {
+			status = manager.Playlist
+		} else if vs := manager.FindUserVoiceState(a.clients.Discord, guild, u.User.ID); vs == nil {
+			status = manager.NotInVC
+		} else if err := srv.EnsureVoice(*vs.ChannelID); err != nil {
+			status = manager.NotInVC
+		} else {
+			userInfo, ok := a.getUserInfo(u.User.ID)
+			if !ok {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+
+			srv.Play(manager.PlayEvent{
 				Username:    u.User.Username,
 				Song:        song,
 				Clients:     a.clients,
@@ -83,10 +98,10 @@ func (a *Api) addToQueue(c *gin.Context) {
 				Loop:        loop,
 				Priority:    priority,
 				IsDeferred:  nil,
-				TextChannel: a.userInfo[u.User.ID].TextChannel,
+				TextChannel: userInfo.TextChannel,
 			})
-		} else {
-			status = manager.Playlist
+
+			status = manager.Success
 		}
 	}
 
@@ -107,6 +122,7 @@ func (a *Api) skip(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	u, authorized := a.checkAuthorizationAndGuild(token, guild)
@@ -115,16 +131,22 @@ func (a *Api) skip(c *gin.Context) {
 		return
 	}
 
+	srv, ok := a.servers.Get(guild)
+	if !ok {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
 	if manager.FindUserVoiceState(a.clients.Discord, guild, u.User.ID) != nil {
-		if !a.servers[guild].IsPlaying() {
+		if !srv.IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
 			if stringToBool(c.Query("clean")) {
-				go a.servers[guild].Clean()
+				go srv.Clean()
 				c.Status(http.StatusOK)
 			} else {
-				a.servers[guild].Skip <- manager.Skip
-				a.servers[guild].Paused.Store(false)
+				srv.SkipSong(manager.Skip)
+				srv.Paused.Store(false)
 				c.Status(http.StatusOK)
 			}
 		}
@@ -138,6 +160,7 @@ func (a *Api) pause(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	u, authorized := a.checkAuthorizationAndGuild(token, guild)
@@ -146,12 +169,17 @@ func (a *Api) pause(c *gin.Context) {
 		return
 	}
 
+	srv, ok := a.servers.Get(guild)
+	if !ok {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
 	if manager.FindUserVoiceState(a.clients.Discord, guild, u.User.ID) != nil {
-		if !a.servers[guild].IsPlaying() {
+		if !srv.IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
-			if a.servers[guild].Paused.CompareAndSwap(false, true) {
-				a.servers[guild].Pause <- struct{}{}
+			if srv.PausePlayback() {
 				c.Status(http.StatusOK)
 			} else {
 				c.Status(http.StatusNotAcceptable)
@@ -167,6 +195,7 @@ func (a *Api) resume(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	u, authorized := a.checkAuthorizationAndGuild(token, guild)
@@ -175,12 +204,17 @@ func (a *Api) resume(c *gin.Context) {
 		return
 	}
 
+	srv, ok := a.servers.Get(guild)
+	if !ok {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
 	if manager.FindUserVoiceState(a.clients.Discord, guild, u.User.ID) != nil {
-		if !a.servers[guild].IsPlaying() {
+		if !srv.IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
 		} else {
-			if a.servers[guild].Paused.CompareAndSwap(true, false) {
-				a.servers[guild].Resume <- struct{}{}
+			if srv.ResumePlayback() {
 				c.Status(http.StatusOK)
 			} else {
 				c.Status(http.StatusNotAcceptable)
@@ -196,6 +230,7 @@ func (a *Api) toggle(c *gin.Context) {
 	guild, err := snowflake.Parse(c.Param("guild"))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		return
 	}
 
 	u, authorized := a.checkAuthorizationAndGuild(token, guild)
@@ -204,20 +239,26 @@ func (a *Api) toggle(c *gin.Context) {
 		return
 	}
 
+	srv, ok := a.servers.Get(guild)
+	if !ok {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+
 	if manager.FindUserVoiceState(a.clients.Discord, guild, u.User.ID) != nil {
-		if !a.servers[guild].IsPlaying() {
+		if !srv.IsPlaying() {
 			c.Status(http.StatusNotAcceptable)
-		} else {
-			if a.servers[guild].Paused.CompareAndSwap(false, true) {
-				a.servers[guild].Pause <- struct{}{}
+		} else if srv.Paused.Load() {
+			if srv.ResumePlayback() {
 				c.Status(http.StatusOK)
 			} else {
-				if a.servers[guild].Paused.CompareAndSwap(true, false) {
-					a.servers[guild].Resume <- struct{}{}
-					c.Status(http.StatusOK)
-				} else {
-					c.Status(http.StatusInternalServerError)
-				}
+				c.Status(http.StatusInternalServerError)
+			}
+		} else {
+			if srv.PausePlayback() {
+				c.Status(http.StatusOK)
+			} else {
+				c.Status(http.StatusInternalServerError)
 			}
 		}
 	} else {

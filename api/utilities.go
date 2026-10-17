@@ -16,13 +16,12 @@ func (a *Api) checkAuthorization(token string) (*discord.Member, bool) {
 		return nil, false
 	}
 
-	var u *discord.Member
-	var ok bool
-	if u, ok = a.tokensToUsers[token]; !ok {
+	value, ok := a.tokensToUsers.Load(token)
+	if !ok {
 		return nil, false
 	}
 
-	return u, true
+	return value.(*discord.Member), true
 }
 
 func (a *Api) checkAuthorizationAndGuild(token string, guild snowflake.ID) (*discord.Member, bool) {
@@ -31,10 +30,25 @@ func (a *Api) checkAuthorizationAndGuild(token string, guild snowflake.ID) (*dis
 		return nil, false
 	}
 
-	if a.userInfo[a.tokensToUsers[token].User.ID].Guild != guild {
+	value, ok := a.userInfo.Load(u.User.ID)
+	if !ok {
 		return nil, false
 	}
+
+	if value.(*UserInfo).Guild != guild {
+		return nil, false
+	}
+
 	return u, true
+}
+
+func (a *Api) getUserInfo(userID snowflake.ID) (*UserInfo, bool) {
+	value, ok := a.userInfo.Load(userID)
+	if !ok {
+		return nil, false
+	}
+
+	return value.(*UserInfo), true
 }
 
 // checkOrigin verifies that the request origin matches the allowed origin

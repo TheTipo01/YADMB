@@ -19,7 +19,11 @@ func SendEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake.ID) *dis
 
 // SendAndDeleteEmbed sends an embed in a given text channel and deletes it after a given duration
 func SendAndDeleteEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake.ID, wait time.Duration) {
-	m, _ := c.Rest.CreateMessage(txtChannel, discord.NewMessageCreate().AddEmbeds(embed))
+	m, err := c.Rest.CreateMessage(txtChannel, discord.NewMessageCreate().AddEmbeds(embed))
+	if err != nil || m == nil {
+		slog.Error("SendAndDeleteEmbed failed", "error", err)
+		return
+	}
 
 	time.Sleep(wait)
 
@@ -28,6 +32,10 @@ func SendAndDeleteEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake
 
 // SendEmbedInteraction sends an embed as response to an interaction
 func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInteractionCreate, c chan<- struct{}, isDeferred chan struct{}) {
+	if c != nil {
+		defer func() { c <- struct{}{} }()
+	}
+
 	if e == nil {
 		return
 	}
@@ -44,10 +52,6 @@ func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInter
 	if err != nil {
 		slog.Error("InteractionRespond failed", "error", err)
 		return
-	}
-
-	if c != nil {
-		c <- struct{}{}
 	}
 }
 

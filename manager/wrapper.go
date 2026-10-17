@@ -28,7 +28,7 @@ type PlayEvent struct {
 
 // Play is a wrapper function for playing songs
 func (server *Server) Play(p PlayEvent) {
-	server.ChanQuitVC <- false
+	server.CancelQuit()
 
 	if strings.Contains(p.Song, "spotify.com/") {
 		// Parse URL

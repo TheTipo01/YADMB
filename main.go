@@ -35,7 +35,7 @@ import (
 
 var (
 	// Holds all the info about a server
-	server = make(map[snowflake.ID]*manager.Server)
+	servers = manager.NewServers()
 	// String for storing the owners of the bot
 	owners map[snowflake.ID]struct{}
 	// Discord bot token
@@ -52,8 +52,6 @@ var (
 	buildFS e.FS
 	// Origin for CORS and link generation
 	origin string
-	// Server mutex
-	serverMutex sync.RWMutex
 	// If set to true, the bot will only respond to commands coming from guilds in the guild list
 	whitelist bool
 	// List of guilds the bot will respond to
@@ -111,7 +109,7 @@ func init() {
 
 	// Start the API, if enabled
 	if cfg.Address != "" {
-		webApi = api.NewApi(server, cfg.Address, owners, &clients, &buildFS, origin)
+		webApi = api.NewApi(servers, cfg.Address, owners, &clients, &buildFS, origin)
 	}
 
 	// Initialize the database
@@ -125,11 +123,7 @@ func init() {
 	// And load custom commands from the db
 	commands, _ := clients.Database.GetCustomCommands()
 	for k := range commands {
-		if server[k] == nil {
-			initializeServer(k)
-		}
-
-		server[k].Custom = commands[k]
+		servers.GetOrCreate(k, &clients).Custom = commands[k]
 	}
 
 	// Load the blacklist
@@ -145,12 +139,9 @@ func init() {
 	}
 
 	for k := range dj {
-		if server[k] == nil {
-			initializeServer(k)
-		}
-
-		server[k].DjMode = dj[k].Enabled
-		server[k].DjRole = dj[k].Role
+		srv := servers.GetOrCreate(k, &clients)
+		srv.DjMode = dj[k].Enabled
+		srv.DjRole = dj[k].Role
 	}
 
 	// Load the whitelist
@@ -195,7 +186,7 @@ func main() {
 		return
 	}
 
-	client, _ := disgo.New(token,
+	client, err := disgo.New(token,
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(
 				gateway.IntentGuildVoiceStates,
@@ -210,9 +201,11 @@ func main() {
 		),
 
 		bot.WithEventListenerFunc(ready),
-		bot.WithEventListenerFunc(guildCreate),
+		bot.WithEventListenerFunc(guildReady),
+		bot.WithEventListenerFunc(guildJoin),
+		bot.WithEventListenerFunc(guildAvailable),
 		bot.WithEventListenerFunc(guildDelete),
-		//bot.WithEventListenerFunc(voiceStateUpdate),
+		bot.WithEventListenerFunc(voiceStateUpdate),
 		bot.WithEventListenerFunc(guildMemberUpdate),
 		bot.WithEventListenerFunc(interactionCreate),
 
@@ -221,7 +214,16 @@ func main() {
 		bot.WithLogger(slog.Default()),
 	)
 
+	if err != nil {
+		slog.Error("Error creating Discord client", "error", err)
+		return
+	}
+
 	defer client.Close(context.TODO())
+
+	// Make the client available to the API and to the server managers as soon
+	// as possible; guild events can arrive while the gateway is still opening.
+	clients.Discord = client
 
 	if err := client.OpenGateway(context.TODO()); err != nil {
 		slog.Error("errors while connecting to gateway", "error", err)
@@ -229,7 +231,7 @@ func main() {
 	}
 
 	// Register commands
-	_, err := client.Rest.SetGlobalCommands(client.ApplicationID, commands)
+	_, err = client.Rest.SetGlobalCommands(client.ApplicationID, commands)
 	if err != nil {
 		slog.Error("Error registering commands", "error", err)
 		return
@@ -259,16 +261,13 @@ func main() {
 
 	// Print guilds the bot is connected to
 	if logLevel.Level() == slog.LevelDebug {
-		slog.Debug("Bot is connected to guilds", "count", len(server))
+		slog.Debug("Bot is connected to guilds", "count", servers.Len())
 
-		for id := range server {
+		servers.Range(func(id snowflake.ID, _ *manager.Server) bool {
 			slog.Debug("Guild", "id", id)
-		}
-
+			return true
+		})
 	}
-
-	// Save the session
-	clients.Discord = client
 
 	// Wait here until CTRL-C or another term signal is received.
 	slog.Info("YADMB is now running. Press CTRL-C to exit.")
@@ -291,7 +290,7 @@ func presenceUpdater() {
 			debounceTimer.Reset(500 * time.Millisecond)
 		case <-debounceTimer.C:
 			if clients.Discord != nil {
-				_ = clients.Discord.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(len(server))+" guilds!"))
+				_ = clients.Discord.SetPresence(context.TODO(), gateway.WithCustomActivity("Serving "+strconv.Itoa(servers.Len())+" guilds!"))
 			}
 		}
 	}
@@ -310,38 +309,81 @@ func ready(e *events.Ready) {
 	manager.BotName = e.User.Username
 }
 
-// Initialize Server structure
-func guildCreate(e *events.GuildReady) {
+// Initialize Server structure for guilds loaded at startup.
+func guildReady(e *events.GuildReady) {
+	initializeServer(e.GuildID)
+
+	notifyGuildCountChange()
+}
+
+// Initialize Server structure when the bot joins a new guild.
+func guildJoin(e *events.GuildJoin) {
+	initializeServer(e.GuildID)
+
+	notifyGuildCountChange()
+}
+
+// Initialize Server structure when a guild becomes available again.
+func guildAvailable(e *events.GuildAvailable) {
 	initializeServer(e.GuildID)
 
 	notifyGuildCountChange()
 }
 
 func guildDelete(e *events.GuildLeave) {
-	if server[e.GuildID].IsPlaying() {
-		ClearAndExit(server[e.GuildID])
+	if srv, ok := servers.Get(e.GuildID); ok {
+		if srv.IsPlaying() {
+			ClearAndExit(srv)
+		} else {
+			srv.CancelQuit()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			srv.VC.Disconnect(ctx)
+			cancel()
+		}
+
+		servers.Remove(e.GuildID)
 	}
 
 	// Update the status
 	notifyGuildCountChange()
 }
 
-// Update the voice channel when the bot is moved
+// Stop the music if the bot is alone in the voice channel.
 func voiceStateUpdate(v *events.GuildVoiceStateUpdate) {
-	// If the bot is alone in the voice channel, stop the music
-	if server[v.VoiceState.GuildID].VC.IsConnected() {
-		channel := server[v.VoiceState.GuildID].VC.GetChannelID()
-		if (v.VoiceState.ChannelID == channel || (v.OldVoiceState.ChannelID != nil && v.OldVoiceState.ChannelID == channel)) && countVoiceStates(v.Client(), v.VoiceState.GuildID, *channel) == 0 {
-			go QuitIfEmptyVoiceChannel(server[v.VoiceState.GuildID])
+	srv, ok := servers.Get(v.VoiceState.GuildID)
+	if !ok {
+		return
+	}
+
+	// The bot's own updates are handled by the voice connection itself.
+	if v.VoiceState.UserID == v.Client().ApplicationID {
+		return
+	}
+
+	channelID, ok := srv.VC.ChannelID()
+	if !ok {
+		return
+	}
+
+	if (v.VoiceState.ChannelID != nil && *v.VoiceState.ChannelID == channelID) ||
+		(v.OldVoiceState.ChannelID != nil && *v.OldVoiceState.ChannelID == channelID) {
+		if countVoiceStates(v.Client(), v.VoiceState.GuildID, channelID) == 0 {
+			go QuitIfEmptyVoiceChannel(srv)
 		}
 	}
 }
 
 func guildMemberUpdate(m *events.GuildMemberUpdate) {
+	srv, ok := servers.Get(m.GuildID)
+	if !ok {
+		return
+	}
+
 	// If we've been timed out, stop the music
 	if m.Member.User.ID == m.Client().ApplicationID && m.Member.CommunicationDisabledUntil != nil &&
-		m.Member.CommunicationDisabledUntil.After(time.Now()) && server[m.GuildID].IsPlaying() {
-		ClearAndExit(server[m.GuildID])
+		m.Member.CommunicationDisabledUntil.After(time.Now()) && srv.IsPlaying() {
+		ClearAndExit(srv)
 	}
 }
 

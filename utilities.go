@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/TheTipo01/YADMB/manager"
@@ -8,13 +9,13 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-func initializeServer(guild snowflake.ID) {
-	serverMutex.Lock()
-	defer serverMutex.Unlock()
+func initializeServer(guild snowflake.ID) *manager.Server {
+	return servers.GetOrCreate(guild, &clients)
+}
 
-	if _, ok := server[guild]; !ok {
-		server[guild] = manager.NewServer(guild, &clients)
-	}
+// getServer returns the server for the guild, creating it on demand.
+func getServer(guild snowflake.ID) *manager.Server {
+	return initializeServer(guild)
 }
 
 func countVoiceStates(s *bot.Client, guild, channel snowflake.ID) int {
@@ -33,12 +34,22 @@ func countVoiceStates(s *bot.Client, guild, channel snowflake.ID) int {
 func QuitIfEmptyVoiceChannel(server *manager.Server) {
 	time.Sleep(1 * time.Minute)
 
-	if server.VC.IsConnected() && countVoiceStates(server.Clients.Discord, server.GuildID, *server.VC.GetChannelID()) == 0 {
+	channelID, ok := server.VC.ChannelID()
+	if !ok {
+		return
+	}
+
+	if countVoiceStates(server.Clients.Discord, server.GuildID, channelID) == 0 {
 		ClearAndExit(server)
 	}
 }
 
 func ClearAndExit(server *manager.Server) {
 	server.Clean()
-	server.VC.Disconnect()
+	server.CancelQuit()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	server.VC.Disconnect(ctx)
 }

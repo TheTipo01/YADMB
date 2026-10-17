@@ -27,6 +27,12 @@ const youtubeBase = "https://www.youtube.com/watch?v="
 
 // downloadAndPlay downloads and plays a song from a YouTube link
 func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
+	// The web API passes a nil interaction. There is nothing to edit/delete in
+	// that case, so use p.TextChannel for user-facing messages instead.
+	if p.Event == nil {
+		respond = false
+	}
+
 	var c chan struct{}
 	if respond {
 		c = make(chan struct{})
@@ -71,9 +77,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 		if respond {
 			embed.ModifyInteractionAndDelete(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), p.Event, time.Second*5)
 		} else {
-			msg := embed.SendEmbed(p.Event.Client(), discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), p.Event.Channel().ID())
-			time.Sleep(time.Second * 5)
-			_ = p.Event.Client().Rest.DeleteMessage(msg.ChannelID, msg.ID)
+			embed.SendAndDeleteEmbed(p.Clients.Discord, discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, err.Error(), false).WithColor(0x7289DA), p.TextChannel, time.Second*5)
 		}
 		return
 	}
@@ -101,7 +105,7 @@ func (server *Server) downloadAndPlay(p PlayEvent, respond bool) {
 			Link:        ytDLP.WebpageURL,
 			User:        p.Username,
 			Thumbnail:   ytDLP.Thumbnail,
-			TextChannel: p.Event.Channel().ID(),
+			TextChannel: p.TextChannel,
 			Loop:        p.Loop,
 		}
 

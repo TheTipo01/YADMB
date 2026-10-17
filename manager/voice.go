@@ -1,35 +1,58 @@
 package manager
 
 import (
+	"context"
+	"errors"
 	"time"
 
 	"github.com/TheTipo01/YADMB/constants"
 	"github.com/TheTipo01/YADMB/embed"
+	"github.com/TheTipo01/YADMB/vc"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 )
 
-// JoinVC joins the voice channel if not already joined, returns true if joined successfully
-func JoinVC(e *events.ApplicationCommandInteractionCreate, channelID snowflake.ID, server *Server, isDeferred chan struct{}) bool {
-	if !server.VC.IsConnected() {
-		// Join the voice channel
-		err := server.VC.Join(channelID, e.Client())
-		if err != nil {
-			embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, constants.CantJoinVC, false).
-				WithColor(0x7289DA), e, time.Second*5, isDeferred)
-			return false
+// EnsureVoice makes sure the bot is connected to channelID.
+// If the bot is idle in another channel it moves there; if it is playing in
+// another channel it returns vc.ErrAlreadyConnected.
+func (server *Server) EnsureVoice(channelID snowflake.ID) error {
+	if server.VC.IsConnected() {
+		current, ok := server.VC.ChannelID()
+		if ok && current == channelID {
+			return nil
 		}
+
+		if server.IsPlaying() {
+			return vc.ErrAlreadyConnected
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		server.VC.Disconnect(ctx)
+		cancel()
 	}
-	return true
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	return server.VC.Join(ctx, channelID, server.Clients.Discord.VoiceManager)
 }
 
-// QuitVC disconnects the bot from the voice channel after 1 minute if nothing is playing
-func (server *Server) QuitVC() {
-	if server.Queue.IsEmpty() {
-		server.VC.Disconnect()
+// JoinVC joins the voice channel if needed, returns true if joined successfully.
+func JoinVC(e *events.ApplicationCommandInteractionCreate, channelID snowflake.ID, server *Server, isDeferred chan struct{}) bool {
+	if err := server.EnsureVoice(channelID); err != nil {
+		msg := constants.CantJoinVC
+		if errors.Is(err, vc.ErrAlreadyConnected) {
+			msg = constants.BotInAnotherVC
+		}
+
+		embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.ErrorTitle, msg, false).
+			WithColor(0x7289DA), e, time.Second*5, isDeferred)
+		return false
 	}
+
+	return true
 }
 
 // FindUserVoiceState finds user current voice channel

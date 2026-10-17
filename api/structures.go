@@ -1,19 +1,22 @@
 package api
 
 import (
+	"sync"
+
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/manager"
-	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
 )
 
 type Api struct {
 	// Server managers
-	servers map[snowflake.ID]*manager.Server
+	servers *manager.Servers
 	// Map from token to users
-	tokensToUsers map[string]*discord.Member
+	tokensToUsers sync.Map
 	// Map from userID to token
-	userInfo map[snowflake.ID]*UserInfo
+	userInfo sync.Map
+	// Serializes compound updates to the two maps above
+	userMu sync.Mutex
 	// Bot owner
 	owner map[snowflake.ID]struct{}
 	// CLients for interacting with the various apis

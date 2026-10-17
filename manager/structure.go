@@ -3,6 +3,7 @@ package manager
 import (
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/TheTipo01/YADMB/database"
 	"github.com/TheTipo01/YADMB/queue"
@@ -47,6 +48,8 @@ type Server struct {
 	Pause chan struct{}
 	// Channel for resuming
 	Resume chan struct{}
+	// Channel for seeking to a frame
+	Seek chan int
 	// Wait group for waiting for spotify to finish before lowering the clear flag
 	WG *sync.WaitGroup
 	// Role ID for the DJ role
@@ -55,8 +58,12 @@ type Server struct {
 	DjMode bool
 	// Clients used for interacting with the various APIs
 	Clients *Clients
-	// Timer used for quitting the voice channel
-	ChanQuitVC chan bool
+	// Mutexes and state used by the player
+	playMu    sync.Mutex
+	cleanMu   sync.Mutex
+	cleaning  atomic.Bool
+	playDone  chan struct{}
+	quitTimer *time.Timer
 }
 
 // YtDLP structure for holding yt-dlp data

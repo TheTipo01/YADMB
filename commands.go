@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -254,11 +255,11 @@ var (
 	commandHandlers = map[string]func(e *events.ApplicationCommandInteractionCreate){
 		// Plays a song from YouTube or spotify playlist. If it's not a valid link, it will insert into the queue the first result for the given queue
 		"play": func(e *events.ApplicationCommandInteractionCreate) {
-			go server[*e.GuildID()].PlayCommand(&clients, e, false, owners)
+			go getServer(*e.GuildID()).PlayCommand(&clients, e, false, owners)
 		},
 		// Plays a playlist from YouTube or spotify (or searches the query on YouTube)
 		"playlist": func(e *events.ApplicationCommandInteractionCreate) {
-			go server[*e.GuildID()].PlayCommand(&clients, e, true, owners)
+			go getServer(*e.GuildID()).PlayCommand(&clients, e, true, owners)
 		},
 		// Skips the currently playing song
 		"skip": func(e *events.ApplicationCommandInteractionCreate) {
@@ -266,14 +267,11 @@ var (
 
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
-				if server[guildID].IsPlaying() {
-					el := server[guildID].Queue.GetFirstElement()
-					server[guildID].Skip <- manager.Skip
-					server[guildID].Paused.Store(false)
-
-					if server[guildID].Queue.GetLength() <= 1 {
-						server[guildID].ChanQuitVC <- true
-					}
+				srv := getServer(guildID)
+				el := srv.Queue.GetFirstElement()
+				if el != nil && srv.IsPlaying() {
+					srv.SkipSong(manager.Skip)
+					srv.Paused.Store(false)
 
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.SkipTitle,
 						el.Title+" - "+el.Duration+" added by "+el.User, false).
@@ -294,8 +292,8 @@ var (
 
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
-				if server[guildID].IsPlaying() {
-					go server[guildID].Clean()
+				if getServer(guildID).IsPlaying() {
+					go getServer(guildID).Clean()
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueCleared, false).
 						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
@@ -311,10 +309,16 @@ var (
 			const maxQueue = 10
 			guildID := *e.GuildID()
 
-			if server[guildID].IsPlaying() {
-				el := server[guildID].Queue.GetAllQueue()
+			if getServer(guildID).IsPlaying() {
+				el := getServer(guildID).Queue.GetAllQueue()
+				if len(el) == 0 {
+					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.QueueTitle, constants.QueueEmpty, false).
+						WithColor(0x7289DA), e, time.Second*5, nil)
+					return
+				}
+
 				builder := discord.NewEmbed().WithTitle(manager.BotName).WithDescription(constants.QueueTitle).AddField("1", fmt.Sprintf("[%s](%s) - %s/%s added by %s\n", el[0].Title, el[0].Link,
-					manager.FormatDuration(float64(server[guildID].Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User), false)
+					manager.FormatDuration(float64(getServer(guildID).Frames.Load())/constants.FrameSeconds), el[0].Duration, el[0].User), false)
 
 				var nEl int
 				if len(el) > maxQueue {
@@ -345,9 +349,8 @@ var (
 			guildID := *e.GuildID()
 
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
-				if server[guildID].IsPlaying() {
-					if server[guildID].Paused.CompareAndSwap(false, true) {
-						server[guildID].Pause <- struct{}{}
+				if getServer(guildID).IsPlaying() {
+					if getServer(guildID).PausePlayback() {
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.PauseTitle, constants.Paused, false).
 							WithColor(0x7289DA), e, time.Second*5, nil)
 					} else {
@@ -367,9 +370,8 @@ var (
 			guildID := *e.GuildID()
 
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
-				if server[guildID].IsPlaying() {
-					if server[guildID].Paused.CompareAndSwap(true, false) {
-						server[guildID].Resume <- struct{}{}
+				if getServer(guildID).IsPlaying() {
+					if getServer(guildID).ResumePlayback() {
 						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ResumeTitle, constants.Resumed, false).
 							WithColor(0x7289DA), e, time.Second*5, nil)
 					} else {
@@ -391,8 +393,11 @@ var (
 
 			// Check if user is not in a voice channel
 			if manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID) != nil {
-				if !server[guildID].IsPlaying() {
-					server[guildID].VC.Disconnect()
+				if !getServer(guildID).IsPlaying() {
+					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					getServer(guildID).VC.Disconnect(ctx)
+					cancel()
+
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DisconnectedTitle, constants.Disconnected, false).
 						WithColor(0x7289DA), e, time.Second*5, c)
 				} else {
@@ -425,9 +430,9 @@ var (
 			loop := options.Bool("loop")
 			guildID := *e.GuildID()
 
-			if server[guildID].Custom[command] == nil {
+			if getServer(guildID).Custom[command] == nil {
 				err := clients.Database.AddCommand(command, link, guildID, loop)
-				server[guildID].Custom[command] = &database.CustomCommand{Link: link, Loop: loop}
+				getServer(guildID).Custom[command] = &database.CustomCommand{Link: link, Loop: loop}
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
@@ -445,9 +450,9 @@ var (
 		"rmcustom": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
 
-			if command := e.SlashCommandInteractionData().String("custom-command"); server[guildID].Custom[command] != nil {
+			if command := e.SlashCommandInteractionData().String("custom-command"); getServer(guildID).Custom[command] != nil {
 				err := clients.Database.RemoveCustom(command, guildID)
-				delete(server[guildID].Custom, command)
+				delete(getServer(guildID).Custom, command)
 
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, err.Error(), false).
@@ -465,9 +470,9 @@ var (
 		"listcustom": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
 
-			commands := make([]string, 0, len(server[guildID].Custom))
+			commands := make([]string, 0, len(getServer(guildID).Custom))
 
-			for c := range server[guildID].Custom {
+			for c := range getServer(guildID).Custom {
 				commands = append(commands, c)
 			}
 
@@ -482,7 +487,7 @@ var (
 
 			c := embed.DeferResponse(e)
 
-			if server[guildID].DjModeCheck(e.Member().Member, owners) {
+			if getServer(guildID).DjModeCheck(e.Member().Member, owners) {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
 					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
@@ -491,17 +496,17 @@ var (
 
 			command := strings.ToLower(options.String("command"))
 
-			if server[guildID].Custom[command] != nil {
+			if getServer(guildID).Custom[command] != nil {
 				// Check if user is not in a voice channel
 				if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
-					if manager.JoinVC(e, *vs.ChannelID, server[guildID], c) {
+					if manager.JoinVC(e, *vs.ChannelID, getServer(guildID), c) {
 						p := manager.PlayEvent{
 							Username:    e.Member().User.Username,
-							Song:        server[guildID].Custom[command].Link,
+							Song:        getServer(guildID).Custom[command].Link,
 							Clients:     &clients,
 							Event:       e,
 							Random:      false,
-							Loop:        server[guildID].Custom[command].Loop,
+							Loop:        getServer(guildID).Custom[command].Loop,
 							Priority:    false,
 							IsDeferred:  c,
 							TextChannel: e.Channel().ID(),
@@ -510,7 +515,7 @@ var (
 						if priority, ok := options.OptBool("priority"); ok {
 							p.Priority = priority
 						}
-						server[guildID].Play(p)
+						getServer(guildID).Play(p)
 					}
 				} else {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
@@ -629,29 +634,24 @@ var (
 		"goto": func(e *events.ApplicationCommandInteractionCreate) {
 			guildID := *e.GuildID()
 
-			if server[guildID].IsPlaying() {
+			srv := getServer(guildID)
+			if srv.IsPlaying() {
 				t, err := time.ParseDuration(e.SlashCommandInteractionData().String("time"))
 				if err != nil {
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoInvalid, false).
 						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					server[guildID].Queue.ModifyFirstElement(func(e *queue.Element) {
-						if e.Segments == nil {
-							e.Segments = make(map[int]struct{}, 2)
-						}
-
-						server[guildID].Paused.Store(true)
-						server[guildID].Pause <- struct{}{}
-
-						e.Segments[int(server[guildID].Frames.Load()+1)] = struct{}{}
-						e.Segments[int(t.Seconds()*constants.FrameSeconds)] = struct{}{}
-
-						server[guildID].Resume <- struct{}{}
-						server[guildID].Paused.Store(false)
-					})
-
-					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, constants.SkippedTo+t.String(), false).
-						WithColor(0x7289DA), e, time.Second*5, nil)
+					target := int(t.Seconds() * constants.FrameSeconds)
+					if target <= int(srv.Frames.Load()) {
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoBackwards, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
+					} else if !srv.SeekFrame(target) {
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.GotoInvalid, false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
+					} else {
+						embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.GotoTitle, constants.SkippedTo+t.String(), false).
+							WithColor(0x7289DA), e, time.Second*5, nil)
+					}
 				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NothingPlaying, false).
@@ -663,7 +663,7 @@ var (
 			guildID := *e.GuildID()
 
 			c := embed.DeferResponse(e)
-			if server[guildID].DjModeCheck(e.Member().Member, owners) {
+			if getServer(guildID).DjModeCheck(e.Member().Member, owners) {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.DjNot, false).
 					WithColor(0x7289DA), e, time.Second*3, nil)
 			}
@@ -698,12 +698,12 @@ var (
 						Closer: stdout,
 					}
 
-					if manager.JoinVC(e, *vs.ChannelID, server[guildID], c) {
+					if manager.JoinVC(e, *vs.ChannelID, getServer(guildID), c) {
 						go manager.DeleteInteraction(e.Client(), e, c)
 						if priority, ok := options.OptBool("priority"); ok {
-							server[guildID].AddSong(priority, el)
+							getServer(guildID).AddSong(priority, el)
 						} else {
-							server[guildID].AddSong(false, el)
+							getServer(guildID).AddSong(false, el)
 						}
 					}
 				} else {
@@ -720,8 +720,8 @@ var (
 			guildID := *e.GuildID()
 
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
-				if server[guildID].DjMode {
-					server[guildID].DjMode = false
+				if getServer(guildID).DjMode {
+					getServer(guildID).DjMode = false
 					err := clients.Database.SetDJSettings(guildID, false)
 					if err != nil {
 						slog.Error("Error while disabling DJ mode", "error", err)
@@ -730,7 +730,7 @@ var (
 					embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.DjTitle, constants.DjDisabled, false).
 						WithColor(0x7289DA), e, time.Second*5, nil)
 				} else {
-					server[guildID].DjMode = true
+					getServer(guildID).DjMode = true
 					err := clients.Database.SetDJSettings(guildID, true)
 					if err != nil {
 						slog.Error("Error while enabling DJ mode", "error", err)
@@ -751,8 +751,8 @@ var (
 
 			if _, isOwner := owners[e.Member().User.ID]; isOwner {
 				role := e.SlashCommandInteractionData().Role("role")
-				if role.ID != server[guildID].DjRole {
-					server[guildID].DjRole = role.ID
+				if role.ID != getServer(guildID).DjRole {
+					getServer(guildID).DjRole = role.ID
 					err := clients.Database.UpdateDJRole(guildID, role.ID)
 					if err != nil {
 						slog.Error("Error updating DJ role", "error", err)
@@ -781,11 +781,11 @@ var (
 				user := e.SlashCommandInteractionData().User("user")
 				member, _ := e.Client().Caches.Member(*e.GuildID(), user.ID)
 
-				if !manager.HasRole(member.RoleIDs, server[guildID].DjRole) {
-					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, server[guildID].DjRole)
+				if !manager.HasRole(member.RoleIDs, getServer(guildID).DjRole) {
+					err = e.Client().Rest.AddMemberRole(*e.GuildID(), user.ID, getServer(guildID).DjRole)
 					action = "added!"
 				} else {
-					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, server[guildID].DjRole)
+					err = e.Client().Rest.RemoveMemberRole(*e.GuildID(), user.ID, getServer(guildID).DjRole)
 					action = "removed!"
 				}
 
