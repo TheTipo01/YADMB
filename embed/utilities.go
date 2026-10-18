@@ -12,7 +12,15 @@ import (
 
 // SendEmbed sends an embed in a given text channel
 func SendEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake.ID) *discord.Message {
-	m, _ := c.Rest.CreateMessage(txtChannel, discord.NewMessageCreate().AddEmbeds(embed))
+	m, err := c.Rest.CreateMessage(txtChannel, discord.NewMessageCreate().AddEmbeds(embed))
+	if err != nil || m == nil {
+		slog.Error("SendEmbed failed", "error", err)
+		return m
+	}
+
+	if !TrackMessage(m) {
+		_ = c.Rest.DeleteMessage(m.ChannelID, m.ID)
+	}
 
 	return m
 }
@@ -25,9 +33,16 @@ func SendAndDeleteEmbed(c *bot.Client, embed discord.Embed, txtChannel snowflake
 		return
 	}
 
+	if !TrackMessage(m) {
+		_ = c.Rest.DeleteMessage(m.ChannelID, m.ID)
+		return
+	}
+
 	time.Sleep(wait)
 
-	_ = c.Rest.DeleteMessage(m.ChannelID, m.ID)
+	if err := c.Rest.DeleteMessage(m.ChannelID, m.ID); err == nil {
+		UntrackMessage(m.ChannelID, m.ID)
+	}
 }
 
 // SendEmbedInteraction sends an embed as response to an interaction
@@ -53,6 +68,10 @@ func SendEmbedInteraction(embed discord.Embed, e *events.ApplicationCommandInter
 		slog.Error("InteractionRespond failed", "error", err)
 		return
 	}
+
+	if !TrackInteraction(e.ApplicationID(), e.Token()) {
+		_ = e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
+	}
 }
 
 // SendAndDeleteEmbedInteraction sends and deletes after three second an embed in a given channel
@@ -70,6 +89,8 @@ func SendAndDeleteEmbedInteraction(embed discord.Embed, e *events.ApplicationCom
 		slog.Error("InteractionResponseDelete failed", "error", err)
 		return
 	}
+
+	UntrackInteraction(e.ApplicationID(), e.Token())
 }
 
 // Modify an already sent interaction
@@ -82,6 +103,10 @@ func ModifyInteraction(e *events.ApplicationCommandInteractionCreate, embed disc
 	if err != nil {
 		slog.Error("InteractionResponseEdit failed", "error", err)
 		return
+	}
+
+	if !TrackInteraction(e.ApplicationID(), e.Token()) {
+		_ = e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
 	}
 }
 
@@ -100,6 +125,8 @@ func ModifyInteractionAndDelete(embed discord.Embed, e *events.ApplicationComman
 		slog.Error("InteractionResponseDelete failed", "error", err)
 		return
 	}
+
+	UntrackInteraction(e.ApplicationID(), e.Token())
 }
 
 func DeferResponse(e *events.ApplicationCommandInteractionCreate) chan struct{} {
@@ -107,7 +134,12 @@ func DeferResponse(e *events.ApplicationCommandInteractionCreate) chan struct{} 
 
 	if e != nil {
 		go func() {
-			_ = e.DeferCreateMessage(false)
+			err := e.DeferCreateMessage(false)
+			if err == nil {
+				if !TrackInteraction(e.ApplicationID(), e.Token()) {
+					_ = e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
+				}
+			}
 			c <- struct{}{}
 		}()
 	} else {

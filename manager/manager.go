@@ -45,6 +45,15 @@ func NewServer(guildID snowflake.ID, clients *Clients) *Server {
 
 // AddSong adds a song to the queue
 func (server *Server) AddSong(priority bool, el ...queue.Element) {
+	if server.shuttingDown.Load() {
+		for _, element := range el {
+			if element.Closer != nil {
+				_ = element.Closer.Close()
+			}
+		}
+		return
+	}
+
 	if priority {
 		notify(notification.NotificationMessage{Notification: notification.PrioritySong, Songs: el, Guild: server.GuildID})
 	} else {
@@ -75,7 +84,7 @@ func (server *Server) startPlayback() {
 func (server *Server) startPlaybackLocked() {
 	server.stopQuitLocked()
 
-	if server.Started.Load() || server.Queue.IsEmpty() || server.Clear.Load() {
+	if server.shuttingDown.Load() || server.Started.Load() || server.Queue.IsEmpty() || server.Clear.Load() {
 		return
 	}
 
@@ -285,6 +294,10 @@ func (server *Server) CancelQuit() {
 
 // Clean clears the queue
 func (server *Server) Clean() {
+	server.clean(context.Background(), true, false)
+}
+
+func (server *Server) clean(ctx context.Context, waitDownloads, shutdown bool) {
 	if !server.cleaning.CompareAndSwap(false, true) {
 		return
 	}
@@ -304,6 +317,7 @@ func (server *Server) Clean() {
 
 		select {
 		case <-done:
+		case <-ctx.Done():
 		case <-time.After(10 * time.Second):
 			// Closing the current reader unblocks a player stuck on a slow
 			// stream. The player checks Clear and exits without removing the
@@ -316,13 +330,27 @@ func (server *Server) Clean() {
 
 			select {
 			case <-done:
+			case <-ctx.Done():
 			case <-time.After(5 * time.Second):
 			}
 		}
 	}
 
 	// Wait for playlist downloads to notice the Clear flag.
-	server.WG.Wait()
+	if waitDownloads {
+		server.WG.Wait()
+	} else {
+		doneWG := make(chan struct{})
+		go func() {
+			server.WG.Wait()
+			close(doneWG)
+		}()
+
+		select {
+		case <-doneWG:
+		case <-ctx.Done():
+		}
+	}
 
 	server.cleanMu.Lock()
 	q := server.Queue.GetAllQueue()
@@ -338,6 +366,10 @@ func (server *Server) Clean() {
 	server.cleanMu.Unlock()
 
 	notify(notification.NotificationMessage{Notification: notification.Clear, Guild: server.GuildID})
+
+	if shutdown {
+		return
+	}
 
 	server.playMu.Lock()
 	if !server.Started.Load() && server.Queue.IsEmpty() {

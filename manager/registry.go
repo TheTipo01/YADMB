@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 
@@ -60,4 +61,30 @@ func (s *Servers) Range(f func(guildID snowflake.ID, server *Server) bool) {
 	s.m.Range(func(key, value any) bool {
 		return f(key.(snowflake.ID), value.(*Server))
 	})
+}
+
+// Shutdown stops every registered server in parallel, waiting until done or
+// until the context expires.
+func (s *Servers) Shutdown(ctx context.Context) {
+	var wg sync.WaitGroup
+
+	s.Range(func(_ snowflake.ID, server *Server) bool {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			server.Shutdown(ctx)
+		}()
+		return true
+	})
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+	}
 }

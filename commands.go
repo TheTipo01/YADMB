@@ -416,8 +416,10 @@ var (
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.RestartTitle, constants.Disconnected, false).
 					WithColor(0x7289DA), e, time.Second*1, nil)
 
-				clients.Database.Close()
-				os.Exit(0)
+				select {
+				case shutdownRequest <- struct{}{}:
+				default:
+				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, "I'm sorry "+e.Member().User.Username+", I'm afraid I can't do that", false).WithColor(0x7289DA), e, time.Second*5, nil)
 			}
@@ -832,10 +834,14 @@ var (
 
 			if vs := manager.FindUserVoiceState(e.Client(), *e.GuildID(), e.Member().User.ID); vs != nil {
 				token := webApi.AddUser(&e.Member().Member, api.UserInfo{Guild: guildID, TextChannel: e.Channel().ID()})
-				embed := discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).WithColor(0x7289DA)
+				msgEmbed := discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.WebUITitle, fmt.Sprintf("%s/?token=%s&GuildId=%s", origin, token, guildID), false).WithColor(0x7289DA)
 
 				// Send the response as ephemeral
-				_ = e.CreateMessage(discord.NewMessageCreate().AddEmbeds(embed).AddFlags(discord.MessageFlagEphemeral))
+				if err := e.CreateMessage(discord.NewMessageCreate().AddEmbeds(msgEmbed).AddFlags(discord.MessageFlagEphemeral)); err == nil {
+					if !embed.TrackInteraction(e.ApplicationID(), e.Token()) {
+						_ = e.Client().Rest.DeleteInteractionResponse(e.ApplicationID(), e.Token())
+					}
+				}
 			} else {
 				embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(manager.BotName).AddField(constants.ErrorTitle, constants.NotInVC, false).
 					WithColor(0x7289DA), e, time.Second*5, nil)

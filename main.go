@@ -58,6 +58,8 @@ var (
 	guildList *sync.Map
 	// Channel used to notify the presence updater that the guild count has changed
 	guildCountChan = make(chan struct{})
+	// Channel used by /restart to request a clean shutdown
+	shutdownRequest = make(chan struct{}, 1)
 	// Logging level, configurable via config.yml
 	logLevel = new(slog.LevelVar)
 )
@@ -232,7 +234,12 @@ func main() {
 		return
 	}
 
-	defer client.Close(context.TODO())
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		client.Close(ctx)
+	}()
 
 	// Make the client available to the API and to the server managers as soon
 	// as possible; guild events can arrive while the gateway is still opening.
@@ -286,10 +293,26 @@ func main() {
 	slog.Info("YADMB is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
 
-	// And the DB connection
+	select {
+	case <-sc:
+	case <-shutdownRequest:
+	}
+	signal.Stop(sc)
+
+	slog.Info("Shutting down")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Stop new messages from being left behind, then clear queues and leave
+	// every voice channel.
+	embed.BeginShutdown()
+	servers.Shutdown(shutdownCtx)
+	embed.DeleteAll(shutdownCtx, client)
+
 	clients.Database.Close()
+
+	slog.Info("Shutdown complete")
 }
 
 // presenceUpdater updates the bot presence every time the guild count changes, with a debounce of 500ms to avoid making too many requests

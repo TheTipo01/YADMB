@@ -40,6 +40,8 @@ type Server struct {
 	Started atomic.Bool
 	// Whether to clear the queue
 	Clear atomic.Bool
+	// Whether the server is shutting down
+	shuttingDown atomic.Bool
 	// Guild ID
 	GuildID snowflake.ID
 	// Whether the bot is paused

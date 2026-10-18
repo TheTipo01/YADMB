@@ -16,6 +16,7 @@ import (
 
 	"github.com/TheTipo01/YADMB/api/notification"
 	"github.com/TheTipo01/YADMB/constants"
+	"github.com/TheTipo01/YADMB/embed"
 	"github.com/TheTipo01/YADMB/queue"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
@@ -150,6 +151,8 @@ func DeleteInteraction(client *bot.Client, i discord.Interaction, c <-chan struc
 		slog.Error("InteractionResponseDelete failed", "error", err)
 		return
 	}
+
+	embed.UntrackInteraction(i.ApplicationID(), i.Token())
 }
 
 // idGen returns the first 11 characters of the SHA1 hash for the given link
@@ -240,6 +243,8 @@ func StringifyErrors(errs ...error) string {
 
 func waitMessageAndDelete(msg chan *discord.Message, client *bot.Client) {
 	if message := <-msg; message != nil {
-		_ = client.Rest.DeleteMessage(message.ChannelID, message.ID)
+		if err := client.Rest.DeleteMessage(message.ChannelID, message.ID); err == nil {
+			embed.UntrackMessage(message.ChannelID, message.ID)
+		}
 	}
 }

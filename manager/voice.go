@@ -18,6 +18,10 @@ import (
 // If the bot is idle in another channel it moves there; if it is playing in
 // another channel it returns vc.ErrAlreadyConnected.
 func (server *Server) EnsureVoice(channelID snowflake.ID) error {
+	if server.shuttingDown.Load() {
+		return errors.New("server is shutting down")
+	}
+
 	if server.VC.IsConnected() {
 		current, ok := server.VC.ChannelID()
 		if ok && current == channelID {

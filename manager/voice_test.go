@@ -138,3 +138,24 @@ func TestEnsureVoiceRefusesToMoveWhilePlaying(t *testing.T) {
 		t.Fatalf("expected channel %s, got %s (ok=%v)", channelA, channelID, ok)
 	}
 }
+
+func TestShutdownClearsQueueAndLeavesVoice(t *testing.T) {
+	server, _ := newTestServer(t)
+
+	if err := server.EnsureVoice(snowflake.ID(10)); err != nil {
+		t.Fatalf("EnsureVoice failed: %v", err)
+	}
+
+	server.Queue.AddElements(queue.Element{Title: "song"})
+	server.Started.Store(true)
+
+	server.Shutdown(context.Background())
+
+	if !server.Queue.IsEmpty() {
+		t.Fatal("expected the queue to be empty after shutdown")
+	}
+
+	if server.VC.IsConnected() {
+		t.Fatal("expected the voice connection to be closed after shutdown")
+	}
+}
