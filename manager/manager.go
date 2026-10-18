@@ -294,6 +294,10 @@ func (server *Server) CancelQuit() {
 
 // Clean clears the queue
 func (server *Server) Clean() {
+	if server.shuttingDown.Load() {
+		return
+	}
+
 	server.clean(context.Background(), true, false)
 }
 
