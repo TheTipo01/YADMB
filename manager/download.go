@@ -178,7 +178,11 @@ func (server *Server) downloadAndPlayYouTubeAPI(p PlayEvent, respond bool, c cha
 		if err == nil && len(entries) > 0 {
 			server.WG.Add(1)
 
-			go embed.SendAndDeleteEmbedInteraction(discord.NewEmbed().WithTitle(BotName).AddField(constants.EnqueuedTitle, "https://www.youtube.com/playlist?list="+id, false).WithColor(0x7289DA), p.Event, time.Second*3, p.IsDeferred)
+			// The enqueued message was already sent by downloadAndPlay, so just
+			// remove it once the response has been updated.
+			if respond && p.Event != nil {
+				go DeleteInteraction(p.Event.Client(), p.Event, c)
+			}
 
 			if p.Random {
 				entries = shuffle(entries)
