@@ -26,8 +26,11 @@ type Element struct {
 	Reader io.Reader `json:"-"`
 	// Closer to the song
 	Closer io.Closer `json:"-"`
-	// Whether we are still downloading the song
+	// Whether the song is being downloaded instead of being read from the cache
 	Downloading bool `json:"-"`
+	// DownloadDone is closed once the background download has finished. It is
+	// nil when the element is not downloaded on demand.
+	DownloadDone <-chan struct{} `json:"-"`
 	// Interaction to edit
 	TextChannel snowflake.ID `json:"-"`
 	// Function to call before playing the song
@@ -42,6 +45,25 @@ type Element struct {
 	IsPaused *bool `json:"isPaused,omitempty"`
 	// Stderr pipes to get possible errors
 	Errors []io.ReadCloser `json:"-"`
+}
+
+// IsDownloading reports whether the song is still being downloaded. Elements
+// read from the cache report false, as do downloads that have already finished.
+func (e Element) IsDownloading() bool {
+	if !e.Downloading {
+		return false
+	}
+
+	if e.DownloadDone == nil {
+		return true
+	}
+
+	select {
+	case <-e.DownloadDone:
+		return false
+	default:
+		return true
+	}
 }
 
 type Queue struct {

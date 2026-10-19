@@ -170,14 +170,31 @@ type dcaStream struct {
 	done    bool
 	closed  bool
 	err     error
+
+	doneCh     chan struct{}
+	doneClosed bool
 }
 
 // newDCAStream returns a stream that encodes pcm into the DCA0 format, saving it
 // to path. Nothing happens until Start or Read is called.
 func newDCAStream(pcm io.ReadCloser, path string) *dcaStream {
-	s := &dcaStream{path: path, pcm: pcm}
+	s := &dcaStream{path: path, pcm: pcm, doneCh: make(chan struct{})}
 	s.cond = sync.NewCond(&s.mu)
 	return s
+}
+
+// Done is closed once the background encoding has finished. Callers can use it
+// to tell whether the whole song has already been written to the cache.
+func (s *dcaStream) Done() <-chan struct{} {
+	return s.doneCh
+}
+
+// signalDoneLocked closes doneCh. It must be called with s.mu held.
+func (s *dcaStream) signalDoneLocked() {
+	if s.doneCh != nil && !s.doneClosed {
+		s.doneClosed = true
+		close(s.doneCh)
+	}
 }
 
 // Start begins the background encoding. It is safe to call it more than once.
@@ -193,6 +210,7 @@ func (s *dcaStream) Start() {
 	if err != nil {
 		s.err = err
 		s.done = true
+		s.signalDoneLocked()
 		s.cond.Broadcast()
 		s.mu.Unlock()
 
@@ -239,6 +257,7 @@ func (s *dcaStream) encode() {
 		s.err = err
 	}
 	s.done = true
+	s.signalDoneLocked()
 	s.cond.Broadcast()
 	s.mu.Unlock()
 

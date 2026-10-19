@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -163,20 +161,27 @@ func (server *Server) play(done chan struct{}) {
 		skipReason, playErr := server.playSound(el)
 		go waitMessageAndDelete(msg, server.Clients.Discord)
 
-		// If we are still downloading the song, we need to finish writing it to disk
-		if el.Downloading && skipReason > Finished {
+		// If the song is still being downloaded, wait for the cache file to be
+		// complete before moving on.
+		if el.IsDownloading() && skipReason > Finished {
+			// Use a dedicated channel so that this message is not paired with
+			// the "Now playing" one and deleted before the download finishes.
+			processingMsg := make(chan *discord.Message, 1)
+
 			// Notify the user
 			go func() {
-				msg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
+				processingMsg <- embed.SendEmbed(server.Clients.Discord, discord.NewEmbed().WithTitle(BotName).
 					AddField(constants.ProcessingTitle, constants.Processing, false).
 					WithColor(0x7289DA), el.TextChannel)
 			}()
 
-			devnull, _ := os.OpenFile(os.DevNull, os.O_WRONLY, 0755)
-			_, _ = io.Copy(devnull, el.Reader)
-			_ = devnull.Close()
+			// The background encoder keeps writing on its own, so there is no
+			// need to drain the reader anymore: just wait for it to finish.
+			if el.DownloadDone != nil {
+				<-el.DownloadDone
+			}
 
-			go waitMessageAndDelete(msg, server.Clients.Discord)
+			go waitMessageAndDelete(processingMsg, server.Clients.Discord)
 		}
 
 		if el.AfterPlay != nil {

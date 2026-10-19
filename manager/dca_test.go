@@ -160,3 +160,25 @@ func TestDCAStreamPartialFrame(t *testing.T) {
 
 	checkFrames(t, out, 51)
 }
+
+func TestDCAStreamDone(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "song.dca")
+	s := newDCAStream(io.NopCloser(bytes.NewReader(testPCM(audioSampleRate))), path)
+
+	select {
+	case <-s.Done():
+		t.Fatal("Done was closed before the download started")
+	default:
+	}
+
+	s.Start()
+	if err := s.Wait(); err != nil {
+		t.Fatalf("Wait failed: %v", err)
+	}
+
+	select {
+	case <-s.Done():
+	default:
+		t.Fatal("Done was not closed after the download finished")
+	}
+}

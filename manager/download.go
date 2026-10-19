@@ -530,6 +530,12 @@ func (server *Server) populateElement(el *queue.Element, pipe *io.ReadCloser, cm
 	el.Reader = bufio.NewReader(*pipe)
 	el.Downloading = true
 
+	// Keep track of when the background download has written the whole song, so
+	// that skipping a fully downloaded element doesn't wait on it.
+	if stream, ok := (*pipe).(*dcaStream); ok {
+		el.DownloadDone = stream.Done()
+	}
+
 	el.BeforePlay = func() error {
 		err := CmdsStart(*cmd)
 		if len(err) > 0 {

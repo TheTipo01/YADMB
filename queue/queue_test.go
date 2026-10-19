@@ -69,3 +69,20 @@ func TestQueue_RemoveFirstElement(t *testing.T) {
 		t.Error("Expected 2, got", q.GetFirstElement().ID)
 	}
 }
+
+func TestElement_IsDownloading(t *testing.T) {
+	if (Element{}).IsDownloading() {
+		t.Error("Expected a cached element not to be downloading")
+	}
+
+	done := make(chan struct{})
+	el := Element{Downloading: true, DownloadDone: done}
+	if !el.IsDownloading() {
+		t.Error("Expected the element to still be downloading")
+	}
+
+	close(done)
+	if el.IsDownloading() {
+		t.Error("Expected the download to be finished")
+	}
+}
