@@ -7,7 +7,8 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"svelte-check": "svelte-check --tsconfig ./tsconfig.json"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -28,6 +29,7 @@
 		"prettier": "^3.9.10",
 		"prettier-plugin-svelte": "^4.1.1",
 		"svelte": "^5.57.2",
+		"svelte-check": "^4.7.7",
 		"tailwindcss": "^4.3.3",
 		"vite": "^8.3.4"
 	},
