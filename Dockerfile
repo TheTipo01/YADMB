@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/ccache \
     go build -trimpath -ldflags '-s -w' -o yadmb
 
-FROM alpine
+FROM denoland/deno:alpine
 
 RUN --mount=type=cache,target=/var/cache/apk \
     --mount=type=cache,target=/root/.cache/pip \
@@ -36,8 +36,6 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add ffmpeg python3 ca-certificates py3-pip opus && \
     pip3 install --break-system-packages --pre "yt-dlp[default,curl-cffi]" yt-dlp-ejs bgutil-ytdlp-pot-provider && \
     apk del py3-pip
-
-COPY --from=denoland/deno:bin /deno /usr/bin/
 
 COPY --from=build /yadmb/yadmb /usr/bin/
 COPY --from=build /root/.local/lib /root/.local/lib
