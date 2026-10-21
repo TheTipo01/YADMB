@@ -85,8 +85,8 @@ export function ClearArray(promise) {
 
 // Function to get the frames
 export function GetFrames(promise) {
-	return promise.then((array) => {
-		if (array.length > 0) {
+	return Promise.resolve(promise).then((array) => {
+		if (Array.isArray(array) && array.length > 0) {
 			return array[0].frames;
 		}
 		return 0;
@@ -95,8 +95,8 @@ export function GetFrames(promise) {
 
 // Function to get the isPaused status from the promise
 export function GetPauseStatus(promise) {
-	return promise.then((array) => {
-		if (array.length > 0) {
+	return Promise.resolve(promise).then((array) => {
+		if (Array.isArray(array) && array.length > 0) {
 			return !array[0].isPaused;
 		}
 		return false;

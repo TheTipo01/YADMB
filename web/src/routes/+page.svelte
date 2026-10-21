@@ -1,7 +1,7 @@
 <script>
 	import Queue from './queue.svelte';
 	import Favorites from './favorites.svelte';
-	import { Avatar, TabItem, Tabs } from 'flowbite-svelte';
+	import { Avatar, P, TabItem, Tabs } from 'flowbite-svelte';
 	import {
 		AddObjectToArray,
 		ClearArray,
@@ -198,8 +198,10 @@
 			</div>
 		{/snippet}
 		{#if activetab === 'queue'}
-			{#if GuildId !== '' && token !== '' && host !== '' && queue != null && timestamp != undefined}
+			{#if GuildId !== '' && token !== '' && host !== '' && queue != null}
 				<Queue {GuildId} {token} {host} {queue} {timestamp} />
+			{:else if host !== ''}
+				<P align="center">Missing token or Guild ID. Open this page using the /webui command.</P>
 			{/if}
 		{/if}
 	</TabItem>
@@ -217,6 +219,8 @@
 		{#if activetab === 'favorites'}
 			{#if token !== '' && host !== ''}
 				<Favorites {GuildId} {token} {host} />
+			{:else if host !== ''}
+				<P align="center">Missing token or Guild ID. Open this page using the /webui command.</P>
 			{/if}
 		{/if}
 	</TabItem>

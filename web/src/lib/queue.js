@@ -84,21 +84,30 @@ export async function RemoveFromQueue(GuildID, token, clear = false, host) {
 export async function GetQueue(GuildID, token, host) {
 	// Request
 	let route = `${host}/queue/${GuildID}?` + new URLSearchParams({ token: token }).toString();
-	let response = await fetch(route, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/x-www-form-urlencoded'
-		}
-	});
 
-	// Error Handling
-	switch (response.status) {
-		case 200:
-			return await response.json();
-		case 401:
-			return Response.QUEUE_TOKEN_ERR;
-		default:
-			return Response.QUEUE_PLAY_ERR;
+	try {
+		let response = await fetch(route, {
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/x-www-form-urlencoded'
+			}
+		});
+
+		// Error Handling
+		switch (response.status) {
+			case 200:
+				try {
+					return await response.json();
+				} catch {
+					return Response.QUEUE_PLAY_ERR;
+				}
+			case 401:
+				return Response.QUEUE_TOKEN_ERR;
+			default:
+				return Response.QUEUE_PLAY_ERR;
+		}
+	} catch {
+		return Response.QUEUE_PLAY_ERR;
 	}
 }
