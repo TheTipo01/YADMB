@@ -142,7 +142,7 @@
 			<!-- Right side of the grid renders the actual queue -->
 			<div>
 				<Heading tag="h4" class="mb-5" align="center">Queue</Heading>
-				{#each queueData as song, index}
+				{#each queueData as song, index (index)}
 					{#if index !== 0}
 						<div class="grid grid-cols-3 justify-items-center mt-3">
 							<Avatar src={song.thumbnail} cornerStyle="rounded" />

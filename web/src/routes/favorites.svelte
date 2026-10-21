@@ -129,7 +129,7 @@
 		<Error response={favorite} />
 	{:else if Array.isArray(favorite) && favorite.length !== 0}
 		<Accordion>
-			{#each GetFolders(favorite) as folder}
+			{#each GetFolders(favorite) as folder (folder)}
 				<!-- Folder Header -->
 				<AccordionItem>
 					{#snippet header()}
@@ -148,7 +148,7 @@
 							</TableHeadCell>
 						</TableHead>
 						<TableBody>
-							{#each favorite as song}
+							{#each favorite as song, i (i)}
 								<TableBodyRow>
 									{#if song.folder === folder}
 										<TableBodyCell class="w-1/2"><P align="center">{song.name}</P></TableBodyCell>
