@@ -27,13 +27,17 @@
 	let token = $state('');
 	let host = $state('');
 	let activetab = $state('queue');
-	let playing;
+	/** @type {boolean} */
+	let playing = false;
 	let started = $state(false);
-	let queue = $state(null);
+	let queue = $state(/** @type {Promise<any> | number | null} */ (null));
 	let seconds = 0;
-	let timestamp = $state();
+	let timestamp = $state(/** @type {string | undefined} */ (undefined));
+	/** @type {WebSocket | undefined} */
 	let socket;
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let reconnectTimer;
+	/** @type {ReturnType<typeof setInterval> | undefined} */
 	let clockTimer;
 	let stopped = false;
 
@@ -190,7 +194,7 @@
 </div>
 
 <Tabs style="underline">
-	<TabItem title="Queue" open active={activetab === 'queue'} onclick={() => (activetab = 'queue')}>
+	<TabItem title="Queue" open={activetab === 'queue'} onclick={() => (activetab = 'queue')}>
 		{#snippet titleSlot()}
 			<div class="flex items-center gap-2">
 				<ListMusicSolid />
@@ -207,7 +211,7 @@
 	</TabItem>
 	<TabItem
 		title="Favorites"
-		active={activetab === 'favorites'}
+		open={activetab === 'favorites'}
 		onclick={() => (activetab = 'favorites')}
 	>
 		{#snippet titleSlot()}

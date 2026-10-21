@@ -15,6 +15,10 @@ export const Response = Object.freeze({
 });
 
 // Function to handle the status code of each function
+/**
+ * @param {number} code
+ * @returns {string}
+ */
 export function get_message(code) {
 	let msg;
 	switch (code) {

@@ -1,10 +1,18 @@
 import { Response } from './error';
 
 // Function to add a song to the favorites
+/**
+ * @param {string} token
+ * @param {string} host
+ * @returns {Promise<any>}
+ */
 export async function AddFavorite(token, host) {
-	let name = document.getElementById('name').value.trim();
-	let link = document.getElementById('link').value.trim();
-	let folder = document.getElementById('folder')?.value.trim();
+	let name =
+		/** @type {HTMLInputElement | null} */ (document.getElementById('name'))?.value.trim() ?? '';
+	let link =
+		/** @type {HTMLInputElement | null} */ (document.getElementById('link'))?.value.trim() ?? '';
+	let folder =
+		/** @type {HTMLInputElement | null} */ (document.getElementById('folder'))?.value.trim() ?? '';
 
 	// Request
 	let route = `${host}/favorites`;
@@ -36,6 +44,12 @@ export async function AddFavorite(token, host) {
 }
 
 // Function to remove a song from the favorites
+/**
+ * @param {string} token
+ * @param {string} name
+ * @param {string} host
+ * @returns {Promise<number>}
+ */
 export async function RemoveFavorite(token, name, host) {
 	// Request
 	let route = `${host}/favorites?` + new URLSearchParams({ name: name, token: token }).toString();
@@ -65,6 +79,11 @@ export async function RemoveFavorite(token, name, host) {
 }
 
 // Function to get the favorite songs
+/**
+ * @param {string} token
+ * @param {string} host
+ * @returns {Promise<any>}
+ */
 export async function GetFavorites(token, host) {
 	// Request
 	let route = `${host}/favorites?` + new URLSearchParams({ token: token }).toString();

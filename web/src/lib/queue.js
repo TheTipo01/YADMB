@@ -1,18 +1,48 @@
 // This file contains every function used in the queue.svelte component
 import { Response } from './error';
 
+/**
+ * @param {string} GuildID
+ * @param {string} token
+ * @param {string} host
+ * @returns {Promise<number>}
+ */
 export async function AddToQueueHTML(GuildID, token, host) {
 	// Values needed for adding a song to a queue
-	let song = document.getElementById('song').value.trim();
-	let shuffle = document.getElementById('shuffle')?.checked ?? false;
-	let playlist = document.getElementById('playlist')?.checked ?? false;
-	let loop = document.getElementById('loop')?.checked ?? false;
-	let priority = document.getElementById('priority')?.checked ?? false;
+	let song =
+		/** @type {HTMLInputElement | null} */ (document.getElementById('song'))?.value.trim() ?? '';
+	let shuffle = /** @type {HTMLInputElement | null} */ (document.getElementById('shuffle'))
+		?.checked;
+	let playlist = /** @type {HTMLInputElement | null} */ (document.getElementById('playlist'))
+		?.checked;
+	let loop = /** @type {HTMLInputElement | null} */ (document.getElementById('loop'))?.checked;
+	let priority = /** @type {HTMLInputElement | null} */ (document.getElementById('priority'))
+		?.checked;
 
-	return AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority);
+	return AddToQueue(
+		GuildID,
+		token,
+		host,
+		song,
+		shuffle ?? false,
+		playlist ?? false,
+		loop ?? false,
+		priority ?? false
+	);
 }
 
 // Function to add a song to the queue
+/**
+ * @param {string} GuildID
+ * @param {string} token
+ * @param {string} host
+ * @param {string} song
+ * @param {boolean} shuffle
+ * @param {boolean} playlist
+ * @param {boolean} loop
+ * @param {boolean} priority
+ * @returns {Promise<number>}
+ */
 export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, loop, priority) {
 	// Request
 	let route = `${host}/queue/${GuildID}`;
@@ -48,7 +78,14 @@ export async function AddToQueue(GuildID, token, host, song, shuffle, playlist, 
 }
 
 // Function to remove a song from the queue or clear it
-export async function RemoveFromQueue(GuildID, token, clear = false, host) {
+/**
+ * @param {string} GuildID
+ * @param {string} token
+ * @param {boolean} clear
+ * @param {string} host
+ * @returns {Promise<number>}
+ */
+export async function RemoveFromQueue(GuildID, token, clear, host) {
 	// AKA skip
 	// Request
 	let route =
@@ -81,6 +118,12 @@ export async function RemoveFromQueue(GuildID, token, clear = false, host) {
 }
 
 // Function to get the queue
+/**
+ * @param {string} GuildID
+ * @param {string} token
+ * @param {string} host
+ * @returns {Promise<any>}
+ */
 export async function GetQueue(GuildID, token, host) {
 	// Request
 	let route = `${host}/queue/${GuildID}?` + new URLSearchParams({ token: token }).toString();

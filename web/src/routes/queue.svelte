@@ -7,15 +7,17 @@
 	import { Response } from '../lib/error';
 	import { SafeHref } from '../lib/utilities';
 
-	/** @type {{GuildId: any, token: any, host: any, queue: any, timestamp: any}} */
+	/** @type {{GuildId: string, token: string, host: string, queue: any, timestamp: string | undefined}} */
 	let { GuildId, token, host, queue, timestamp } = $props();
 
-	let code = $state(null);
+	/** @typedef {{ title: string, link: string, thumbnail: string, duration: string, user: string, frames: number, isPaused: boolean }} QueueSong */
+
+	let code = $state(/** @type {number | Promise<number> | null} */ (null));
 	let showModal = $state(false);
 	let isPlaylist = $state(false);
 
 	// Create reactive state for the queue data
-	let queueData = $state(null);
+	let queueData = $state(/** @type {QueueSong[] | number | null} */ (null));
 	let isLoading = $state(true);
 
 	// Unwrap the promise prop into local state
@@ -28,8 +30,9 @@
 	});
 
 	// Helper function to handle Toggle and update UI immediately
+	/** @param {'pause' | 'resume'} action */
 	async function handleToggle(action) {
-		if (!queueData || queueData.length === 0) {
+		if (!Array.isArray(queueData) || queueData.length === 0) {
 			return;
 		}
 
@@ -141,7 +144,7 @@
 
 			<!-- Right side of the grid renders the actual queue -->
 			<div>
-				<Heading tag="h4" class="mb-5" align="center">Queue</Heading>
+				<Heading tag="h4" class="mb-5 text-center">Queue</Heading>
 				{#each queueData as song, index (index)}
 					{#if index !== 0}
 						<div class="grid grid-cols-3 justify-items-center mt-3">
@@ -172,7 +175,7 @@
 
 				<!-- Clear button -->
 				<div class="justify-self-start">
-					<Button align="right" onclick={() => (code = RemoveFromQueue(GuildId, token, true, host))}
+					<Button onclick={() => (code = RemoveFromQueue(GuildId, token, true, host))}
 						><P align="center">Clear Queue</P></Button
 					>
 				</div>

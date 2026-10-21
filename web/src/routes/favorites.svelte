@@ -16,17 +16,18 @@
 		TableHeadCell
 	} from 'flowbite-svelte';
 	import { TrashBinSolid, PlusOutline } from 'flowbite-svelte-icons';
+	import { untrack } from 'svelte';
 	import { AddToQueue } from '../lib/queue.js';
 	import { Response } from '../lib/error.js';
 	import Error from './errors.svelte';
 
 	// props
-	/** @type {{GuildId: any, token: any, host: any}} */
+	/** @type {{GuildId: string, token: string, host: string}} */
 	let { GuildId, token, host } = $props();
 
 	// variables
-	let favorites = $state(GetFavorites(token, host));
-	let code = $state(favorites);
+	let favorites = $state(untrack(() => GetFavorites(token, host)));
+	let code = $state(/** @type {number | Promise<any> | null} */ (null));
 	let showModal = $state(false);
 
 	async function submitFavorite() {
@@ -46,6 +47,7 @@
 		showModal = false;
 	}
 
+	/** @param {{ name: string }} song */
 	async function removeFavorite(song) {
 		const result = await RemoveFavorite(token, song.name, host);
 		switch (result) {
@@ -169,7 +171,7 @@
 												))}
 										>
 											<div class="flex items-center justify-center cursor-pointer">
-												<PlusOutline size="lg" align="center" />
+												<PlusOutline size="lg" />
 											</div>
 											<P align="center">Add to Queue</P>
 										</TableBodyCell>

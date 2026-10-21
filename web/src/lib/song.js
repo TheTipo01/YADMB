@@ -3,6 +3,13 @@ import { Response } from './error';
 // This file contains a function used in the queue.svelte component
 
 // Function to pause or resume the current song
+/**
+ * @param {string} GuildID
+ * @param {string} token
+ * @param {string} action
+ * @param {string} host
+ * @returns {Promise<number>}
+ */
 export async function ToggleSong(GuildID, token, action = '', host) {
 	// Request
 	if (action === '') {
