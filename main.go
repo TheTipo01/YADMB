@@ -133,12 +133,16 @@ func init() {
 	}
 
 	// And load custom commands from the db
-	commands, _ := clients.Database.GetCustomCommands()
-	for guild := range commands {
-		srv := servers.GetOrCreate(guild, &clients)
-		for command, cmd := range commands[guild] {
-			srv.SetCustom(command, cmd)
-		}
+	commands, err := clients.Database.GetCustomCommands()
+	if err != nil {
+		slog.Error("Error while getting custom commands", "error", err)
+	} else {
+		for guild := range commands {
+			srv := servers.GetOrCreate(guild, &clients)
+			for command, cmd := range commands[guild] {
+				srv.SetCustom(command, cmd)
+			}
+		}		
 	}
 
 	// Load the blacklist

@@ -60,7 +60,7 @@ func (c Common) GetCustomCommands() (map[snowflake.ID]map[string]*database.Custo
 		commands             = make(map[snowflake.ID]map[string]*database.CustomCommand)
 	)
 
-	rows, err := c.db.Query("SELECT guild, command, song, loop FROM customCommands")
+	rows, err := c.db.Query("SELECT guild, command, song, `loop` FROM customCommands")
 	if err != nil {
 		return nil, err
 	}
