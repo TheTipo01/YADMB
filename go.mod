@@ -16,7 +16,7 @@ require (
 	github.com/kkyr/fig v0.5.0
 	github.com/zmb3/spotify/v2 v2.4.3
 	golang.org/x/oauth2 v0.37.0
-	google.golang.org/api v0.307.0
+	google.golang.org/api v0.308.0
 	layeh.com/gopus v0.0.0-20210501142526-1ee02d434e32
 	modernc.org/sqlite v1.61.0
 )
