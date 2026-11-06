@@ -13,32 +13,32 @@
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@sveltejs/adapter-auto": "^8.0.0",
-		"@sveltejs/adapter-static": "^4.0.0",
-		"@sveltejs/kit": "^3.1.0",
+		"@sveltejs/adapter-static": "^4.0.1",
+		"@sveltejs/kit": "^3.1.1",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
-		"autoprefixer": "^10.6.1",
-		"eslint": "^10.13.0",
+		"autoprefixer": "^10.6.2",
+		"eslint": "^10.14.0",
 		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-svelte": "^3.23.1",
+		"eslint-plugin-svelte": "^3.24.0",
 		"flowbite": "^4.0.2",
 		"flowbite-svelte": "^1.33.1",
 		"flowbite-svelte-icons": "^3.1.0",
-		"globals": "^17.13.0",
-		"postcss": "^8.5.31",
+		"globals": "^17.14.0",
+		"postcss": "^8.5.32",
 		"postcss-load-config": "^6.0.1",
 		"prettier": "^3.9.10",
 		"prettier-plugin-svelte": "^4.1.1",
-		"svelte": "^5.57.2",
-		"svelte-check": "^4.7.7",
-		"tailwindcss": "^4.3.3",
-		"vite": "^8.3.5"
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.8",
+		"tailwindcss": "^4.3.4",
+		"vite": "^8.3.6"
 	},
 	"type": "module",
 	"dependencies": {
-		"@tailwindcss/postcss": "^4.3.3",
-		"@tailwindcss/vite": "^4.3.3",
+		"@tailwindcss/postcss": "^4.3.4",
+		"@tailwindcss/vite": "^4.3.4",
 		"svelte-preprocess": "^6.0.5",
 		"typescript": "^6.0.3",
-		"ws": "^8.22.0"
+		"ws": "^8.22.1"
 	}
 }
