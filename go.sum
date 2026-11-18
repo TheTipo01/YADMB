@@ -68,8 +68,8 @@ github.com/disgoorg/disgo v0.20.1-0.20261116223422-05fe0f6826ff h1:hg7k/udSTcCIU
 github.com/disgoorg/disgo v0.20.1-0.20261116223422-05fe0f6826ff/go.mod h1:ZMGQXsHdnrc7rIgcugi6Ht8sSPOKXwy7WKeNlDGfgKg=
 github.com/disgoorg/godave v0.3.1-0.20261118215854-c06abab601e2 h1:1FvPnAxZ5IiIB72azZwibYq39EUHLEDou5xvhXQziOU=
 github.com/disgoorg/godave v0.3.1-0.20261118215854-c06abab601e2/go.mod h1:OreAC3hpabr39bMVA+jwOVDq1EUPXH5A0XUBiZaDI1Y=
-github.com/disgoorg/godave/golibdave v0.3.0 h1:mSX4YzIYasUB80fo8izi0ENplOKRm7WDwRxXYfKFKWQ=
-github.com/disgoorg/godave/golibdave v0.3.0/go.mod h1:X5N0QoCLqX7wmrSMDa2nGoMna47Svv5phmllHYnjMvM=
+github.com/disgoorg/godave/golibdave v0.3.1-0.20261118215854-c06abab601e2 h1:Wz5N7vynnAJN6rCDkrswp70bgsP4rfMNyt4J+RjEHDY=
+github.com/disgoorg/godave/golibdave v0.3.1-0.20261118215854-c06abab601e2/go.mod h1:X5N0QoCLqX7wmrSMDa2nGoMna47Svv5phmllHYnjMvM=
 github.com/disgoorg/godave/libdave v0.3.0 h1:D0MbJXysTbIGY2aqQAiGTB7HkR1Nd6jZi/7I1mcewx0=
 github.com/disgoorg/godave/libdave v0.3.0/go.mod h1:CxundbQ722MpK3vD31kaOAxbu1+cFnnEKQDqQ7rpxEM=
 github.com/disgoorg/json/v2 v2.0.0 h1:U16yy/ARK7/aEpzjjqK1b/KaqqGHozUdeVw/DViEzQI=

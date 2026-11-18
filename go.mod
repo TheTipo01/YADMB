@@ -6,7 +6,7 @@ require (
 	github.com/coder/websocket v1.8.15
 	github.com/dchest/uniuri v1.2.0
 	github.com/disgoorg/disgo v0.20.1-0.20261116223422-05fe0f6826ff
-	github.com/disgoorg/godave/golibdave v0.3.0
+	github.com/disgoorg/godave/golibdave v0.3.1-0.20261118215854-c06abab601e2
 	github.com/disgoorg/snowflake/v2 v2.0.4-0.20250223124221-0e6fdabd91cc
 	github.com/gin-contrib/cors v1.7.11
 	github.com/gin-contrib/static v1.1.10
