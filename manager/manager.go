@@ -396,6 +396,20 @@ func (server *Server) scheduleQuitLocked() {
 	server.quitTimer.Reset(time.Minute)
 }
 
+// scheduleQuitIfIdle arms the idle disconnect timer if the server isn't
+// playing anything. It is used when a play request fails before enqueuing a
+// song, since Play already cancelled the previous timer.
+func (server *Server) scheduleQuitIfIdle() {
+	server.playMu.Lock()
+	defer server.playMu.Unlock()
+
+	if server.shuttingDown.Load() || server.Started.Load() || !server.Queue.IsEmpty() || server.Clear.Load() {
+		return
+	}
+
+	server.scheduleQuitLocked()
+}
+
 func (server *Server) stopQuitLocked() {
 	if server.quitTimer != nil {
 		server.quitTimer.Stop()

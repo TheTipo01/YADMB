@@ -30,6 +30,10 @@ type PlayEvent struct {
 func (server *Server) Play(p PlayEvent) {
 	server.CancelQuit()
 
+	// The request may fail before a song is enqueued. Play cancelled the idle
+	// disconnect timer, so arm it again if nothing ended up playing.
+	defer server.scheduleQuitIfIdle()
+
 	if strings.Contains(p.Song, "spotify.com/") {
 		// Parse URL
 		u, err := url.Parse(p.Song)
