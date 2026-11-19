@@ -62,7 +62,7 @@ jobs:
           sudo make install
 
           # Fetch the prebuilt arm64 libdave and register it with pkg-config.
-          curl -fsSL https://github.com/discord/libdave/releases/download/v1.1.0/cpp/libdave-Linux-ARM64-boringssl.zip -o /tmp/libdave-arm64.zip
+          curl -fsSL https://github.com/discord/libdave/releases/download/v1.3.0/cpp/libdave-Linux-ARM64-boringssl.zip -o /tmp/libdave-arm64.zip
           sudo mkdir -p /opt/arm64/lib /opt/arm64/include
           sudo unzip -j -o /tmp/libdave-arm64.zip "lib/libdave.so" -d /opt/arm64/lib
           sudo unzip -j -o /tmp/libdave-arm64.zip "include/dave/dave.h" -d /opt/arm64/include
@@ -74,7 +74,7 @@ jobs:
 
           Name: dave
           Description: Discord Audio & Video End-to-End Encryption (DAVE) Protocol
-          Version: v1.1.0
+          Version: v1.3.0
           URL: https://github.com/discord/libdave
           Libs: -L${libdir} -ldave -Wl,-rpath,${libdir}
           Cflags: -I${includedir}
