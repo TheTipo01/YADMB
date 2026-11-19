@@ -25,7 +25,7 @@ libdave is now required, you can use the script over at [disgoorg/godave](https:
 ```Bash
 wget https://raw.githubusercontent.com/disgoorg/godave/refs/heads/master/scripts/libdave_install.sh
 chmod +x libdave_install.sh
-./libdave_install.sh v1.1.0
+./libdave_install.sh v1.3.0
 ```
 
 Final things:
