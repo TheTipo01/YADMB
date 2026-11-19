@@ -32,7 +32,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/disgoorg/godave v0.3.1-0.20261118215854-c06abab601e2 // indirect
-	github.com/disgoorg/godave/libdave v0.3.0 // indirect
+	github.com/disgoorg/godave/libdave v0.3.1-0.20261118215854-c06abab601e2 // indirect
 	github.com/disgoorg/json/v2 v2.0.0 // indirect
 	github.com/disgoorg/omit v1.0.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
